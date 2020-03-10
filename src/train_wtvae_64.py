@@ -38,7 +38,7 @@ if __name__ == "__main__":
                                 rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
 
     model.set_inv_filters(inv_filters)
-    model.set_cuda(DEVICE)
+    model.set_device(DEVICE)
     
     train_losses = []
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         save_image(x_sample1[:8].cpu(), img_output_dir + '/decoded_sample{}.png'.format(epoch))
         
         x_sample1 = x_sample1.view(-1,1,64,64)
-        x_sample1 = iwt(x_sample1, levels=3)
+        x_sample1 = iwt(x_sample1, inv_filters, levels=3)
         x_sample1 = x_sample1.view(-1,3,64,64)
         x_sample1 = x_sample1.contiguous()
 

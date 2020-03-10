@@ -166,7 +166,7 @@ class WTVAE_64(nn.Module):
     def loss_function(self, wt_x, x, mu, logvar) -> Variable:
         
         wt_x = wt_x.view(-1,1,64,64)
-        x_recon = iwt(wt_x, levels=3)
+        x_recon = iwt(wt_x, self.inv_filters, levels=3)
         x_recon = x_recon.view(-1,3,64,64)
         x_recon = x_recon.contiguous()
         

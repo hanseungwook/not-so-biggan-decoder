@@ -6,7 +6,7 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
     for batch_idx, data in enumerate(train_loader):
         
         if model.cuda:
-            data = data.cuda()
+            data = data.to(model.device)
 
         optimizer.zero_grad()
         
