@@ -31,7 +31,7 @@ def iwt(vres, inv_filters, levels=1):
     w = vres.size(3)
     res = vres.contiguous().view(-1, h//2, 2, w//2).transpose(1, 2).contiguous().view(-1, 4, h//2, w//2).clone()
     if levels > 1:
-        res[:,:1] = iwt(res[:,:1], levels=levels-1)
+        res[:,:1] = iwt(res[:,:1], inv_filters, levels=levels-1)
     res = torch.nn.functional.conv_transpose2d(res, Variable(inv_filters[:,None]),stride=2)
     res = res[:,:,2:-2,2:-2] #removing padding
 
