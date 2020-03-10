@@ -43,8 +43,8 @@ if __name__ == "__main__":
     train_losses = []
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
-    img_output_dir = os.path.join(args.root_dir, 'celeba_wtvae64_')
-    model_dir = os.path.join(args.root_dir, 'wtvae64_' + args.config + '_models/')
+    img_output_dir = os.path.join(args.root_dir, '/image_samples/celeba_wtvae64_')
+    model_dir = os.path.join(args.root_dir, '/models/wtvae64_' + args.config + '_models/')
 
     try:
         os.mkdir(img_output_dir)
