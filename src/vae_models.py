@@ -26,20 +26,10 @@ def weights_init(m):
         nn.init.constant_(m.bias.data, 0.0)
 
 
-def iwt(vres, device=None, levels=1):
-    if inv_filters is None:
-        w=pywt.Wavelet('bior2.2')
-        rec_hi = torch.Tensor(w.rec_hi).to(device)
-        rec_lo = torch.Tensor(w.rec_lo).to(device)
-
-        inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
-                                  rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
-                                  rec_hi.unsqueeze(0)*rec_lo.unsqueeze(1),
-                                  rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
-
+def iwt(vres, inv_filters, levels=1):
     h = vres.size(2)
     w = vres.size(3)
-    res = vres.contiguous().view(-1,h//2,2,w//2).transpose(1,2).contiguous().view(-1,4,h//2,w//2).clone()
+    res = vres.contiguous().view(-1, h//2, 2, w//2).transpose(1, 2).contiguous().view(-1, 4, h//2, w//2).clone()
     if levels > 1:
         res[:,:1] = iwt(res[:,:1], levels=levels-1)
     res = torch.nn.functional.conv_transpose2d(res, Variable(inv_filters[:,None]),stride=2)
@@ -60,11 +50,16 @@ class UnFlatten1(nn.Module):
         return input.view(input.size(0), size, 2, 2) 
 
 # WTVAE for 64 x 64 images
-# 2 WT layers
+# num_wt of WT layers (default: 2)
 # Using Unflatten for decoder (N * 2048 * 1 * 1), instead of Unflatten1
 class WTVAE_64(nn.Module):
-    def __init__(self, image_channels=3, h_dim=2048, z_dim=100, unflatten=0):
+    def __init__(self, image_channels=3, h_dim=2048, z_dim=100, unflatten=0, num_wt=2):
         super(WTVAE_64, self).__init__()
+
+        self.inv_filters = None
+        self.cuda = False
+        self.device = None
+        self.num_wt = num_wt
         
         self.encoder = nn.Sequential(
             nn.Conv2d(image_channels, 32, kernel_size=4, stride=2), # N * 32 * 31 * 31
@@ -130,20 +125,10 @@ class WTVAE_64(nn.Module):
                 nn.Sigmoid(),
             )
         
-        self.wt1 = nn.Sequential(
-            nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2), # N * 3 * 64 * 64
-            nn.BatchNorm2d(image_channels)
-        )
-        
-        self.wt2 = nn.Sequential(
-            nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2), # N * 3 * 64 * 64
-            nn.BatchNorm2d(image_channels)
-        )
-        
-#         self.wt3 = nn.Sequential(
-#             nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2), # N * 3 * 64 * 64
-#             nn.BatchNorm2d(image_channels)
-#         )
+        self.wt = nn.Sequential()
+        for i in range(self.num_wt):
+            self.wt.add_module(nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)) # N * 3 * 64 * 64
+            self.wt.add_module(nn.BatchNorm2d(image_channels))
         
 
     def reparameterize(self, mu, logvar):
@@ -169,9 +154,7 @@ class WTVAE_64(nn.Module):
     def decode(self, z):
         z = self.fc3(z)
         z = self.fct_decode_1(z)
-        z = self.wt1(z)
-        z = self.wt2(z)
-#         z = self.wt3(z)
+        z = self.wt(z)
         
         return z
 
@@ -194,6 +177,15 @@ class WTVAE_64(nn.Module):
         KLD /= x.shape[0] * 3 * 64 * 64
 
         return BCE + KLD
+    
+    def set_inv_filters(self, inv_filters):
+        self.inv_filters = inv_filters
+    
+    def set_device(self, device):
+        if device != 'cpu':
+            self.cuda = True
+        
+        self.device = device
 
 # WTVAE for 128 x 128 images
 # 2 WT layers

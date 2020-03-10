@@ -9,6 +9,7 @@ from wt_datasets import CelebaDataset
 from trainer import train_wtvae
 from arguments import args_parse
 import logging
+import pywt
 
 
 if __name__ == "__main__":
@@ -24,8 +25,20 @@ if __name__ == "__main__":
     DEVICE = ('cuda:0' if torch.cuda.is_available() else 'cpu')
     logging.info('Device: {}'.format(DEVICE))
 
-    model = WTVAE_64()
+    model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt)
     model = model.to(DEVICE)
+
+    w = pywt.Wavelet('bior2.2')
+    rec_hi = torch.Tensor(w.rec_hi).to(DEVICE)
+    rec_lo = torch.Tensor(w.rec_lo).to(DEVICE)
+
+    inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
+                                rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
+                                rec_hi.unsqueeze(0)*rec_lo.unsqueeze(1),
+                                rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
+
+    model.set_inv_filters(inv_filters)
+    model.set_cuda(DEVICE)
     
     train_losses = []
     optimizer = optim.Adam(model.parameters(), lr=1e-3)

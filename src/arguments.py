@@ -17,6 +17,10 @@ def args_parse():
                         help='Configuration for model -- to be used for output directory')
     parser.add_argument('--flatten', type=int, default=0,
                         help='Which flatten to use for WT VAE decoder (0/1)')
+    parser.add_argument('--num_wt', type=int, default=2,
+                        help='How many WT in WT VAE')
+    parser.add_argument('--z_dim', type=int, default=100,
+                        help='Z dimension (whether in WTVAE or IWTVAE)') 
 
     args = parser.parse_args()
 
