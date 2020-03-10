@@ -127,8 +127,8 @@ class WTVAE_64(nn.Module):
         
         self.wt = nn.Sequential()
         for i in range(self.num_wt):
-            self.wt.add_module(nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)) # N * 3 * 64 * 64
-            self.wt.add_module(nn.BatchNorm2d(image_channels))
+            self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)) # N * 3 * 64 * 64
+            self.wt.add_module('wt{}_bn'.format(i), nn.BatchNorm2d(image_channels))
         
 
     def reparameterize(self, mu, logvar):
