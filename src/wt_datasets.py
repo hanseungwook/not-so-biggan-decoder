@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
-from scipy.misc import imresize
+# from scipy.misc import imresize
 
 # Celeba Dataset
 # If WT == False, returns original image
