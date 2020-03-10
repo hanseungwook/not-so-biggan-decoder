@@ -50,7 +50,8 @@ if __name__ == "__main__":
         os.mkdir(img_output_dir)
         os.mkdir(model_dir)
     except:
-        LOGGER.error('Cannot make model & img output directories')
+        LOGGER.error('Could not make model & img output directories')
+        raise Exception('Could not make model & img output directories')
     
     for epoch in range(1, args.epochs + 1):
         train_wtvae(epoch, model, optimizer, train_loader, train_losses, args)
