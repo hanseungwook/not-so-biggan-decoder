@@ -14,7 +14,8 @@ def truncated_normal_(tensor, mean=0, std=0.02):
     ind = valid.max(-1, keepdim=True)[1]
     tensor.data.copy_(tmp.gather(-1, ind).squeeze(-1))
     tensor.data.mul_(std).add_(mean)
-    
+
+
 def weights_init(m):
     if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d)):
         with torch.no_grad():
@@ -24,6 +25,28 @@ def weights_init(m):
         nn.init.normal_(m.weight.data, mean=0, std=0.02)
         nn.init.constant_(m.bias.data, 0.0)
 
+
+def iwt(vres, device=None, levels=1):
+    if inv_filters is None:
+        w=pywt.Wavelet('bior2.2')
+        rec_hi = torch.Tensor(w.rec_hi).to(device)
+        rec_lo = torch.Tensor(w.rec_lo).to(device)
+
+        inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
+                                  rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
+                                  rec_hi.unsqueeze(0)*rec_lo.unsqueeze(1),
+                                  rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
+
+    h = vres.size(2)
+    w = vres.size(3)
+    res = vres.contiguous().view(-1,h//2,2,w//2).transpose(1,2).contiguous().view(-1,4,h//2,w//2).clone()
+    if levels > 1:
+        res[:,:1] = iwt(res[:,:1], levels=levels-1)
+    res = torch.nn.functional.conv_transpose2d(res, Variable(inv_filters[:,None]),stride=2)
+    res = res[:,:,2:-2,2:-2] #removing padding
+
+    return res
+
 class Flatten(nn.Module):
     def forward(self, input):
         return input.view(input.size(0), -1)
@@ -31,10 +54,16 @@ class Flatten(nn.Module):
 class UnFlatten(nn.Module):
     def forward(self, input, size=2048):
         return input.view(input.size(0), size, 1, 1)
-        
 
+class UnFlatten1(nn.Module):
+    def forward(self, input, size=512):
+        return input.view(input.size(0), size, 2, 2) 
+
+# WTVAE for 64 x 64 images
+# 2 WT layers
+# Using Unflatten for decoder (N * 2048 * 1 * 1), instead of Unflatten1
 class WTVAE_64(nn.Module):
-    def __init__(self, image_channels=3, h_dim=2048, z_dim=100):
+    def __init__(self, image_channels=3, h_dim=2048, z_dim=100, unflatten=0):
         super(WTVAE_64, self).__init__()
         
         self.encoder = nn.Sequential(
@@ -60,21 +89,46 @@ class WTVAE_64(nn.Module):
         self.fc2 = nn.Linear(h_dim, z_dim)
         self.fc3 = nn.Linear(z_dim, h_dim)
 
-        # Decoder
-        self.fct_decode_1 = nn.Sequential(
-            UnFlatten(),
-            nn.ConvTranspose2d(h_dim, 128, kernel_size=5, stride=2), # N * 128 * 5 * 5
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.ConvTranspose2d(128, 64, kernel_size=5, stride=2), # N * 64 * 13 * 13
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, kernel_size=6, stride=2), # N * 64 * 30 * 30
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.ConvTranspose2d(32, image_channels, kernel_size=6, stride=2), # N * 3 * 64 * 64
-            nn.Sigmoid(),
-        )
+        # Decoder with Flatten (N * 2048 * 1 * 1)
+        if unflatten == 0:
+            
+            self.fct_decode_1 = nn.Sequential(
+                UnFlatten(),
+                nn.ConvTranspose2d(h_dim, 128, kernel_size=5, stride=2), # N * 128 * 5 * 5
+                nn.BatchNorm2d(128),
+                nn.ReLU(),
+                nn.ConvTranspose2d(128, 64, kernel_size=5, stride=2), # N * 64 * 13 * 13
+                nn.BatchNorm2d(64),
+                nn.ReLU(),
+                nn.ConvTranspose2d(64, 32, kernel_size=6, stride=2), # N * 64 * 30 * 30
+                nn.BatchNorm2d(32),
+                nn.ReLU(),
+                nn.ConvTranspose2d(32, image_channels, kernel_size=6, stride=2), # N * 3 * 64 * 64
+                nn.BatchNorm2d(3),
+                nn.Sigmoid(),
+            )
+
+        # Decoder with Flatten1 (N * 512 * 2 * 2) and 1 more layer of convolutions
+        elif unflatten == 1:
+            self.fct_decode_1 = nn.Sequential(
+                UnFlatten1(),                                          # N * 512 * 2 * 2
+                nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2), # N * 256 * 6 * 6
+                nn.BatchNorm2d(256),
+                nn.ReLU(),
+                nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2), # N * 128 * 14 * 14
+                nn.BatchNorm2d(128),
+                nn.ReLU(),
+                nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2), # N * 64 * 30 * 30
+                nn.BatchNorm2d(64),
+                nn.ReLU(),
+                nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2), # N * 32 * 62 * 62
+                nn.BatchNorm2d(32),
+                nn.ReLU(),
+                nn.ConvTranspose2d(32, image_channels, kernel_size=3, stride=1), # N * 3 * 64 * 64 
+                nn.BatchNorm2d(3),
+                nn.ReLU(),
+                nn.Sigmoid(),
+            )
         
         self.wt1 = nn.Sequential(
             nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2), # N * 3 * 64 * 64
@@ -138,6 +192,124 @@ class WTVAE_64(nn.Module):
 
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.0001
         KLD /= x.shape[0] * 3 * 64 * 64
+
+        return BCE + KLD
+
+# WTVAE for 128 x 128 images
+# 2 WT layers
+# Using Unflatten1 for decoder (N * 512 * 2 * 2), instead of Flatten (N * 2048 * 1 * 1)
+class WTVAE_128(nn.Module):
+    def __init__(self, image_channels=3, h_dim=2048, z_dim=100, unflatten=0):
+        super(WTVAE_128, self).__init__()
+        
+        self.encoder = nn.Sequential(
+            nn.Conv2d(image_channels, 32, kernel_size=4, stride=2), # N * 32 * 63 * 63
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2), # N * 64 * 30 * 30,
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.Conv2d(64, 128, kernel_size=4, stride=2), # N * 128 * 14 * 14
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.Conv2d(128, 256, kernel_size=4, stride=2), # N * 256 * 6 * 6
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.Conv2d(256, 512, kernel_size=4, stride=2), # N * 512 * 2 * 2
+            nn.BatchNorm2d(512),
+            nn.ReLU(),
+            Flatten()
+        )
+
+        self.fc1 = nn.Linear(h_dim, z_dim)
+        self.fc2 = nn.Linear(h_dim, z_dim)
+        self.fc3 = nn.Linear(z_dim, h_dim)
+
+        # Decoder
+        self.fct_decode_1 = nn.Sequential(
+            UnFlatten1(),
+            nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2), # N * 256 * 6 * 6
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2), # N * 128 * 14 * 14
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2), # N * 64 * 30 * 30
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2), # N * 64 * 62 * 62
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, image_channels, kernel_size=5, stride=2, output_padding=1), # N * 3 * 128 * 128
+            nn.BatchNorm2d(3),
+            nn.Sigmoid(),
+        )
+        
+        self.wt1 = nn.Sequential(
+            nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2), # N * 3 * 128 * 128
+            nn.BatchNorm2d(image_channels)
+        )
+        
+        self.wt2 = nn.Sequential(
+            nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2), # N * 3 * 128 * 128
+            nn.BatchNorm2d(image_channels)
+        )
+        
+#         self.wt3 = nn.Sequential(
+#             nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2), # N * 3 * 64 * 64
+#             nn.BatchNorm2d(image_channels)
+#         )
+        
+
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = logvar.mul(0.5).exp_()
+            # return torch.normal(mu, std)
+            esp = torch.randn(*mu.size()).cuda()
+            z = mu + std * esp
+            return z
+        else:
+            return mu
+    
+    def bottleneck(self, h):
+        mu, logvar = self.fc1(h), self.fc2(h)
+        z = self.reparameterize(mu, logvar)
+        return z, mu, logvar
+
+    def encode(self, x):
+        h = self.encoder(x)
+        z, mu, logvar = self.bottleneck(h)
+        return z, mu, logvar
+
+    def decode(self, z):
+        z = self.fc3(z)
+        z = self.fct_decode_1(z)
+        z = self.wt1(z)
+        z = self.wt2(z)
+#         z = self.wt3(z)
+        
+        return z
+
+    def forward(self, x):
+        z, mu, logvar = self.encode(x)
+        z = self.decode(z)
+        return z, mu, logvar
+       
+#         z_final = Variable(torch.stack([z_1,z_2,z_3,z_4], dim=1))
+#         z_final = z_final.view(-1,2,128//2,128//2).transpose(1,2).contiguous().view(-1,1,128,128)
+
+    def loss_function(self, wt_x, x, mu, logvar) -> Variable:
+        
+        wt_x = wt_x.view(-1,1,128,128)
+        x_recon = iwt(wt_x, levels=2)
+        x_recon = x_recon.view(-1,3,128,128)
+        x_recon = x_recon.contiguous()
+        
+        # Loss btw reconstructed img and original img
+        BCE = F.l1_loss(x_recon.view(-1, 3 * 128 * 128), x.view(-1, 3 * 128 * 128))
+
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.0001
+        KLD /= BATCH_SIZE * 3 * 128 * 128
 
         return BCE + KLD
 

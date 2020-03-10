@@ -1,4 +1,4 @@
-def train_wtvae(epoch, model, optimizer, train_loader):
+def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
     # toggle model to train mode
     model.train()
     train_loss = 0
@@ -17,7 +17,7 @@ def train_wtvae(epoch, model, optimizer, train_loader):
         train_losses.append(loss.item())
         train_loss += loss
         optimizer.step()
-        if batch_idx % LOG_INTERVAL == 0:
+        if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
                                                                             len(train_loader.dataset),
                                                                             100. * batch_idx / len(train_loader),
@@ -28,7 +28,7 @@ def train_wtvae(epoch, model, optimizer, train_loader):
 
     print('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
-def train(epoch, model, optimizer, train_loader):
+def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args):
     # toggle model to train mode
     model.train()
     train_loss = 0
