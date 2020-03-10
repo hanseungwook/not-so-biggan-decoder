@@ -17,7 +17,8 @@ if __name__ == "__main__":
 
     args = args_parse()
 
-    train_dataset = CelebaDataset(args.root_dir, os.listdir(os.path.join(args.root_dir, 'celeba64/')), WT=False)
+    dataset_dir = os.path.join(args.root_dir, 'celeba64')
+    train_dataset = CelebaDataset(dataset_dir, os.listdir(dataset_dir), WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
     
     DEVICE = ('cuda:0' if torch.cuda.is_available() else 'cpu')
