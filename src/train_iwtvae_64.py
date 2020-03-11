@@ -8,7 +8,7 @@ from vae_models import IWTVAE_64, IWTVAE_64_Mask, WTVAE_64
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
-from utils.processing import zero_patches
+from utils.utils import zero_patches, set_seed
 import logging
 import pywt
 from random import sample
@@ -22,6 +22,9 @@ if __name__ == "__main__":
     LOGGER = logging.getLogger(__name__)
 
     args = args_parse()
+
+    # Set seed
+    set_seed(args.seed)
 
     dataset_dir = os.path.join(args.root_dir, 'celeba64')
     train_dataset = CelebaDataset(dataset_dir, os.listdir(dataset_dir), WT=False)

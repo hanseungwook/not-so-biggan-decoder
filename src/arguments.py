@@ -23,6 +23,8 @@ def args_parse():
                         help='How many WT in WT VAE')
     parser.add_argument('--z_dim', type=int, default=100,
                         help='Z dimension (whether in WTVAE or IWTVAE)')
+    parser.add_argument('--seed', type=int, default=2020,
+                        help='Random seed') 
 
     # Arguments exclusively for IWTVAE
     parser.add_argument('--upsampling', type=str, default='linear',
@@ -39,6 +41,7 @@ def args_parse():
                         help='Whether to learn z as mask or not')  
     parser.add_argument('--bottleneck_dim', type=int, default=0,
                         help='Bottleneck dim for Y bottleneck (>0 to use this model)')            
+
 
     args = parser.parse_args()
 

@@ -1,5 +1,5 @@
 import sys
-from utils.processing import zero_patches
+from utils.utils import zero_patches
 import logging
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
