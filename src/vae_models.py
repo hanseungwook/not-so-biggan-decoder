@@ -152,7 +152,7 @@ class WTVAE_64(nn.Module):
         if self.training:
             std = logvar.mul(0.5).exp_()
             # return torch.normal(mu, std)
-            esp = torch.randn(*mu.size()).cuda()
+            esp = torch.randn(*mu.size()).to(self.device)
             z = mu + std * esp
             return z
         else:
@@ -274,7 +274,7 @@ class WTVAE_128(nn.Module):
         if self.training:
             std = logvar.mul(0.5).exp_()
             # return torch.normal(mu, std)
-            esp = torch.randn(*mu.size()).cuda()
+            esp = torch.randn(*mu.size()).to(self.devices[0])
             z = mu + std * esp
             return z
         else:
