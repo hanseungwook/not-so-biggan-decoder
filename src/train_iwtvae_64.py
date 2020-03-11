@@ -8,6 +8,7 @@ from vae_models import IWTVAE_64, WTVAE_64
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
+from utils.processing import zero_patches
 import logging
 import pywt
 from random import sample
@@ -62,11 +63,13 @@ if __name__ == "__main__":
             
             for data in sample_loader:
                 data0 = data.to(devices[0])
-                data1 = data.clone().to(devices[1])
+                data1 = data.to(devices[1])
                 
                 z_sample = torch.randn(data.shape[0],100).to(devices[0])
                 
                 Y = wt_model(data1)[0].to(devices[0])
+                if args.zero:
+                    Y = zero_patches(Y)
                 mu, var = iwt_model.encode(data0, Y)
                 x_hat = iwt_model.decode(Y, mu)
                 x_sample = iwt_model.decode(Y, z_sample)
