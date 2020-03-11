@@ -14,7 +14,7 @@ from random import sample
 
 
 if __name__ == "__main__":
-    logging.basicConfig(format='%(asctime)s %(message)s')
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
     LOGGER = logging.getLogger(__name__)
 
     args = args_parse()

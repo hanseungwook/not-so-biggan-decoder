@@ -1,6 +1,8 @@
 from utils.processing import zero_patches
 import logging
 
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
+
 def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
     # toggle model to train mode
     model.train()
