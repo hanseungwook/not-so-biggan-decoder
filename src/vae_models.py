@@ -428,11 +428,11 @@ class IWTVAE_64(nn.Module):
         h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
         h = self.leakyrelu(self.iwt1(h))                               #[b, 3, 64, 64]
         
-        if self.num_upsampling > 1:
-            mu = self.mu2(z).reshape(-1, 3, 64, 64)
-            var = self.var2(z).reshape(-1, 3, 64, 64)
-            h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
-            h = self.leakyrelu(self.iwt2(h))                               #[b, 3, 64, 64]
+        # if self.num_upsampling > 1:
+        mu = self.mu2(z).reshape(-1, 3, 64, 64)
+        var = self.var2(z).reshape(-1, 3, 64, 64)
+        h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
+        h = self.leakyrelu(self.iwt2(h))                               #[b, 3, 64, 64]
         
         return self.sigmoid(h)
         
