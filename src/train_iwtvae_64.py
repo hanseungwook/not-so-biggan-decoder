@@ -86,7 +86,9 @@ if __name__ == "__main__":
                 
                 Y = wt_model(data1)[0]
                 if args.zero:
-                    Y = zero_patches(Y).to(devices[0])
+                    Y = zero_patches()
+                Y = Y.to(devices[0])
+    
                 mu, var = iwt_model.encode(data0, Y)
                 x_hat = iwt_model.decode(Y, mu)
                 x_sample = iwt_model.decode(Y, z_sample)
