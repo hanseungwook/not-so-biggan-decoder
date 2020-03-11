@@ -29,6 +29,8 @@ def args_parse():
                         help='Upsampling layer for IWTVAE: linear, conv1d, conv2d') 
     parser.add_argument('--reuse', action='store_true', default=False,
                         help='Whether to re-use upsampling layer or not')
+    parser.add_argument('--zero', action='store_true', default=False,
+                        help='Whether to zero out patches other than the first or not')
     parser.add_argument('--num_upsampling', type=int, default=2,
                         help='Number of upsampling layers')
     parser.add_argument('--wtvae_model', type=str, default='',
