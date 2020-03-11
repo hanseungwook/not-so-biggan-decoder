@@ -37,7 +37,7 @@ def iwt(vres, inv_filters, levels=1):
 
     return res
 
-def get_upsampling_layer(name, res):
+def get_upsampling_layer(name, res, bottleneck_dim=100):
     layer = None
     if name == 'linear':
         layer = nn.Linear(3 * res * res, 3 * res * res)
@@ -341,7 +341,7 @@ class WTVAE_128(nn.Module):
 # IWT VAE for 64 x 64 images
 # Assumes that 2 GPUs available
 class IWTVAE_64(nn.Module):
-    def __init__(self, image_channels=3, z_dim=100, upsampling='linear', num_upsampling=2, reuse=False):
+    def __init__(self, image_channels=3, z_dim=100, bottleneck_dim=100, upsampling='linear', num_upsampling=2, reuse=False):
         super(IWTVAE_64, self).__init__()
         # Resolution of images (64 x 64)
         self.res = 64
@@ -352,6 +352,7 @@ class IWTVAE_64(nn.Module):
         self.cuda = False
         
         self.z_dim = z_dim
+        self.bottleneck_dim = bottleneck_dim
         self.leakyrelu = nn.LeakyReLU(0.2)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
@@ -383,7 +384,7 @@ class IWTVAE_64(nn.Module):
         weights_init(self.fc_var)
         
         # IWT Decoder        
-        self.d1 = get_upsampling_layer(self.upsampling, self.res)
+        self.d1 = get_upsampling_layer(self.upsampling, self.res, self.bottleneck_dim)
         weights_init(self.d1)
         self.mu1 = nn.Linear(z_dim, 3 * 64 * 64)
         self.var1 = nn.Linear(z_dim, 3 * 64 * 64)
@@ -395,7 +396,7 @@ class IWTVAE_64(nn.Module):
             if self.reuse:
                 self.d2 = self.d1
             else:
-                self.d2 = get_upsampling_layer(self.upsampling, self.res)
+                self.d2 = get_upsampling_layer(self.upsampling, self.res, self.bottleneck_dim)
                 weights_init(self.d2)
 
             self.mu2 = nn.Linear(z_dim, 3 * 64 * 64)
