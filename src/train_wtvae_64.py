@@ -25,7 +25,7 @@ if __name__ == "__main__":
     DEVICE = ('cuda:0' if torch.cuda.is_available() else 'cpu')
     logging.info('Device: {}'.format(DEVICE))
 
-    model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt)
+    model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt, unflatten=args.unflatten)
     model = model.to(DEVICE)
 
     w = pywt.Wavelet('bior2.2')

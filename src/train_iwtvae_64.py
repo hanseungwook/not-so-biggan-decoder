@@ -36,7 +36,7 @@ if __name__ == "__main__":
     iwt_model = iwt_model.to(devices[0])
 
 
-    wt_model = WTVAE_64()
+    wt_model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt, unflatten=args.unflatten)
     wt_model.load_state_dict(torch.load(args.root_dir + args.wtvae_model))
     wt_model.to(devices[1])
     wt_model.eval()
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         raise Exception('Could not make model & img output directories')
     
     for epoch in range(1, args.epochs + 1):
-        train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, devices, args)
+        train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args)
         
         with torch.no_grad():
             iwt_model.eval()
@@ -64,9 +64,9 @@ if __name__ == "__main__":
                 data0 = data.to(devices[0])
                 data1 = data.clone().to(devices[1])
                 
-                z_sample = torch.randn(data.shape[0],100).to(device[0])
+                z_sample = torch.randn(data.shape[0],100).to(devices[0])
                 
-                Y = wt_model(data1)[0].to(device[0])
+                Y = wt_model(data1)[0].to(devices[0])
                 mu, var = iwt_model.encode(data0, Y)
                 x_hat = iwt_model.decode(Y, mu)
                 x_sample = iwt_model.decode(Y, z_sample)
