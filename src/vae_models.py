@@ -53,6 +53,8 @@ def get_upsampling_dims(name, res):
         sizes = (-1, res*res, 3)
     elif name == 'conv2d':
         sizes = (-1, 3, res, res)
+    
+    return sizes
 
 class Flatten(nn.Module):
     def forward(self, input):
