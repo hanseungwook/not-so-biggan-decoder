@@ -48,8 +48,11 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         
         # Get Y
         Y = wt_model(data1)[0]
-        # Zeroing out all other patches
-        Y = zero_patches(Y)
+        
+        # Zeroing out all other patches, if given zero arg
+        if args.zero:
+            Y = zero_patches(Y)
+            
         x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.devices[0]))
         # Fix loss function
         loss = iwt_model.loss_function(x_hat, data0, mu, var)
