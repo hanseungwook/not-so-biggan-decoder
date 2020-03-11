@@ -43,7 +43,7 @@ if __name__ == "__main__":
     wt_model.eval()
     
     train_losses = []
-    optimizer = optim.Adam(iwt_model.parameters(), lr=1e-3)
+    optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
 
     img_output_dir = os.path.join(args.root_dir, 'image_samples/iwtvae64_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'models/iwtvae64_{}/'.format(args.config))
