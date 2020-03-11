@@ -4,7 +4,7 @@ from torch import optim
 from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import IWTVAE_64, WTVAE_64
+from vae_models import IWTVAE_64, IWTVAE_64_Mask, WTVAE_64
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
@@ -31,8 +31,13 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
+    if args.mask:
+        iwt_model = IWTVAE_64_Mask(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
+    elif args.bottleneck > 0:
+        iwt_model = IWTVAE_64(z_dim=args.z_dim, bottleneck_dim=args.bottleneck, upsampling='bottleneck', num_upsampling=args.num_upsampling, reuse=args.reuse)
+    else:
+        iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
 
-    iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
     iwt_model = iwt_model.to(devices[0])
     iwt_model.set_devices(devices)
 

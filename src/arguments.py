@@ -35,6 +35,10 @@ def args_parse():
                         help='Number of upsampling layers')
     parser.add_argument('--wtvae_model', type=str, default='',
                         help='Saved model state for wtvae (for inference during iwtvae training)')
+    parser.add_argument('--mask', action='store_true', default=False,
+                        help='Whether to learn z as mask or not')  
+    parser.add_argument('--bottleneck_dim', type=int, default=0,
+                        help='Bottleneck dim for Y bottleneck (>0 to use this model)')            
 
     args = parser.parse_args()
 
