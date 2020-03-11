@@ -36,7 +36,7 @@ if __name__ == "__main__":
     iwt_model.set_devices(devices)
 
     wt_model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt, unflatten=args.unflatten)
-    wt_model.load_state_dict(torch.load(args.root_dir + args.wtvae_model))
+    wt_model.load_state_dict(torch.load(args.wtvae_model))
     wt_model.to(devices[1])
     wt_model.eval()
     
