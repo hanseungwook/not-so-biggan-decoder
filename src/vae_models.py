@@ -383,25 +383,17 @@ class IWTVAE_64(nn.Module):
         self.iwt1 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
         
         # Only instantiate if # of upsampling > 1, and set d2 to d1 if re-using upsampling layer
-        # if self.num_upsampling > 1:
-        #     if self.reuse:
-        #         self.d2 = self.d1
-        #     else:
-        #         self.d2 = get_upsampling_layer(self.upsampling, self.res)
-        #         weights_init(self.d2)
+        if self.num_upsampling > 1:
+            if self.reuse:
+                self.d2 = self.d1
+            else:
+                self.d2 = get_upsampling_layer(self.upsampling, self.res)
+                weights_init(self.d2)
 
-        #     self.mu2 = nn.Linear(z_dim, 3 * 64 * 64)
-        #     self.var2 = nn.Linear(z_dim, 3 * 64 * 64)
-        #     self.instance_norm_d2 = nn.InstanceNorm2d(num_features=3, affine=False)
-        #     self.iwt2 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
-        
-        self.d2 = nn.Linear(3 * 64 * 64, 3 * 64 * 64)
-        weights_init(self.d2)
-
-        self.mu2 = nn.Linear(z_dim, 3 * 64 * 64)
-        self.var2 = nn.Linear(z_dim, 3 * 64 * 64)
-        self.instance_norm_d2 = nn.InstanceNorm2d(num_features=3, affine=False)
-        self.iwt2 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
+            self.mu2 = nn.Linear(z_dim, 3 * 64 * 64)
+            self.var2 = nn.Linear(z_dim, 3 * 64 * 64)
+            self.instance_norm_d2 = nn.InstanceNorm2d(num_features=3, affine=False)
+            self.iwt2 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
       
     def encode(self, x, y):
         h = self.leakyrelu(self.instance_norm_e1(self.e1(x-y)))   #[b, 64, 32, 32]
@@ -428,11 +420,11 @@ class IWTVAE_64(nn.Module):
         h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
         h = self.leakyrelu(self.iwt1(h))                               #[b, 3, 64, 64]
         
-        # if self.num_upsampling > 1:
-        mu = self.mu2(z).reshape(-1, 3, 64, 64)
-        var = self.var2(z).reshape(-1, 3, 64, 64)
-        h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
-        h = self.leakyrelu(self.iwt2(h))                               #[b, 3, 64, 64]
+        if self.num_upsampling > 1:
+            mu = self.mu2(z).reshape(-1, 3, 64, 64)
+            var = self.var2(z).reshape(-1, 3, 64, 64)
+            h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
+            h = self.leakyrelu(self.iwt2(h))                               #[b, 3, 64, 64]
         
         return self.sigmoid(h)
         
