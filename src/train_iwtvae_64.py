@@ -29,12 +29,11 @@ if __name__ == "__main__":
         devices = ['cuda:0', 'cuda:1']
     else: 
         devices = ['cpu', 'cpu']
-    
-    iwt_model.set_devices(devices)
+
 
     iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
     iwt_model = iwt_model.to(devices[0])
-
+    iwt_model.set_devices(devices)
 
     wt_model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt, unflatten=args.unflatten)
     wt_model.load_state_dict(torch.load(args.root_dir + args.wtvae_model))
