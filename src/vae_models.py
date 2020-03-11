@@ -24,6 +24,10 @@ def weights_init(m):
     elif isinstance(m, nn.Linear):
         nn.init.normal_(m.weight.data, mean=0, std=0.02)
         nn.init.constant_(m.bias.data, 0.0)
+    elif isinstance(m, nn.Sequential):
+        for sub_m in m:
+            nn.init.normal_(sub_m.weight.data, mean=0, std=0.02)
+            nn.init.constant_(sub_m.bias.data, 0.0)
 
 
 def iwt(vres, inv_filters, levels=1):
