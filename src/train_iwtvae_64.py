@@ -86,7 +86,7 @@ if __name__ == "__main__":
                 
                 Y = wt_model(data1)[0]
                 if args.zero:
-                    Y = zero_patches()
+                    Y = zero_patches(Y)
                 Y = Y.to(devices[0])
     
                 mu, var = iwt_model.encode(data0, Y)
@@ -101,6 +101,6 @@ if __name__ == "__main__":
         torch.save(iwt_model.state_dict(), model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
     
     np.save(model_dir+'/train_losses.npy', train_losses)
-    
+    LOGGER.info('IWT Model parameters: {}'.format(sum(x.numel() for x in iwt_model.parameters())))
     
     
