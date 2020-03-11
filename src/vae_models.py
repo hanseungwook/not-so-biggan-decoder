@@ -333,6 +333,7 @@ class IWTVAE_64(nn.Module):
         self.reuse = reuse
         self.num_upsampling = num_upsampling
         self.devices = None
+        self.cuda = False
         
         self.z_dim = z_dim
         self.leakyrelu = nn.LeakyReLU(0.2)
@@ -398,7 +399,7 @@ class IWTVAE_64(nn.Module):
     def reparameterize(self, mu, var):
         std = torch.sqrt(var)
         if self.cuda:
-            eps = torch.FloatTensor(std.size()).normal_().to(self.device)
+            eps = torch.FloatTensor(std.size()).normal_().to(self.devices[0])
         else:
             eps = torch.FloatTensor(std.size()).normal_()
         eps = Variable(eps)
@@ -444,5 +445,7 @@ class IWTVAE_64(nn.Module):
 
     def set_devices(self, devices):
         self.devices = devices
+        if 'cuda' in self.devices[0] and 'cuda' in self.devices[1]:
+            self.cuda = True
         
         
