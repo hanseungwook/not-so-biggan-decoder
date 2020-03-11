@@ -494,6 +494,133 @@ class IWTVAE_64(nn.Module):
 
 # IWT VAE for 64 x 64 images
 # Assumes that 2 GPUs available
+class IWTVAE_64_Bottleneck(nn.Module):
+    def __init__(self, image_channels=3, z_dim=100, bottleneck_dim=100):
+        super(IWTVAE_64_Bottleneck, self).__init__()
+        # Resolution of images (64 x 64)
+        self.res = 64
+        self.devices = None
+        self.cuda = False
+        
+        self.z_dim = z_dim
+        self.bottleneck_dim = bottleneck_dim
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+        # X - Y Residual Encoder
+        self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 32, 32]
+        weights_init(self.e1)
+        self.instance_norm_e1 = nn.InstanceNorm2d(num_features=64, affine=False)
+
+        self.e2 = nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 128, 16, 16]
+        weights_init(self.e2)
+        self.instance_norm_e2 = nn.InstanceNorm2d(num_features=128, affine=False)
+
+        self.e3 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 8, 8]
+        weights_init(self.e3)
+        self.instance_norm_e3 = nn.InstanceNorm2d(num_features=256, affine=False)
+
+        self.e4 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 4, 4]
+        weights_init(self.e4)
+        self.instance_norm_e4 = nn.InstanceNorm2d(num_features=512, affine=False)
+        
+        self.fc_enc = nn.Linear(512 * 4 * 4, 256)
+        weights_init(self.fc_enc)
+        
+        self.fc_mean = nn.Linear(256, z_dim)
+        weights_init(self.fc_mean)
+        
+        self.fc_var = nn.Linear(256, z_dim)
+        weights_init(self.fc_var)
+        
+        # IWT Decoder        
+        self.d1 = nn.Sequential(nn.Linear(res*res*3, 1024),
+                                nn.Linear(1024, bottleneck_dim),
+                                nn.Linear(bottleneck_dim, 1024),
+                                nn.Linear(1024, res*res*3)
+                               )  
+        weights_init(self.d1)
+        self.mu1 = nn.Linear(z_dim, 3 * 64 * 64)
+        self.var1 = nn.Linear(z_dim, 3 * 64 * 64)
+        self.instance_norm_d1 = nn.InstanceNorm2d(num_features=3, affine=False)
+        self.iwt1 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
+        
+        # Only instantiate if # of upsampling > 1, and set d2 to d1 if re-using upsampling layer
+        # if self.num_upsampling > 1:
+        #     if self.reuse:
+        #         self.d2 = self.d1
+        #     else:
+        #         self.d2 = get_upsampling_layer(self.upsampling, self.res, self.bottleneck_dim)
+        #         weights_init(self.d2)
+
+        # self.mu2 = nn.Linear(z_dim, 3 * 64 * 64)
+        # self.var2 = nn.Linear(z_dim, 3 * 64 * 64)
+        # self.instance_norm_d2 = nn.InstanceNorm2d(num_features=3, affine=False)
+        self.iwt2 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
+      
+    def encode(self, x, y):
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))   #[b, 64, 32, 32]
+        h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))     #[b, 128, 16, 16]
+        h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))     #[b, 256, 8, 8]
+        h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))     #[b, 512, 4, 4]
+        h = self.leakyrelu(self.fc_enc(h.view(-1,512*4*4)))       #[b, 512 * 4 * 4]
+        
+        return self.fc_mean(h), F.softplus(self.fc_var(h))        #[b, z_dim]
+
+    def reparameterize(self, mu, var):
+        std = torch.sqrt(var)
+        if self.cuda:
+            eps = torch.FloatTensor(std.size()).normal_().to(self.devices[0])
+        else:
+            eps = torch.FloatTensor(std.size()).normal_()
+        eps = Variable(eps)
+        return eps.mul(std).add_(mu) 
+    
+    def decode(self, y, z):
+        mu = self.mu1(z).reshape(-1, 3, 64, 64)
+        var = self.var1(z).reshape(-1, 3, 64, 64)
+        h = self.leakyrelu(var*self.instance_norm_d1(y + mu)) #[b, 3, 64, 64]
+        h = self.d1(h)                                                 #[b, 3, 64, 64]
+        h = self.leakyrelu(self.iwt1(h))                               #[b, 3, 64, 64]
+        
+        # mu = self.mu2(z).reshape(-1, 3, 64, 64)
+        # var = self.var2(z).reshape(-1, 3, 64, 64)
+        # h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64) + mu)) #[b, 3, 64, 64]
+        h = self.leakyrelu(self.iwt2(h))                               #[b, 3, 64, 64]
+        
+        return self.sigmoid(h)
+        
+        
+    def forward(self, x, y):
+        mu, var = self.encode(x, y)
+        if self.training:
+            z = self.reparameterize(mu, var)
+        else:
+            z = mu
+        x_hat = self.decode(y, z)
+        
+        return x_hat, mu, var
+        
+    def loss_function(self, x, x_hat, mu, var) -> Variable:
+        
+        # Loss btw reconstructed img and original img
+        BCE = F.mse_loss(x_hat.view(-1), x.view(-1))
+        
+        logvar = torch.log(var)
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
+#         KLD /= x.shape[0] * 3 * 64 * 64
+
+        return BCE + KLD
+
+    def set_devices(self, devices):
+        self.devices = devices
+        if 'cuda' in self.devices[0] and 'cuda' in self.devices[1]:
+            self.cuda = True
+
+
+# IWT VAE for 64 x 64 images
+# Assumes that 2 GPUs available
 class IWTVAE_64_Mask(nn.Module):
     def __init__(self, image_channels=3, z_dim=100, num_upsampling=2, reuse=False):
         super(IWTVAE_64_Mask, self).__init__()
