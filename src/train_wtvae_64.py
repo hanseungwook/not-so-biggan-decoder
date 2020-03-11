@@ -13,6 +13,9 @@ import pywt
 
 
 if __name__ == "__main__":
+    # Accelerate training since fixed input sizes
+    torch.backends.cudnn.benchmark = True 
+
     logging.basicConfig(format='%(asctime)s %(message)s')
     LOGGER = logging.getLogger(__name__)
 

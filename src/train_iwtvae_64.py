@@ -15,6 +15,9 @@ from random import sample
 
 
 if __name__ == "__main__":
+    # Accelerate training since fixed input sizes
+    torch.backends.cudnn.benchmark = True 
+
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
     LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +39,7 @@ if __name__ == "__main__":
         LOGGER.info('Running mask model')
     elif args.bottleneck_dim > 0:
         iwt_model = IWTVAE_64(z_dim=args.z_dim, bottleneck_dim=args.bottleneck_dim, upsampling='bottleneck', num_upsampling=args.num_upsampling, reuse=args.reuse)
-        LOGGER.info('Running bottleneck model')
+        LOGGER.info('Running bottleneck model with dim = {}'.format(bottleneck_dim))
     else:
         iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
         LOGGER.info('Running original model with upsampling = {}'.format(args.upsampling))
