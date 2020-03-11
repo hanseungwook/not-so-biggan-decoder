@@ -475,7 +475,6 @@ class IWTVAE_64_Mask(nn.Module):
         super(IWTVAE_64_Mask, self).__init__()
         # Resolution of images (64 x 64)
         self.res = 64
-        self.upsampling = upsampling
         self.reuse = reuse
         self.num_upsampling = num_upsampling
         self.devices = None
