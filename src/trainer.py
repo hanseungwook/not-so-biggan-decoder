@@ -39,7 +39,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
     for batch_idx, data in enumerate(train_loader):
         
         data0 = data.to(iwt_model.devices[0])
-        data1 = data.clone().to(iwt_model.devices[1])
+        data1 = data.to(iwt_model.devices[1])
 
         optimizer.zero_grad()
         
