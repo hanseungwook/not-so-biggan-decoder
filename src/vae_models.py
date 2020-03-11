@@ -535,11 +535,7 @@ class IWTVAE_64_Bottleneck(nn.Module):
         weights_init(self.fc_var)
         
         # IWT Decoder        
-        self.d1 = nn.Sequential(nn.Linear(res*res*3, 1024),
-                                nn.Linear(1024, bottleneck_dim),
-                                nn.Linear(bottleneck_dim, 1024),
-                                nn.Linear(1024, res*res*3)
-                               )  
+        self.d1 = get_upsampling_layer('bottleneck', self.res)
         weights_init(self.d1)
         self.mu1 = nn.Linear(z_dim, 3 * 64 * 64)
         self.var1 = nn.Linear(z_dim, 3 * 64 * 64)
