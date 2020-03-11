@@ -81,9 +81,9 @@ if __name__ == "__main__":
                 
                 z_sample = torch.randn(data.shape[0],100).to(devices[0])
                 
-                Y = wt_model(data1)[0].to(devices[0])
+                Y = wt_model(data1)[0]
                 if args.zero:
-                    Y = zero_patches(Y)
+                    Y = zero_patches(Y).to(devices[0])
                 mu, var = iwt_model.encode(data0, Y)
                 x_hat = iwt_model.decode(Y, mu)
                 x_sample = iwt_model.decode(Y, z_sample)
