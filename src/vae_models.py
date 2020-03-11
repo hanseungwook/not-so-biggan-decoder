@@ -471,7 +471,7 @@ class IWTVAE_64(nn.Module):
 # IWT VAE for 64 x 64 images
 # Assumes that 2 GPUs available
 class IWTVAE_64_Mask(nn.Module):
-    def __init__(self, image_channels=3, z_dim=100, upsampling='linear', num_upsampling=2, reuse=False):
+    def __init__(self, image_channels=3, z_dim=100, num_upsampling=2, reuse=False):
         super(IWTVAE_64_Mask, self).__init__()
         # Resolution of images (64 x 64)
         self.res = 64
@@ -550,7 +550,6 @@ class IWTVAE_64_Mask(nn.Module):
         return eps.mul(std).add_(mu) 
     
     def decode(self, y, z):
-        upsampling_sizes = get_upsampling_dims(self.upsampling, self.res)
         mu = self.mu1(z).reshape(-1, 3, 64, 64)
         var = self.var1(z).reshape(-1, 3, 64, 64)
         h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y, mu))) #[b, 3, 64, 64]
