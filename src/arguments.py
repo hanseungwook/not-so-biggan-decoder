@@ -2,6 +2,8 @@ import argparse
 
 def args_parse():
     """Parses command line arguments for model training"""
+
+    # Arguments shared by WTVAE & IWTVAE
     parser = argparse.ArgumentParser(description='Arguments for training Wavelet VAE')
     parser.add_argument('--epochs', type=int, default=100,
                         help='# of epochs for training')
@@ -21,6 +23,8 @@ def args_parse():
                         help='How many WT in WT VAE')
     parser.add_argument('--z_dim', type=int, default=100,
                         help='Z dimension (whether in WTVAE or IWTVAE)')
+
+    # Arguments exclusively for IWTVAE
     parser.add_argument('--upsampling', type=str, default='linear',
                         help='Upsampling layer for IWTVAE: linear, conv1d, conv2d') 
     parser.add_argument('--reuse', action='store_true', default=False,
