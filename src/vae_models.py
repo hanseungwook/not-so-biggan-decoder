@@ -79,7 +79,7 @@ class UnFlatten(nn.Module):
 
 class Mask(nn.Module):
     def forward(self, img, mask):
-        return img - mask
+        return img - mask.unsqueeze(1)
 
 class UnFlatten1(nn.Module):
     def forward(self, input, size=512):
