@@ -577,8 +577,8 @@ class IWTVAE_64_Bottleneck(nn.Module):
         mu = self.mu1(z).reshape(-1, 3, 64, 64)
         var = self.var1(z).reshape(-1, 3, 64, 64)
         h = self.leakyrelu(var*self.instance_norm_d1(y + mu)) #[b, 3, 64, 64]
-        h = self.d1(h.reshape(-1, 3*64*64))                                                 #[b, 3, 64, 64]
-        h = self.leakyrelu(self.iwt1(h))                               #[b, 3, 64, 64]
+        h = self.d1(h.reshape(-1, 3*64*64))                                                 #[b, 3*64*64]
+        h = self.leakyrelu(self.iwt1(h.reshape(-1, 3, 64, 64)))                               #[b, 3, 64, 64]
         
         # mu = self.mu2(z).reshape(-1, 3, 64, 64)
         # var = self.var2(z).reshape(-1, 3, 64, 64)
