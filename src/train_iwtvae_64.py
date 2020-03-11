@@ -4,10 +4,11 @@ from torch import optim
 from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import IWTVAE_64, WTVAE_64
+from vae_models import IWTVAE_64, IWTVAE_64_Mask, WTVAE_64
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
+from utils.processing import zero_patches
 import logging
 import pywt
 from random import sample
@@ -30,8 +31,13 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
+    if args.mask:
+        iwt_model = IWTVAE_64_Mask(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
+    elif args.bottleneck > 0:
+        iwt_model = IWTVAE_64(z_dim=args.z_dim, bottleneck_dim=args.bottleneck, upsampling='bottleneck', num_upsampling=args.num_upsampling, reuse=args.reuse)
+    else:
+        iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
 
-    iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
     iwt_model = iwt_model.to(devices[0])
     iwt_model.set_devices(devices)
 
@@ -42,7 +48,7 @@ if __name__ == "__main__":
     wt_model.eval()
     
     train_losses = []
-    optimizer = optim.Adam(iwt_model.parameters(), lr=1e-3)
+    optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
 
     img_output_dir = os.path.join(args.root_dir, 'image_samples/iwtvae64_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'models/iwtvae64_{}/'.format(args.config))
@@ -62,11 +68,13 @@ if __name__ == "__main__":
             
             for data in sample_loader:
                 data0 = data.to(devices[0])
-                data1 = data.clone().to(devices[1])
+                data1 = data.to(devices[1])
                 
                 z_sample = torch.randn(data.shape[0],100).to(devices[0])
                 
                 Y = wt_model(data1)[0].to(devices[0])
+                if args.zero:
+                    Y = zero_patches(Y)
                 mu, var = iwt_model.encode(data0, Y)
                 x_hat = iwt_model.decode(Y, mu)
                 x_sample = iwt_model.decode(Y, z_sample)
