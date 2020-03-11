@@ -228,8 +228,13 @@ class WTVAE_64(nn.Module):
 # 2 WT layers
 # Using Unflatten1 for decoder (N * 512 * 2 * 2), instead of Flatten (N * 2048 * 1 * 1)
 class WTVAE_128(nn.Module):
-    def __init__(self, image_channels=3, h_dim=2048, z_dim=100, unflatten=0):
+    def __init__(self, image_channels=3, h_dim=2048, z_dim=100, num_wt=2):
         super(WTVAE_128, self).__init__()
+
+        self.inv_filters = None
+        self.cuda = False
+        self.device = None
+        self.num_wt = num_wt
         
         self.encoder = nn.Sequential(
             nn.Conv2d(image_channels, 32, kernel_size=4, stride=2), # N * 32 * 63 * 63
@@ -284,22 +289,22 @@ class WTVAE_128(nn.Module):
             nn.BatchNorm2d(image_channels)
         )
         
-#         self.wt3 = nn.Sequential(
-#             nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2), # N * 3 * 64 * 64
-#             nn.BatchNorm2d(image_channels)
-#         )
+        self.wt = nn.Sequential()
+        for i in range(self.num_wt):
+            self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)) # N * 3 * 64 * 64
+            self.wt.add_module('wt{}_bn'.format(i), nn.BatchNorm2d(image_channels))
         
-
     def reparameterize(self, mu, logvar):
         if self.training:
             std = logvar.mul(0.5).exp_()
             # return torch.normal(mu, std)
-            esp = torch.randn(*mu.size()).to(self.devices[0])
+            esp = torch.randn(*mu.size()).to(self.device)
             z = mu + std * esp
             return z
         else:
             return mu
-    
+
+
     def bottleneck(self, h):
         mu, logvar = self.fc1(h), self.fc2(h)
         z = self.reparameterize(mu, logvar)
@@ -313,9 +318,7 @@ class WTVAE_128(nn.Module):
     def decode(self, z):
         z = self.fc3(z)
         z = self.fct_decode_1(z)
-        z = self.wt1(z)
-        z = self.wt2(z)
-#         z = self.wt3(z)
+        z = self.wt(z)
         
         return z
 
@@ -324,9 +327,21 @@ class WTVAE_128(nn.Module):
         z = self.decode(z)
         return z, mu, logvar
        
-#         z_final = Variable(torch.stack([z_1,z_2,z_3,z_4], dim=1))
-#         z_final = z_final.view(-1,2,128//2,128//2).transpose(1,2).contiguous().view(-1,1,128,128)
 
+    def loss_function(self, wt_x, x, mu, logvar) -> Variable:
+        
+        wt_x = wt_x.view(-1,1,64,64)
+        x_recon = iwt(wt_x, self.inv_filters, levels=3)
+        x_recon = x_recon.view(-1,3,64,64)
+        x_recon = x_recon.contiguous()
+        
+        # Loss btw reconstructed img and original img
+        BCE = F.l1_loss(x_recon.view(-1, 3 * 64 * 64), x.view(-1, 3 * 64 * 64))
+
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.0001
+        KLD /= x.shape[0] * 3 * 64 * 64
+
+        return BCE + KLD
     def loss_function(self, wt_x, x, mu, logvar) -> Variable:
         
         wt_x = wt_x.view(-1,1,128,128)
@@ -341,6 +356,15 @@ class WTVAE_128(nn.Module):
         KLD /= BATCH_SIZE * 3 * 128 * 128
 
         return BCE + KLD
+
+    def set_inv_filters(self, inv_filters):
+        self.inv_filters = inv_filters
+    
+    def set_device(self, device):
+        if device != 'cpu':
+            self.cuda = True
+        
+        self.device = device
 
 # IWT VAE for 64 x 64 images
 # Assumes that 2 GPUs available
@@ -409,7 +433,7 @@ class IWTVAE_64(nn.Module):
             self.iwt2 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
       
     def encode(self, x, y):
-        h = self.leakyrelu(self.instance_norm_e1(self.e1(x-y)))   #[b, 64, 32, 32]
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))   #[b, 64, 32, 32]
         h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))     #[b, 128, 16, 16]
         h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))     #[b, 256, 8, 8]
         h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))     #[b, 512, 4, 4]
@@ -430,13 +454,13 @@ class IWTVAE_64(nn.Module):
         upsampling_sizes = get_upsampling_dims(self.upsampling, self.res)
         mu = self.mu1(z).reshape(-1, 3, 64, 64)
         var = self.var1(z).reshape(-1, 3, 64, 64)
-        h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
+        h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y.view(upsampling_sizes)).reshape(-1, 3, 64, 64) + mu)) #[b, 3, 64, 64]
         h = self.leakyrelu(self.iwt1(h))                               #[b, 3, 64, 64]
         
         if self.num_upsampling > 1:
             mu = self.mu2(z).reshape(-1, 3, 64, 64)
             var = self.var2(z).reshape(-1, 3, 64, 64)
-            h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
+            h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64) + mu)) #[b, 3, 64, 64]
             h = self.leakyrelu(self.iwt2(h))                               #[b, 3, 64, 64]
         
         return self.sigmoid(h)
