@@ -1,4 +1,5 @@
 import torch
+import matplotlib.pyplot as plt
 import random
 
 # Zeroing out all other patches than the first for WT image: 4D: B * C * H * W
@@ -22,3 +23,10 @@ def set_seed(seed, cudnn=True):
     # note: the below slows down the code but makes it reproducible
     if (seed is not None) and cudnn:
         torch.backends.cudnn.deterministic = True
+
+def save_plot(data, save_file):
+    plt.plot(data)
+    plt.ylabel('Loss')
+    plt.xlabel('Iterations')
+    plt.title('Train Loss')
+    plt.savefig(save_file)

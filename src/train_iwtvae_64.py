@@ -8,7 +8,8 @@ from vae_models import IWTVAE_64, IWTVAE_64_Mask, WTVAE_64
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
-from utils.utils import zero_patches, set_seed
+from utils.utils import zero_patches, set_seed, save_plot
+import matplotlib.pyplot as plt
 import logging
 import pywt
 from random import sample
@@ -100,7 +101,12 @@ if __name__ == "__main__":
     
         torch.save(iwt_model.state_dict(), model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
     
+    # Save train losses and plot
     np.save(model_dir+'/train_losses.npy', train_losses)
+    save_plot(train_losses, img_output_dir + '/train_loss.png')
+    
     LOGGER.info('IWT Model parameters: {}'.format(sum(x.numel() for x in iwt_model.parameters())))
+
+    
     
     
