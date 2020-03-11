@@ -366,7 +366,7 @@ class IWTVAE_64(nn.Module):
         weights_init(self.fc_var)
         
         # IWT Decoder        
-        self.d1 = get_upsampling_layer(self.name, self.res)
+        self.d1 = get_upsampling_layer(self.upsampling, self.res)
         weights_init(self.d1)
         self.mu1 = nn.Linear(z_dim, 3 * 64 * 64)
         self.var1 = nn.Linear(z_dim, 3 * 64 * 64)
@@ -378,7 +378,7 @@ class IWTVAE_64(nn.Module):
             if self.reuse:
                 self.d2 = self.d1
             else:
-                self.d2 = get_upsampling_layer(self.name, self.res)
+                self.d2 = get_upsampling_layer(self.upsampling, self.res)
                 weights_init(self.d2)
 
             self.mu2 = nn.Linear(z_dim, 3 * 64 * 64)
