@@ -37,6 +37,23 @@ def iwt(vres, inv_filters, levels=1):
 
     return res
 
+def get_upsampling_layer(name, res):
+    if name == 'linear':
+        return nn.Linear(3 * res * res, 3 * res * res)
+    elif name == 'conv1d':
+        return nn.Conv1d(res*res, res*res, kernel_size=1, stride=1)
+    elif name == 'conv2d':
+        return nn.Conv2d(3, 3, kernel_size=1, stride=1)
+
+def get_upsampling_dims(name, res):
+    sizes = None
+    if name == 'linear':
+        sizes = (-1, 3 * res * res)
+    elif name == 'conv1d':
+        sizes = (-1, res*res, 3)
+    elif name == 'conv2d':
+        sizes = (-1, 3, res, res)
+
 class Flatten(nn.Module):
     def forward(self, input):
         return input.view(input.size(0), -1)
@@ -305,16 +322,17 @@ class WTVAE_128(nn.Module):
 
         return BCE + KLD
 
+# IWT VAE for 64 x 64 images
+# Assumes that 2 GPUs available
 class IWTVAE_64(nn.Module):
-    def __init__(self, image_channels=3, z_dim=100, device=None):
+    def __init__(self, image_channels=3, z_dim=100, upsampling='linear', num_upsampling=2, reuse=False):
         super(IWTVAE_64, self).__init__()
-        
-        if device is None:
-            self.cuda = False
-            self.device = None
-        else:
-            self.device = device
-            self.cuda = True
+        # Resolution of images (64 x 64)
+        self.res = 64
+        self.upsampling = upsampling
+        self.reuse = reuse
+        self.num_upsampling = num_upsampling
+        self.devices = None
         
         self.z_dim = z_dim
         self.leakyrelu = nn.LeakyReLU(0.2)
@@ -348,21 +366,26 @@ class IWTVAE_64(nn.Module):
         weights_init(self.fc_var)
         
         # IWT Decoder        
-        self.d1 = nn.Linear(3 * 64 * 64, 3 * 64 * 64)
+        self.d1 = get_upsampling_layer(self.name, self.res)
         weights_init(self.d1)
         self.mu1 = nn.Linear(z_dim, 3 * 64 * 64)
         self.var1 = nn.Linear(z_dim, 3 * 64 * 64)
         self.instance_norm_d1 = nn.InstanceNorm2d(num_features=3, affine=False)
         self.iwt1 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
         
-        self.d2 = nn.Linear(3 * 64 * 64, 3 * 64 * 64)
-        weights_init(self.d2)
-        self.mu2 = nn.Linear(z_dim, 3 * 64 * 64)
-        self.var2 = nn.Linear(z_dim, 3 * 64 * 64)
-        self.instance_norm_d2 = nn.InstanceNorm2d(num_features=3, affine=False)
-        self.iwt2 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
-        
-    
+        # Only instantiate if # of upsampling > 1, and set d2 to d1 if re-using upsampling layer
+        if self.num_upsampling > 1:
+            if self.reuse:
+                self.d2 = self.d1
+            else:
+                self.d2 = get_upsampling_layer(self.name, self.res)
+                weights_init(self.d2)
+
+            self.mu2 = nn.Linear(z_dim, 3 * 64 * 64)
+            self.var2 = nn.Linear(z_dim, 3 * 64 * 64)
+            self.instance_norm_d2 = nn.InstanceNorm2d(num_features=3, affine=False)
+            self.iwt2 = nn.ConvTranspose2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)
+      
     def encode(self, x, y):
         h = self.leakyrelu(self.instance_norm_e1(self.e1(x-y)))   #[b, 64, 32, 32]
         h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))     #[b, 128, 16, 16]
@@ -382,15 +405,17 @@ class IWTVAE_64(nn.Module):
         return eps.mul(std).add_(mu) 
     
     def decode(self, y, z):
+        upsampling_sizes = get_upsampling_dims(self.upsampling, self.res)
         mu = self.mu1(z).reshape(-1, 3, 64, 64)
         var = self.var1(z).reshape(-1, 3, 64, 64)
-        h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y.view(y.shape[0], -1)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
+        h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
         h = self.leakyrelu(self.iwt1(h))                               #[b, 3, 64, 64]
         
-        mu = self.mu2(z).reshape(-1, 3, 64, 64)
-        var = self.var2(z).reshape(-1, 3, 64, 64)
-        h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(h.shape[0], -1)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
-        h = self.leakyrelu(self.iwt2(h))                               #[b, 3, 64, 64]
+        if self.num_upsampling > 1:
+            mu = self.mu2(z).reshape(-1, 3, 64, 64)
+            var = self.var2(z).reshape(-1, 3, 64, 64)
+            h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64)) + mu) #[b, 3, 64, 64]
+            h = self.leakyrelu(self.iwt2(h))                               #[b, 3, 64, 64]
         
         return self.sigmoid(h)
         
@@ -413,9 +438,11 @@ class IWTVAE_64(nn.Module):
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
-        KLD /= x.shape[0] * 3 * 64 * 64
+        # KLD /= x.shape[0] * 3 * 64 * 64
 
         return BCE + KLD
-        
+
+    def set_devices(self, devices):
+        self.devices = devices
         
         

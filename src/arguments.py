@@ -20,7 +20,15 @@ def args_parse():
     parser.add_argument('--num_wt', type=int, default=2,
                         help='How many WT in WT VAE')
     parser.add_argument('--z_dim', type=int, default=100,
-                        help='Z dimension (whether in WTVAE or IWTVAE)') 
+                        help='Z dimension (whether in WTVAE or IWTVAE)')
+    parser.add_argument('--upsampling', type=str, default='linear',
+                        help='Upsampling layer for IWTVAE: linear, conv1d, conv2d') 
+    parser.add_argument('--reuse', action='store_true', default=False,
+                        help='Whether to re-use upsampling layer or not')
+    parser.add_argument('--num_upsampling', type=int, default=2,
+                        help='Number of upsampling layers')
+    parser.add_argument('--wtvae_model', type=str, default='',
+                        help='Saved model state for wtvae (for inference during iwtvae training)')
 
     args = parser.parse_args()
 
