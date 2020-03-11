@@ -36,7 +36,7 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
 
 def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args):
     # toggle model to train mode
-    wt_model.train()
+    iwt_model.train()
     train_loss = 0
     
     for batch_idx, data in enumerate(train_loader):
@@ -52,7 +52,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         # Zeroing out all other patches, if given zero arg
         if args.zero:
             Y = zero_patches(Y)
-            
+
         x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.devices[0]))
         # Fix loss function
         loss = iwt_model.loss_function(x_hat, data0, mu, var)
