@@ -942,6 +942,7 @@ class IWTVAE_512_Mask(nn.Module):
         self.cuda = False
         
         self.z_dim = z_dim
+        self.num_iwt = num_iwt
         self.leakyrelu = nn.LeakyReLU(0.2)
 
         # Z Encoder - Decoder                                                                [b, 3, 512, 512]
@@ -1031,7 +1032,7 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.u1(h.reshape(-1, 512, 8, 8), indices=m2_idx))   #[b, 512, 16, 16]
         h = self.leakyrelu(self.instance_norm_d1(self.d1(h)))                   #[b, 256, 32, 32]
         h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                   #[b, 128, 64, 64]
-        h = self.leakyrelu(self.u2(h, indices=m1_idx))                  #[b, 128, 128, 128]
+        h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
         h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                   #[b, 1, 256, 512]
 
