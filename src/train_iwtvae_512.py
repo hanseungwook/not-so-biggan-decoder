@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     dataset_dir = os.path.join(args.root_dir, 'data/celebaHQ512')
     dataset_files = sample(os.listdir(dataset_dir), 10000)
-    train_dataset = CelebaDataset(dataset_dir, os.listdir(dataset_dir), WT=False)
+    train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
     sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
                 Y = wt_model(data1)[0]
                 if args.zero:
                     Y = zero_patches(Y)
-                    
+
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
                 mu, var, m1_idx, m2_idx = iwt_model.encode(data0, Y)
