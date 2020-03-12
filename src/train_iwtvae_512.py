@@ -70,7 +70,9 @@ if __name__ == "__main__":
                 data1 = data.to(devices[1])
                 
                 Y = wt_model(data1)[0]
-                Y = Y.to(devices[0])
+                if args.zero:
+                    Y = zero_patches(Y)
+                    
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
                 mu, var, m1_idx, m2_idx = iwt_model.encode(data0, Y)
