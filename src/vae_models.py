@@ -606,13 +606,13 @@ class IWTVAE_64_FreezeIWT(nn.Module):
         upsampling_sizes = get_upsampling_dims(self.upsampling, self.res)
         mu = self.mu1(z).reshape(-1, 3, 64, 64)
         var = self.var1(z).reshape(-1, 3, 64, 64)
-        h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y.view(upsampling_sizes)).reshape(-1, 3, 64, 64) + mu)) #[b, 3, 64, 64]
+        h = self.leakyrelu(var*self.instance_norm_d1(self.d1(y.reshape(upsampling_sizes)).reshape(-1, 3, 64, 64) + mu)) #[b, 3, 64, 64]
         h = self.iwt1(h)                               #[b, 3, 64, 64]
         
         if self.num_upsampling > 1:
             mu = self.mu2(z).reshape(-1, 3, 64, 64)
             var = self.var2(z).reshape(-1, 3, 64, 64)
-            h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.view(upsampling_sizes)).reshape(-1, 3, 64, 64) + mu)) #[b, 3, 64, 64]
+            h = self.leakyrelu(var*self.instance_norm_d2(self.d2(h.reshape(upsampling_sizes)).reshape(-1, 3, 64, 64) + mu)) #[b, 3, 64, 64]
             h = self.iwt2(h)                               #[b, 3, 64, 64]
         
         return h
