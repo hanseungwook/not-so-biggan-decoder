@@ -965,8 +965,14 @@ class IWTVAE_512_Mask(nn.Module):
 
         self.m2 = nn.MaxPool2d(kernel_size=4, stride=2, padding=1, return_indices=True) #[b, 512, 8, 8]
         
-        self.fc_enc = nn.Linear(512 * 8 * 8, z_dim)
+        self.fc_enc = nn.Linear(512 * 8 * 8, 1024)
         weights_init(self.fc_enc)
+        
+        self.fc_mean = nn.Linear(1024, z_dim)
+        weights_init(self.fc_mean)
+        
+        self.fc_var = nn.Linear(1024, z_dim)
+        weights_init(self.fc_var)
         
         self.fc_dec = nn.Linear(z_dim, 512 * 8 * 8)
         weights_init(self.fc_dec)
@@ -997,15 +1003,25 @@ class IWTVAE_512_Mask(nn.Module):
     
       
     def encode(self, x):
-        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))     #[b, 64, 256, 256]
-        h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))     #[b, 128, 128, 128]
-        h, m1_idx = self.leakyrelu(self.m1(h))                    #[b, 128, 64, 64]
-        h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))     #[b, 256, 32, 32]
-        h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))     #[b, 512, 16, 16]
-        h, m2_idx = self.leakyrelu(self.m2(h))                    #[b, 512, 8, 8]
-        h = self.leakyrelu(self.fc_enc(h.reshape(-1,512*8*8)))    #[b, z_dim]
-        
-        return h, m1_idx, m2_idx                                  #[b, z_dim]
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))                       #[b, 64, 256, 256]
+        h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))                       #[b, 128, 128, 128]
+        h, m1_idx = self.leakyrelu(self.m1(h))                                      #[b, 128, 64, 64]
+        h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))                       #[b, 256, 32, 32]
+        h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))                       #[b, 512, 16, 16]
+        h, m2_idx = self.leakyrelu(self.m2(h))                                      #[b, 512, 8, 8]
+        h = self.leakyrelu(self.fc_enc(h.reshape(-1,512*8*8)))                      #[b, z_dim]
+
+        return self.fc_mean(h), F.softplus(self.fc_var(h)), m1_idx, m2_idx          #[b, z_dim]
+    
+    def reparameterize(self, mu, var):
+        std = torch.sqrt(var)
+        if self.cuda:
+            eps = torch.FloatTensor(std.size()).normal_().to(self.devices[0])
+        else:
+            eps = torch.FloatTensor(std.size()).normal_()
+        eps = Variable(eps)
+
+        return eps.mul(std).add_(mu) 
     
     def decode(self, y, z, m1_idx, m2_idx):
         h = self.leakyrelu(self.fc_dec(z))                                      #[b, 512*8*8]
@@ -1025,25 +1041,25 @@ class IWTVAE_512_Mask(nn.Module):
         return h
         
     def forward(self, x, y):
-        z, m1_idx, m2_idx = self.encode(x)
-        # if self.training:
-        #     z = self.reparameterize(mu, var)
-        # else:
-        #     z = mu
+        mu, var, m1_idx, m2_idx = self.encode(x)
+        if self.training:
+            z = self.reparameterize(mu, var)
+        else:
+            z = mu
         x_hat = self.decode(y, z, m1_idx, m2_idx)
         
-        return x_hat
+        return x_hat, mu, var
         
-    def loss_function(self, x, x_hat) -> Variable:
+    def loss_function(self, x, x_hat, mu, var) -> Variable:
         
         # Loss btw reconstructed img and original img
         BCE = F.mse_loss(x_hat.view(-1), x.view(-1))
         
-        # logvar = torch.log(var)
-        # KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
+        logvar = torch.log(var)
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
 #         KLD /= x.shape[0] * 3 * 64 * 64
 
-        return BCE
+        return BCE + KLD
 
     def set_devices(self, devices):
         self.devices = devices
