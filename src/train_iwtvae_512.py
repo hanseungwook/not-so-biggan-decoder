@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # Set seed
     set_seed(args.seed)
 
-    dataset_dir = os.path.join(args.root_dir, 'celeba64')
+    dataset_dir = os.path.join(args.root_dir, 'data/celeba64')
     train_dataset = CelebaDataset(dataset_dir, os.listdir(dataset_dir), WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     train_losses = []
     optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
 
-    img_output_dir = os.path.join(args.root_dir, 'image_samples/iwtvae512_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'models/iwtvae512_{}/'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtvae512_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae512_{}/'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
