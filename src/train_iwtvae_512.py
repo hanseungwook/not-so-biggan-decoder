@@ -4,9 +4,9 @@ from torch import optim
 from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import WTVAE_64, IWTVAE_64, IWTVAE_64_Mask, IWTVAE_64_Bottleneck, IWTVAE_64_FreezeIWT
+from vae_models import WTVAE_64, IWTVAE_512_Mask, WT
 from wt_datasets import CelebaDataset
-from trainer import train_iwtvae
+from trainer import train_iwtvae_512
 from arguments import args_parse
 from utils.utils import zero_patches, set_seed, save_plot
 import matplotlib.pyplot as plt
@@ -38,12 +38,10 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
-    if args.mask:
-        iwt_model = IWTVAE_512_Mask()
-    
-    if args.zero:
-        LOGGER.info('Zero-ing out all patches other than 1st')
+    wt_model = WT(num_wt=2)
+    wt_model = wt_model.to(devices[1])
 
+    iwt_model = IWTVAE_512_Mask(num_iwt=2)
     iwt_model = iwt_model.to(devices[0])
     iwt_model.set_devices(devices)
     
@@ -61,7 +59,7 @@ if __name__ == "__main__":
         raise Exception('Could not make model & img output directories')
     
     for epoch in range(1, args.epochs + 1):
-        train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args)
+        train_iwtvae_512(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args)
         
         with torch.no_grad():
             iwt_model.eval()
@@ -70,19 +68,15 @@ if __name__ == "__main__":
                 data0 = data.to(devices[0])
                 data1 = data.to(devices[1])
                 
-                z_sample = torch.randn(data.shape[0],100).to(devices[0])
-                
                 Y = wt_model(data1)[0]
-                if args.zero:
-                    Y = zero_patches(Y)
                 Y = Y.to(devices[0])
     
                 mu, var = iwt_model.encode(data0, Y)
                 x_hat = iwt_model.decode(Y, mu)
-                x_sample = iwt_model.decode(Y, z_sample)
+                # x_sample = iwt_model.decode(Y, z_sample)
 
                 save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
-                save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
+                # save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
                 save_image(Y.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
                 save_image(data.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
     

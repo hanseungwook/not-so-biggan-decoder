@@ -107,7 +107,7 @@ class WT(nn.Module):
         for m in self.wt:
             input = m(input, self.filters)
 
-        return input
+        return (input)
 
 class IWT(nn.Module):
     def __init__(self):
@@ -997,13 +997,13 @@ class IWTVAE_512_Mask(nn.Module):
     
       
     def encode(self, x):
-        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))   #[b, 64, 256, 256]
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))     #[b, 64, 256, 256]
         h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))     #[b, 128, 128, 128]
         h, m1_idx = self.leakyrelu(self.m1(h))                    #[b, 128, 64, 64]
         h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))     #[b, 256, 32, 32]
         h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))     #[b, 512, 16, 16]
         h, m2_idx = self.leakyrelu(self.m2(h))                    #[b, 512, 8, 8]
-        h = self.leakyrelu(self.fc_enc(h.reshape(-1,512*8*8)))       #[b, z_dim]
+        h = self.leakyrelu(self.fc_enc(h.reshape(-1,512*8*8)))    #[b, z_dim]
         
         return h, m1_idx, m2_idx                                  #[b, z_dim]
     
@@ -1025,12 +1025,12 @@ class IWTVAE_512_Mask(nn.Module):
         return h
         
     def forward(self, x, y):
-        z, m1_idx, m2_idx = self.encode(x, y)
+        z, m1_idx, m2_idx = self.encode(x)
         # if self.training:
         #     z = self.reparameterize(mu, var)
         # else:
         #     z = mu
-        x_hat = self.decode(y, z)
+        x_hat = self.decode(y, z, m1_idx, m2_idx)
         
         return x_hat
         
