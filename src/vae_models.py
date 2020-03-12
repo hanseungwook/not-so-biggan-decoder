@@ -83,16 +83,17 @@ class WT_layer(nn.Module):
         return res.reshape(batch_size, -1, h, w)
 
 class WT(nn.Module):
-    def __init__(self, num_wt=2):
+    def __init__(self, num_wt=2, device='cpu'):
         super(WT, self).__init__()
 
         self.num_wt = num_wt
+        self.device = device
 
         w = pywt.Wavelet('bior2.2')
-        dec_hi = torch.Tensor(w.dec_hi[::-1]).cuda() 
-        dec_lo = torch.Tensor(w.dec_lo[::-1]).cuda()
-        rec_hi = torch.Tensor(w.rec_hi).cuda()
-        rec_lo = torch.Tensor(w.rec_lo).cuda()
+        dec_hi = torch.Tensor(w.dec_hi[::-1]).to(self.device)
+        dec_lo = torch.Tensor(w.dec_lo[::-1]).to(self.device)
+        rec_hi = torch.Tensor(w.rec_hi).to(self.device)
+        rec_lo = torch.Tensor(w.rec_lo).to(self.device)
 
         self.filters = torch.stack([dec_lo.unsqueeze(0)*dec_lo.unsqueeze(1),
                        dec_lo.unsqueeze(0)*dec_hi.unsqueeze(1),

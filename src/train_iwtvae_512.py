@@ -39,7 +39,7 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
-    wt_model = WT(num_wt=args.num_iwt)
+    wt_model = WT(num_wt=args.num_iwt, device=devices[1])
     wt_model = wt_model.to(devices[1])
 
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
