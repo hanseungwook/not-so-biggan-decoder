@@ -1057,7 +1057,7 @@ class IWTVAE_512_Mask(nn.Module):
     def loss_function(self, x, x_hat, mu, var) -> Variable:
         
         # Loss btw reconstructed img and original img
-        BCE = F.mse_loss(x_hat.view(-1), x.view(-1))
+        BCE = F.mse_loss(x_hat.reshape(-1), x.reshape(-1))
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
