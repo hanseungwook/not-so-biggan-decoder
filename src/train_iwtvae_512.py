@@ -73,12 +73,12 @@ if __name__ == "__main__":
                 if args.zero:
                     Y = zero_patches(Y)
                 Y = Y.to(devices[0])
-                
+
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
                 mu, var, m1_idx, m2_idx = iwt_model.encode(data0, Y)
                 x_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
-                x_sample = iwt_model.decode(Y, z_sample)
+                x_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
 
                 save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
                 save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
