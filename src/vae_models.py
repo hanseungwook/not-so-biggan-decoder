@@ -526,7 +526,7 @@ class IWTVAE_64_FreezeIWT(nn.Module):
         self.cuda = False
         
         self.z_dim = z_dim
-        self.bottleneck_dim = bottleneck_dim
+        # self.bottleneck_dim = bottleneck_dim
         self.leakyrelu = nn.LeakyReLU(0.2)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
