@@ -4,6 +4,7 @@ from torch import nn, optim
 from torch.autograd import Variable
 from torch.nn import functional as F
 from torchvision.utils import save_image
+from utils.utils import zero_mask
 import numpy as np
 import pywt
 
@@ -69,12 +70,50 @@ def get_upsampling_dims(name, res):
     
     return sizes
 
+class WT_layer(nn.Module):    
+    def forward(self, input, filters):
+        batch_size = input.shape[0]
+        h = input.shape[2]
+        w = input.shape[3]
+        input = input.reshape(-1,1,h,w)
+        padded = torch.nn.functional.pad(input,(2,2,2,2))
+        res = torch.nn.functional.conv2d(padded, Variable(filters[:,None]),stride=2)
+        res = res.view(-1,2,h//2,w//2).transpose(1,2).contiguous().view(-1,1,h,w)
+
+        return res.reshape(batch_size, -1, h, w)
+
+class WT(nn.Module):
+    def __init__(self, num_wt=2):
+        super(WT, self).__init__()
+
+        self.num_wt = num_wt
+
+        w = pywt.Wavelet('bior2.2')
+        dec_hi = torch.Tensor(w.dec_hi[::-1]).cuda() 
+        dec_lo = torch.Tensor(w.dec_lo[::-1]).cuda()
+        rec_hi = torch.Tensor(w.rec_hi).cuda()
+        rec_lo = torch.Tensor(w.rec_lo).cuda()
+
+        self.filters = torch.stack([dec_lo.unsqueeze(0)*dec_lo.unsqueeze(1),
+                       dec_lo.unsqueeze(0)*dec_hi.unsqueeze(1),
+                       dec_hi.unsqueeze(0)*dec_lo.unsqueeze(1),
+                       dec_hi.unsqueeze(0)*dec_hi.unsqueeze(1)], dim=0)
+        
+        self.wt = nn.Sequential()
+        for i in range(self.num_wt):
+            self.wt.add_module('wt_{}'.format(i), WT_layer())
+        
+    def forward(self, input):
+        for m in self.wt:
+            input = m(input, self.filters)
+
+        return input
+
 class IWT(nn.Module):
     def __init__(self):
         super(IWT, self).__init__()
 
         #self.device = 'cpu'
-
         w = pywt.Wavelet('bior2.2')
         rec_hi = torch.Tensor(w.rec_hi).cuda()
         rec_lo = torch.Tensor(w.rec_lo).cuda()
@@ -105,9 +144,15 @@ class UnFlatten(nn.Module):
     def forward(self, input, size=2048):
         return input.view(input.size(0), size, 1, 1)
 
-class Mask(nn.Module):
+# Mask substracting from image
+class Mask_Sub(nn.Module):
     def forward(self, img, mask):
         return img - mask.unsqueeze(1)
+
+# Mask adding to image
+class Mask_Add(nn.Module):
+    def forward(self, img, mask):
+        return img + mask.unsqueeze(1)
 
 class UnFlatten1(nn.Module):
     def forward(self, input, size=512):
@@ -881,6 +926,124 @@ class IWTVAE_64_Mask(nn.Module):
 #         KLD /= x.shape[0] * 3 * 64 * 64
 
         return BCE + KLD
+
+    def set_devices(self, devices):
+        self.devices = devices
+        if 'cuda' in self.devices[0] and 'cuda' in self.devices[1]:
+            self.cuda = True
+
+class IWTVAE_512_Mask(nn.Module):
+    def __init__(self, image_channels=3, z_dim=500, num_iwt=2):
+        super(IWTVAE_64_Mask, self).__init__()
+        # Resolution of images (512 x 512)
+        self.res = 512
+        self.devices = None
+        self.cuda = False
+        
+        self.z_dim = z_dim
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.relu = nn.ReLU()
+
+        # Z Encoder - Decoder                                                                [b, 3, 512, 512]
+        self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 256, 256]
+        weights_init(self.e1)
+        self.instance_norm_e1 = nn.InstanceNorm2d(num_features=64, affine=False)
+
+        self.e2 = nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 128, 128, 128]
+        weights_init(self.e2)
+        self.instance_norm_e2 = nn.InstanceNorm2d(num_features=128, affine=False)
+
+        self.m1 = nn.MaxPool2d(kernel_size=4, stride=2, padding=1, return_indices=True) #[b, 128, 64, 64]
+
+        self.e3 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 32, 32]
+        weights_init(self.e3)
+        self.instance_norm_e3 = nn.InstanceNorm2d(num_features=256, affine=False)
+
+        self.e4 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 16, 16]
+        weights_init(self.e4)
+        self.instance_norm_e4 = nn.InstanceNorm2d(num_features=512, affine=False)
+
+        self.m2 = nn.MaxPool2d(kernel_size=4, stride=2, padding=1, return_indices=True) #[b, 512, 8, 8]
+        
+        self.fc_enc = nn.Linear(512 * 8 * 8, z_dim)
+        weights_init(self.fc_enc)
+        
+        self.fc_dec = nn.Linear(z_dim, 512 * 8 * 8)
+        weights_init(self.fc_dec)
+
+        self.u1 = nn.MaxUnpool2d(kernel_size=4, stride=2, padding=1) #[b, 512, 16, 16]
+
+        self.d1 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True) #[b, 256, 32, 32]
+        weights_init(self.d1)
+        self.instance_norm_d1 = nn.InstanceNorm2d(num_features=256, affine=False)
+
+        self.d2= nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True) #[b, 128, 64, 64]
+        weights_init(self.d2)
+        self.instance_norm_d2 = nn.InstanceNorm2d(num_features=128, affine=False)
+    
+        self.u2 = nn.MaxUnpool2d(kernel_size=4, stride=2, padding=1) #[b, 128, 128, 128]
+
+        self.d3 = nn.ConvTranspose2d(128, 32, 4, stride=2, padding=1, bias=True) #[b, 32, 256, 256]
+        weights_init(self.d3)
+        self.instance_norm_d3 = nn.InstanceNorm2d(num_features=32, affine=False)
+
+        self.d4 = nn.ConvTranspose2d(32, 1, 4, stride=2, padding=1, bias=True) #[b, 1, 512, 512]
+        weights_init(self.d4)
+        self.instance_norm_d4 = nn.InstanceNorm2d(num_features=3, affine=False)
+        
+        # Mask
+        self.mask = Mask_Add()
+        self.iwt = IWT()
+    
+      
+    def encode(self, x):
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))   #[b, 64, 256, 256]
+        h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))     #[b, 128, 128, 128]
+        h, m1_idx = self.leakyrelu(self.m1(h))                    #[b, 128, 64, 64]
+        h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))     #[b, 256, 32, 32]
+        h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))     #[b, 512, 16, 16]
+        h, m2_idx = self.leakyrelu(self.m2(h))                    #[b, 512, 8, 8]
+        h = self.leakyrelu(self.fc_enc(h.reshape(-1,512*8*8)))       #[b, z_dim]
+        
+        return h, m1_idx, m2_idx                                  #[b, z_dim]
+    
+    def decode(self, y, z, m1_idx, m2_idx):
+        h = self.leakyrelu(self.fc_dec(z))                                      #[b, 512*8*8]
+        h = self.leakyrelu(self.u1(h.reshape(-1, 512, 8, 8), indices=m2_idx))   #[b, 512, 16, 16]
+        h = self.leakyrelu(self.instance_norm_d1(self.d1(h)))                   #[b, 256, 32, 32]
+        h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                   #[b, 128, 64, 64]
+        h = self.leakyrelu(self.u1(h.reshape, indices=m1_idx))                  #[b, 128, 128, 128]
+        h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
+        h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                   #[b, 1, 256, 512]
+
+        h = zero_mask(h)
+        h = self.mask(y, h)
+
+        for i in range(self.num_iwt):
+            h = self.iwt(h)
+        
+        return h
+        
+    def forward(self, x, y):
+        z, m1_idx, m2_idx = self.encode(x, y)
+        # if self.training:
+        #     z = self.reparameterize(mu, var)
+        # else:
+        #     z = mu
+        x_hat = self.decode(y, z)
+        
+        return x_hat
+        
+    def loss_function(self, x, x_hat) -> Variable:
+        
+        # Loss btw reconstructed img and original img
+        BCE = F.mse_loss(x_hat.view(-1), x.view(-1))
+        
+        # logvar = torch.log(var)
+        # KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
+#         KLD /= x.shape[0] * 3 * 64 * 64
+
+        return BCE
 
     def set_devices(self, devices):
         self.devices = devices

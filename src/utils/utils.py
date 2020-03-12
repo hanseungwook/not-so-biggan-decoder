@@ -10,6 +10,14 @@ def zero_patches(img):
     
     return zeros
 
+# Zeroing out the first patch's portion of the mask
+def zero_mask(mask):
+    h = mask.shape[1]
+    w = mask.shape[2]
+    mask[:,:h//2, :w//2].fill_(0)
+    
+    return mask
+
 def set_seed(seed, cudnn=True):
     """
     Seed everything we can!
