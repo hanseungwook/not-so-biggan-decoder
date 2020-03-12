@@ -92,7 +92,7 @@ class IWT(nn.Module):
         input = torch.nn.functional.conv_transpose2d(input, Variable(self.inv_filters[:,None]),stride=2)
         input = input[:,:,2:-2,2:-2] # Remove padding
         
-        return input.view(batch_size, -1, h, w)
+        return input.reshape(batch_size, -1, h, w)
 
     # def set_device(device):
     #     self.device = device
