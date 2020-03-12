@@ -70,11 +70,14 @@ def get_upsampling_dims(name, res):
     return sizes
 
 class IWT(nn.Module):
-    def __init__(self, device='cpu'):
+    def __init__(self):
         super(IWT, self).__init__()
+
+        #self.device = 'cpu'
+
         w = pywt.Wavelet('bior2.2')
-        rec_hi = torch.Tensor(w.rec_hi).to(device)
-        rec_lo = torch.Tensor(w.rec_lo).to(device)
+        rec_hi = torch.Tensor(w.rec_hi).cuda()
+        rec_lo = torch.Tensor(w.rec_lo).cuda()
 
         self.inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
                                     rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
@@ -90,6 +93,9 @@ class IWT(nn.Module):
         input = input[:,:,2:-2,2:-2] # Remove padding
         
         return input.view(batch_size, -1, h, w)
+
+    # def set_device(device):
+    #     self.device = device
 
 class Flatten(nn.Module):
     def forward(self, input):
@@ -563,7 +569,7 @@ class IWTVAE_64_FreezeIWT(nn.Module):
         self.mu1 = nn.Linear(z_dim, 3 * 64 * 64)
         self.var1 = nn.Linear(z_dim, 3 * 64 * 64)
         self.instance_norm_d1 = nn.InstanceNorm2d(num_features=3, affine=False)
-        self.iwt1 = IWT(device=self.devices[0])
+        self.iwt1 = IWT()
         
         # Only instantiate if # of upsampling > 1, and set d2 to d1 if re-using upsampling layer
         if self.num_upsampling > 1:
