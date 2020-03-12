@@ -28,6 +28,7 @@ if __name__ == "__main__":
     set_seed(args.seed)
 
     dataset_dir = os.path.join(args.root_dir, 'data/celeba64')
+    dataset_files = sample(os.listdir(dataset_dir), 10000)
     train_dataset = CelebaDataset(dataset_dir, os.listdir(dataset_dir), WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
