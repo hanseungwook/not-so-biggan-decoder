@@ -515,7 +515,7 @@ class IWTVAE_64(nn.Module):
             self.cuda = True
 
 class IWTVAE_64_FreezeIWT(nn.Module):
-    def __init__(self, image_channels=3, z_dim=100, upsampling='linear', num_upsampling=2, reuse=False):
+    def __init__(self, image_channels=3, z_dim=100, bottleneck_dim=0, upsampling='linear', num_upsampling=2, reuse=False):
         super(IWTVAE_64_FreezeIWT, self).__init__()
         # Resolution of images (64 x 64)
         self.res = 64
