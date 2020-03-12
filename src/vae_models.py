@@ -1005,10 +1005,13 @@ class IWTVAE_512_Mask(nn.Module):
     def encode(self, x):
         h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))                       #[b, 64, 256, 256]
         h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))                       #[b, 128, 128, 128]
-        h, m1_idx = self.leakyrelu(self.m1(h))                                      #[b, 128, 64, 64]
+        h, m1_idx = self.m1(h)                                                      #[b, 128, 64, 64]
+        h = self.leakyrelu(h)                                                       
         h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))                       #[b, 256, 32, 32]
         h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))                       #[b, 512, 16, 16]
-        h, m2_idx = self.leakyrelu(self.m2(h))                                      #[b, 512, 8, 8]
+
+        h, m2_idx = self.m2(h)                                                      #[b, 512, 8, 8]
+        h = self.leakyrelu(h)
         h = self.leakyrelu(self.fc_enc(h.reshape(-1,512*8*8)))                      #[b, z_dim]
 
         return self.fc_mean(h), F.softplus(self.fc_var(h)), m1_idx, m2_idx          #[b, z_dim]
