@@ -108,7 +108,7 @@ class WT(nn.Module):
         for m in self.wt:
             input = m(input, self.filters)
 
-        return (input)
+        return (input, )
 
 class IWT(nn.Module):
     def __init__(self):
