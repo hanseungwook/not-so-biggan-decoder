@@ -998,8 +998,6 @@ class IWTVAE_512_Mask(nn.Module):
         weights_init(self.d4)
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=3, affine=False)
         
-        # Mask
-        self.mask = Mask_Add()
         self.iwt = IWT()
     
       
@@ -1037,7 +1035,7 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                   #[b, 1, 256, 512]
 
         h = zero_mask(h.squeeze(1))
-        h = self.mask(y, h)
+        h = y - h.unsqeeze(1)
 
         for i in range(self.num_iwt):
             h = self.iwt(h)
