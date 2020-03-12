@@ -45,7 +45,7 @@ if __name__ == "__main__":
         iwt_model = IWTVAE_64_Bottleneck(z_dim=args.z_dim, bottleneck_dim=args.bottleneck_dim)
         LOGGER.info('Running bottleneck model with dim = {}'.format(args.bottleneck_dim))
     elif args.freeze_iwt:
-        iwt_model = IWTVAE_64_FreezeIWT(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
+        iwt_model = IWTVAE_64_FreezeIWT(z_dim=args.z_dim, bottleneck_dim=args.bottleneck_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
         LOGGER.info('Running freeze IWT model with upsampling = {}'.format(args.upsampling))
     else:
         iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
