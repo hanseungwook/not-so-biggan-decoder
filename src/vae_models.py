@@ -934,7 +934,7 @@ class IWTVAE_64_Mask(nn.Module):
 
 class IWTVAE_512_Mask(nn.Module):
     def __init__(self, image_channels=3, z_dim=500, num_iwt=2):
-        super(IWTVAE_64_Mask, self).__init__()
+        super(IWTVAE_512_Mask, self).__init__()
         # Resolution of images (512 x 512)
         self.res = 512
         self.devices = None
@@ -942,7 +942,6 @@ class IWTVAE_512_Mask(nn.Module):
         
         self.z_dim = z_dim
         self.leakyrelu = nn.LeakyReLU(0.2)
-        self.relu = nn.ReLU()
 
         # Z Encoder - Decoder                                                                [b, 3, 512, 512]
         self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 256, 256]
