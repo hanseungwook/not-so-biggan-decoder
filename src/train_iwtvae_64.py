@@ -4,7 +4,7 @@ from torch import optim
 from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import IWTVAE_64, IWTVAE_64_Mask, IWTVAE_64_Bottleneck, WTVAE_64
+from vae_models import WTVAE_64, IWTVAE_64, IWTVAE_64_Mask, IWTVAE_64_Bottleneck, IWTVAE_64_FreezeIWT
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
@@ -44,6 +44,9 @@ if __name__ == "__main__":
     elif args.bottleneck_dim > 0:
         iwt_model = IWTVAE_64_Bottleneck(z_dim=args.z_dim, bottleneck_dim=args.bottleneck_dim)
         LOGGER.info('Running bottleneck model with dim = {}'.format(args.bottleneck_dim))
+    elif args.freeze_iwt:
+        iwt_model = IWTVAE_64_FreezeIWT(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
+        LOGGER.info('Running freeze IWT model with upsampling = {}'.format(args.upsampling))
     else:
         iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
         LOGGER.info('Running original model with upsampling = {}'.format(args.upsampling))

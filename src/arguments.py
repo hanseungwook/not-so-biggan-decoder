@@ -40,7 +40,9 @@ def args_parse():
     parser.add_argument('--mask', action='store_true', default=False,
                         help='Whether to learn z as mask or not')  
     parser.add_argument('--bottleneck_dim', type=int, default=0,
-                        help='Bottleneck dim for Y bottleneck (>0 to use this model)')            
+                        help='Bottleneck dim for Y bottleneck (>0 to use this model)')    
+    parser.add_argument('--freeze_iwt', action='store_true', default=False,
+                        help='Whether to train model with frozen IWT')          
 
 
     args = parser.parse_args()
