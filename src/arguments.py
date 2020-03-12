@@ -42,7 +42,9 @@ def args_parse():
     parser.add_argument('--bottleneck_dim', type=int, default=0,
                         help='Bottleneck dim for Y bottleneck (>0 to use this model)')    
     parser.add_argument('--freeze_iwt', action='store_true', default=False,
-                        help='Whether to train model with frozen IWT')          
+                        help='Whether to train model with frozen IWT')       
+    parser.add_argument('--num_iwt', type=int, default=2,
+                        help='Number of times to apply deterministic IWT')       
 
 
     args = parser.parse_args()

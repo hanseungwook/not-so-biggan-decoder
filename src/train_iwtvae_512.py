@@ -38,18 +38,18 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
-    wt_model = WT(num_wt=2)
+    wt_model = WT(num_wt=args.num_iwt)
     wt_model = wt_model.to(devices[1])
 
-    iwt_model = IWTVAE_512_Mask(num_iwt=2)
+    iwt_model = IWTVAE_512_Mask(num_iwt=args.num_iwt)
     iwt_model = iwt_model.to(devices[0])
     iwt_model.set_devices(devices)
     
     train_losses = []
     optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
 
-    img_output_dir = os.path.join(args.root_dir, 'image_samples/iwtvae64_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'models/iwtvae64_{}/'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'image_samples/iwtvae512_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'models/iwtvae512_{}/'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
