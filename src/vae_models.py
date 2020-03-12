@@ -516,7 +516,7 @@ class IWTVAE_64(nn.Module):
 
 class IWTVAE_64_FreezeIWT(nn.Module):
     def __init__(self, image_channels=3, z_dim=100, upsampling='linear', num_upsampling=2, reuse=False):
-        super(IWTVAE_64, self).__init__()
+        super(IWTVAE_64_FreezeIWT, self).__init__()
         # Resolution of images (64 x 64)
         self.res = 64
         self.upsampling = upsampling
