@@ -51,7 +51,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         
         # Zeroing out all other patches, if given zero arg
         if args.zero:
-            Y = zero_patches(Y)
+            Y = zero_patches(Y, args.num_iwt)
 
         x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.devices[0]))
         

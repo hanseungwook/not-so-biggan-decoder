@@ -71,8 +71,8 @@ if __name__ == "__main__":
                 
                 Y = wt_model(data1)[0]
                 if args.zero:
-                    Y = zero_patches(Y)
-                Y = Y.to(devices[0])
+                    Y = zero_patches(Y, args.num_iwt)
+                # Y = Y.to(devices[0])
 
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
