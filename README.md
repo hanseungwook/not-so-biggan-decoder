@@ -14,5 +14,5 @@ Change `root_dir`, `config`, `unflatten`, `num_wt`, `upsampling`, `reuse`, `zero
 
 Example command for training IWTVAE 512 pipeline (deterministic WT and IWT)
 ```{bash}
-python3 train_iwtvae_512.py --root_dir=/disk_c/han/ --batch_size=16 --z_dim=500 --zero
+python3 train_iwtvae_512.py --root_dir=/disk_c/han/ --batch_size=16 --z_dim=500 --zero --config=dynmask_rest0_freezewtiwt_2wt --num_iwt=2
 ```
