@@ -14,7 +14,7 @@ def zero_patches(img):
 def zero_mask(mask, num_iwt):
     h = mask.shape[1]
     w = mask.shape[2]
-    mask[:, :h//(torch.pow(2, num_iwt)), :w//torch.pow(2, num_iwt)].fill_(0)
+    mask[:, :h//(np.power(2, num_iwt)), :w//np.power(2, num_iwt)].fill_(0)
     
     return mask
 
