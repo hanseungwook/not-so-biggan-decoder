@@ -1034,10 +1034,9 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
         h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                   #[b, 1, 256, 512]
 
-        h = zero_mask(h.squeeze(1), self.num_iwt)
-        h = y - h.unsqueeze(1)
-
         for i in range(self.num_iwt):
+            h = zero_mask(h.squeeze(1), self.num_iwt, i+1)
+            h = y - h.unsqueeze(1)
             h = self.iwt(h)
         
         return h
@@ -1059,7 +1058,7 @@ class IWTVAE_512_Mask(nn.Module):
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
-#         KLD /= x.shape[0] * 3 * 64 * 64
+        # KLD /= x.shape[0] * 3 * 64 * 64
 
         return BCE + KLD, BCE, KLD
 
