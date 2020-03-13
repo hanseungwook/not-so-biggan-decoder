@@ -11,10 +11,10 @@ def zero_patches(img):
     return zeros
 
 # Zeroing out the first patch's portion of the mask
-def zero_mask(mask):
+def zero_mask(mask, num_iwt):
     h = mask.shape[1]
     w = mask.shape[2]
-    mask[:,:h//2, :w//2].fill_(0)
+    mask[:, :h//(torch.pow(2, num_iwt)), :w//torch.pow(2, num_iwt)].fill_(0)
     
     return mask
 

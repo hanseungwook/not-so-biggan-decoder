@@ -1034,7 +1034,7 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
         h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                   #[b, 1, 256, 512]
 
-        h = zero_mask(h.squeeze(1))
+        h = zero_mask(h.squeeze(1), self.num_iwt)
         h = y - h.unsqeeze(1)
 
         for i in range(self.num_iwt):
@@ -1055,13 +1055,13 @@ class IWTVAE_512_Mask(nn.Module):
     def loss_function(self, x, x_hat, mu, var) -> Variable:
         
         # Loss btw reconstructed img and original img
-        BCE = F.mse_loss(x_hat.reshape(-1), x.reshape(-1))
+        BCE = F.l1_loss(x_hat.reshape(-1), x.reshape(-1))
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
 #         KLD /= x.shape[0] * 3 * 64 * 64
 
-        return BCE + KLD
+        return BCE + KLD, BCE, KLD
 
     def set_devices(self, devices):
         self.devices = devices

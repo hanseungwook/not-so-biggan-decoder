@@ -54,11 +54,11 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
             Y = zero_patches(Y)
 
         x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.devices[0]))
-        # Fix loss function
-        loss = iwt_model.loss_function(data0, x_hat, mu, var)
+        
+        loss, loss_bce, loss_kld = iwt_model.loss_function(data0, x_hat, mu, var)
         loss.backward()
         
-        train_losses.append(loss.item())
+        train_losses.append([loss.item(), loss_bce.item(), loss_kld.item()])
         train_loss += loss
         optimizer.step()
         if batch_idx % args.log_interval == 0:
