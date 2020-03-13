@@ -1033,10 +1033,13 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
         h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                   #[b, 1, 256, 512]
+        mask = h.clone().detach()
 
         for i in range(self.num_iwt):
-            h = zero_mask(h.squeeze(1), self.num_iwt, i+1)
-            h = y - h.unsqueeze(1)
+            with torch.no_grad():
+                mask.data.copy(h.data)
+                mask = zero_mask(mask.squeeze(1), self.num_iwt, i+1)
+            h = y - mask.unsqueeze(1)
             h = self.iwt(h)
         
         return h
