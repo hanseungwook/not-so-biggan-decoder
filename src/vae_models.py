@@ -1035,7 +1035,7 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                   #[b, 1, 256, 512]
 
         h = zero_mask(h.squeeze(1), self.num_iwt)
-        h = y - h.unsqeeze(1)
+        h = y - h.unsqueeze(1)
 
         for i in range(self.num_iwt):
             h = self.iwt(h)
