@@ -48,7 +48,7 @@ def wt(vimg, filters, levels=1):
     padded = torch.nn.functional.pad(vimg,(2,2,2,2))
     res = torch.nn.functional.conv2d(padded, Variable(filters[:,None]),stride=2)
     if levels>1:
-        res[:,:1] = wt(res[:,:1],levels-1)
+        res[:,:1] = wt(res[:,:1], filters, levels-1)
         res[:,:1,32:,:] = res[:,:1,32:,:]*1.
         res[:,:1,:,32:] = res[:,:1,:,32:]*1.
         res[:,1:] = res[:,1:]*1.
