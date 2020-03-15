@@ -1228,6 +1228,7 @@ class IWTVAE_512_Mask(nn.Module):
 
 class FullVAE_512(nn.Module):
     def __init__(self, wt_model, iwt_model, devices):
+        super(FullVAE_512, self).__init__()
         self.devices = devices
 
         # Setting up filters for loss function of WTVAE model
