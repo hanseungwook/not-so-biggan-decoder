@@ -525,6 +525,7 @@ class WTVAE_512(nn.Module):
 
         self.fc_dec = nn.Linear(z_dim, h_dim)
         weights_init(self.fc_dec)
+
         # Unflatten before going through layers of decoder
 
         self.d1 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True)       #[b, 256, 8, 8]
@@ -541,13 +542,19 @@ class WTVAE_512(nn.Module):
         self.instance_norm_d3 = nn.InstanceNorm2d(num_features=64, affine=False)
         weights_init(self.d3)
 
-        self.d4 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True)             #[b, 3, 128, 128]
+        self.u2 = nn.MaxUnpool2d(kernel_size=4, stride=2, padding=1)                    #[b, 64, 128, 128]
+
+        self.d4 = nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, bias=True)             #[b, 3, 256, 256]
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=64, affine=False)         
         weights_init(self.d4)
 
+        self.d5 = nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1, bias=True)             #[b, 3, 512, 512]
+        self.instance_norm_d5 = nn.InstanceNorm2d(num_features=64, affine=False)         
+        weights_init(self.d5)
+
         self.wt = nn.Sequential()
         for i in range(self.num_wt):
-            self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)) # N * 3 * 64 * 64
+            self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=4, stride=2, padding=1)) # N * 3 * 128 * 128, when num_wt=2
             self.wt.add_module('wt{}_in'.format(i), nn.InstanceNorm2d(image_channels))
 
     def reparameterize(self, mu, logvar):
@@ -578,22 +585,24 @@ class WTVAE_512(nn.Module):
 
         z, mu, logvar = self.bottleneck(h.reshape(h.shape[0], -1))                  #[b, z_dim]
 
-        return z, mu, logvar, m2_idx
+        return z, mu, logvar, m1_idx, m2_idx
 
-    def decode(self, z, m2_idx):
+    def decode(self, z, m1_idx, m2_idx):
         z = self.fc_dec(z)                                                          #[b, h_dim (512*4*4)]
         z = self.leakyrelu(self.instance_norm_d1(self.d1(z.reshape(-1, 512, 4, 4))))#[b, 256, 8, 8]
         z = self.leakyrelu(self.u1(z, indices=m2_idx))                              #[b, 256, 16, 16]
         z = self.leakyrelu(self.instance_norm_d2(self.d2(z)))                       #[b, 128, 32, 32]
         z = self.leakyrelu(self.instance_norm_d3(self.d3(z)))                       #[b, 64, 64, 64]
-        z = self.leakyrelu(self.instance_norm_d4(self.d4(z)))                       #[b, 3, 128, 128]
-        z = self.wt(z)
+        z = self.leakyrelu(self.u2(z, indices=m1_idx))                              #[b, 64, 128, 128]
+        z = self.leakyrelu(self.instance_norm_d4(self.d4(z)))                       #[b, 32, 256, 256]
+        z = self.leakyrelu(self.instance_norm_d5(self.d5(z)))                       #[b, 3, 512, 512]
+        z = self.wt(z)                                                              #[b, 3, 128, 128], when num_wt=2
         
         return z
 
     def forward(self, x):
-        z, mu, logvar, m2_idx = self.encode(x)
-        z = self.decode(z, m2_idx)
+        z, mu, logvar, m1_idx, m2_idx = self.encode(x)
+        z = self.decode(z, m1_idx, m2_idx)
         return z, mu, logvar
 
     def loss_function(self, x, x_wt_hat, mu, logvar) -> Variable:
