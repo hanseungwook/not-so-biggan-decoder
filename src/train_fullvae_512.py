@@ -39,7 +39,22 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
+    # Setting up WT filters
+    w = pywt.Wavelet('bior2.2')
+
+    dec_hi = torch.Tensor(w.dec_hi[::-1]).to(devices[0])
+    dec_lo = torch.Tensor(w.dec_lo[::-1]).to(devices[0])
+    rec_hi = torch.Tensor(w.rec_hi).to(devices[0])
+    rec_lo = torch.Tensor(w.rec_lo).to(devices[0])
+
+    filters = torch.stack([dec_lo.unsqueeze(0)*dec_lo.unsqueeze(1),
+                       dec_lo.unsqueeze(0)*dec_hi.unsqueeze(1),
+                       dec_hi.unsqueeze(0)*dec_lo.unsqueeze(1),
+                       dec_hi.unsqueeze(0)*dec_hi.unsqueeze(1)], dim=0)
+
+
     wt_model = WTVAE_512(z_dim=100)
+    wt_model.set_filters(filters)
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
     full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
     
