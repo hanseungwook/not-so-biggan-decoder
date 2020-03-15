@@ -1292,8 +1292,8 @@ class FullVAE_512(nn.Module):
         
     def loss_function(self, x, y, mu_wt, logvar_wt, x_hat, mu, var):
         # Returns a loss tuple of (KLD+BCE, BCE, KLD)
-        wt_loss = self.wtvae.loss_function(x.to(self.devices[0]), y, mu_wt, logvar_wt)
-        iwt_loss = self.iwtvae.loss_function(x.to(self.devices[1]), x_hat, mu, var)
+        wt_loss = self.wt_model.loss_function(x.to(self.devices[0]), y, mu_wt, logvar_wt)
+        iwt_loss = self.iwt_model.loss_function(x.to(self.devices[1]), x_hat, mu, var)
 
         # Summing each elements (KLD+BCE, BCE, KLD)
         return wt_loss[0] + iwt_loss[0], wt_loss[1] + iwt_loss[1], wt_loss[2] + iwt_loss[2]
