@@ -126,7 +126,7 @@ class WT(nn.Module):
 
 class IWT0(nn.Module):
     def __init__(self):
-        super(IWT, self).__init__()
+        super(IWT0, self).__init__()
 
         #self.device = 'cpu'
         w = pywt.Wavelet('bior2.2')
@@ -150,7 +150,7 @@ class IWT0(nn.Module):
 
 class IWT1(nn.Module):
     def __init__(self):
-        super(IWT, self).__init__()
+        super(IWT1, self).__init__()
 
         #self.device = 'cpu'
         w = pywt.Wavelet('bior2.2')
