@@ -485,7 +485,7 @@ class WTVAE_512(nn.Module):
         self.instance_norm_e4 = nn.InstanceNorm2d(num_features=256, affine=False)
         weights_init(self.e4)
 
-        self.m2 = nn.MaxPool2d(kernel_size=4, stride=2, padding=1) #[b, 256, 8, 8]
+        self.m2 = nn.MaxPool2d(kernel_size=4, stride=2, padding=1, return_indices=True) #[b, 256, 8, 8]
 
         self.e5 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 4, 4]
         self.instance_norm_e5 = nn.InstanceNorm2d(num_features=512, affine=False)
