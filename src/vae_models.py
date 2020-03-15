@@ -516,7 +516,7 @@ class WTVAE_512(nn.Module):
         self.instance_norm_d3 = nn.InstanceNorm2d(num_features=64, affine=False)
         weights_init(self.d3)
 
-        self.d4 = nn.ConvTranspose2d(64, 3, stride=2, padding=1, bias=True)             #[b, 3, 128, 128]
+        self.d4 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True)             #[b, 3, 128, 128]
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=64, affine=False)         
         weights_init(self.d4)
 
