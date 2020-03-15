@@ -116,7 +116,7 @@ def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args
         
         y, mu_wt, logvar_wt, x_hat, mu, var = full_model(data)
         
-        loss, loss_bce, loss_kld = full_model.loss_function(data, y, mu_wt, logvar_wt, x_hat, mu, var)
+        loss, loss_bce, loss_kld = full_model.loss_function(data.to(full_model.devices[1]), y, mu_wt, logvar_wt, x_hat, mu, var)
         loss.backward()
         
         train_losses.append([loss.item(), loss_bce.item(), loss_kld.item()])
