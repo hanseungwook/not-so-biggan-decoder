@@ -484,7 +484,7 @@ class WTVAE_128(nn.Module):
 
 
 class WTVAE_512(nn.Module):
-    def __init__(self, image_channels=3, h_dim=512*4*4, z_dim=100, num_wt):
+    def __init__(self, image_channels=3, h_dim=512*4*4, z_dim=100, num_wt=2):
         super(WTVAE_512, self).__init__()
         
         self.cuda = False
