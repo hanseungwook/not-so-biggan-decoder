@@ -1276,7 +1276,7 @@ class FullVAE_512(nn.Module):
         y, y_padded, mu_wt, logvar_wt = self.wt(x)
         x_hat, mu, var = self.iwt(x, y_padded)
 
-        return y, mu_wt, logvar_wt, x_hat, mu, var
+        return y.to(self.devices[1]), mu_wt.to(self.devices[1]), logvar_wt.to(self.devices[1]), x_hat, mu, var
     
     def wt(self, x):
         y, mu_wt, logvar_wt = self.wt_model(x.to(self.devices[0]))                   #[b, 3, 128, 128]
