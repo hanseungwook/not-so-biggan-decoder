@@ -53,7 +53,7 @@ if __name__ == "__main__":
                        dec_hi.unsqueeze(0)*dec_hi.unsqueeze(1)], dim=0)
 
 
-    wt_model = WTVAE_512(z_dim=100. num_wt=args.num_iwt)
+    wt_model = WTVAE_512(z_dim=100, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
     full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
