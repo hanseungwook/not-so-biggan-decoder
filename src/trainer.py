@@ -119,7 +119,7 @@ def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args
         loss, loss_bce, loss_kld = full_model.loss_function(data, y, mu_wt, logvar_wt, x_hat, mu, var)
         loss.backward()
         
-        train_losses.append([loss.item(), loss_bce.item(), loss_kld.item()])
+        train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
         train_loss += loss
         optimizer.step()
         if batch_idx % args.log_interval == 0:
