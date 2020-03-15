@@ -555,8 +555,8 @@ class WTVAE_512(nn.Module):
         z = self.leakyrelu(self.instance_norm_d1(self.d1(z.reshape(-1, 512, 4, 4))))#[b, 256, 8, 8]
         z = self.leakyrelu(self.u1(z, indices=m2_idx))                              #[b, 256, 16, 16]
         z = self.leakyrelu(self.instance_norm_d2(self.d2(z)))                       #[b, 128, 32, 32]
-        z = self.leakyrelu(self.instance_norm_d3(self.d2(z)))                       #[b, 64, 64, 64]
-        z = self.leakyrelu(self.instance_norm_d4(self.d2(z)))                       #[b, 3, 128, 128]
+        z = self.leakyrelu(self.instance_norm_d3(self.d3(z)))                       #[b, 64, 64, 64]
+        z = self.leakyrelu(self.instance_norm_d4(self.d4(z)))                       #[b, 3, 128, 128]
         
         return z
 
