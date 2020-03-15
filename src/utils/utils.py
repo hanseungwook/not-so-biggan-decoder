@@ -10,6 +10,17 @@ def zero_patches(img, num_wt):
     
     return img
 
+# Create padding on patch so that this patch is formed into a square image with other patches as 0
+# 3 x 128 x 128 => 3 x target_dim x target_dim
+def zero_pad(img, target_dim, device='cpu'):
+    batch_size = img.shape[0]
+    num_channels = img.shape[1]
+    padded_img = torch.zeros((batch_size, num_channels, target_dim, target_dim)).to(device)
+    padded_img[:, :, :img.shape[2], :img.shape[3]] = img.to(device)
+    
+    return padded_img
+    
+
 # Zeroing out the first patch's portion of the mask
 def zero_mask(mask, num_iwt, cur_iwt):
     h = mask.shape[1]
