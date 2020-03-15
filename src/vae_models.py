@@ -465,7 +465,6 @@ class WTVAE_512(nn.Module):
         
         self.cuda = False
         self.device = None
-        self.num_wt = num_wt
         self.leakyrelu = nn.LeakyReLU(0.2)
         
         self.e1 = nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 32, 256, 256]
