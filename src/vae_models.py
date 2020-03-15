@@ -124,7 +124,7 @@ class WT(nn.Module):
 
         return (input, )
 
-class IWT(nn.Module):
+class IWT0(nn.Module):
     def __init__(self):
         super(IWT, self).__init__()
 
@@ -132,6 +132,30 @@ class IWT(nn.Module):
         w = pywt.Wavelet('bior2.2')
         rec_hi = torch.Tensor(w.rec_hi).cuda()
         rec_lo = torch.Tensor(w.rec_lo).cuda()
+
+        self.inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
+                                    rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
+                                    rec_hi.unsqueeze(0)*rec_lo.unsqueeze(1),
+                                    rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
+
+    def forward(self, input):
+        batch_size = input.shape[0]
+        h = input.shape[2]
+        w = input.shape[3]
+        input = input.view(-1,1,h,w).contiguous().view(-1,h//2,2,w//2).transpose(1,2).contiguous().view(-1,4,h//2,w//2).clone()
+        input = torch.nn.functional.conv_transpose2d(input, Variable(self.inv_filters[:,None]),stride=2)
+        input = input[:,:,2:-2,2:-2] # Remove padding
+        
+        return input.reshape(batch_size, -1, h, w)
+
+class IWT1(nn.Module):
+    def __init__(self):
+        super(IWT, self).__init__()
+
+        #self.device = 'cpu'
+        w = pywt.Wavelet('bior2.2')
+        rec_hi = torch.Tensor(w.rec_hi).to('cuda:1')
+        rec_lo = torch.Tensor(w.rec_lo).cuda('cuda:1')
 
         self.inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
                                     rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
@@ -1146,7 +1170,7 @@ class IWTVAE_512_Mask(nn.Module):
         weights_init(self.d4)
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=3, affine=False)
         
-        self.iwt = IWT()
+        self.iwt = IWT1()
     
       
     def encode(self, x, y):
