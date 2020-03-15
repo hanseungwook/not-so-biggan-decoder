@@ -484,11 +484,12 @@ class WTVAE_128(nn.Module):
 
 
 class WTVAE_512(nn.Module):
-    def __init__(self, image_channels=3, h_dim=512*4*4, z_dim=100):
+    def __init__(self, image_channels=3, h_dim=512*4*4, z_dim=100, num_wt):
         super(WTVAE_512, self).__init__()
         
         self.cuda = False
         self.device = None
+        self.num_wt = num_wt
         self.leakyrelu = nn.LeakyReLU(0.2)
         
         self.e1 = nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 32, 256, 256]
@@ -544,6 +545,11 @@ class WTVAE_512(nn.Module):
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=64, affine=False)         
         weights_init(self.d4)
 
+        self.wt = nn.Sequential()
+        for i in range(self.num_wt):
+            self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=5, stride=1, padding=2)) # N * 3 * 64 * 64
+            self.wt.add_module('wt{}_in'.format(i), nn.InstanceNorm2d(image_channels))
+
     def reparameterize(self, mu, logvar):
         if self.training:
             std = logvar.mul(0.5).exp_()
@@ -581,6 +587,7 @@ class WTVAE_512(nn.Module):
         z = self.leakyrelu(self.instance_norm_d2(self.d2(z)))                       #[b, 128, 32, 32]
         z = self.leakyrelu(self.instance_norm_d3(self.d3(z)))                       #[b, 64, 64, 64]
         z = self.leakyrelu(self.instance_norm_d4(self.d4(z)))                       #[b, 3, 128, 128]
+        z = self.wt(z)
         
         return z
 
