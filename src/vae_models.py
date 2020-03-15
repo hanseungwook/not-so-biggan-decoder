@@ -1241,9 +1241,9 @@ class FullVAE_512(nn.Module):
                                dec_hi.unsqueeze(0)*dec_lo.unsqueeze(1),
                                dec_hi.unsqueeze(0)*dec_hi.unsqueeze(1)], dim=0)
 
-        self.wt_model = wtvae.to(devices[0])
+        self.wt_model = wt_model.to(devices[0])
         self.wt_model.set_device(devices[0])
-        self.iwt_model = iwtvae.to(devices[1])
+        self.iwt_model = iwt_model.to(devices[1])
         self.iwt_model.set_device(devices[1])
 
     def forward(self, x):
