@@ -71,6 +71,7 @@ if __name__ == "__main__":
                 
                 Y = wt_model(data1)[0]
                 if args.zero:
+                    print('Zeroing out other patches during valid')
                     padded = torch.zeros(Y.shape)
                     patch_dim = Y.shape[2] // np.power(2, args.num_iwt)
                     padded[:, :, :patch_dim, :patch_dim] = Y[:, :, :patch_dim, :patch_dim]
