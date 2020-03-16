@@ -80,6 +80,7 @@ if __name__ == "__main__":
         train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args)
         
         with torch.no_grad():
+            full_model.eval()
             full_model.wt_model.eval()
             full_model.iwt_model.eval()
             
@@ -92,7 +93,7 @@ if __name__ == "__main__":
                 y_sample = full_model.wt_model.decode(z_sample1, m1_idx, m2_idx)
 
                 y_padded = zero_pad(y, target_dim=512, device=devices[1])
-                y_sample_padded = zero_pad(y, target_dim=512, device=devices[1])
+                y_sample_padded = zero_pad(y_sample, target_dim=512, device=devices[1])
                 
                 mu, var, m1_idx, m2_idx = full_model.iwt_model.encode(data.to(devices[1]), y_padded)
                 x_hat = iwt_model.decode(y_padded, mu, m1_idx, m2_idx)
