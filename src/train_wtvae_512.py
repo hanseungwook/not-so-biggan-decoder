@@ -20,12 +20,14 @@ if __name__ == "__main__":
     # Accelerate training since fixed input sizes
     torch.backends.cudnn.benchmark = True 
 
-    # Setting up logger and writer
+    # Setting up logger
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
     LOGGER = logging.getLogger(__name__)
-    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs'))
 
     args = args_parse()
+
+    # Setting up tensorboard writer
+    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs'))
 
     # Set seed
     set_seed(args.seed)
