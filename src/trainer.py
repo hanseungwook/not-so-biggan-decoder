@@ -139,6 +139,9 @@ def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args
         # Calculating and printing gradient norm
         total_norm = 0
         for p in full_model.parameters():
+            # If frozen parameters, then skip
+            if not p.requires_grad:
+                continue
             param_norm = p.grad.data.norm(2)
             total_norm += param_norm.item() ** 2
         total_norm = total_norm ** (1. / 2)
@@ -146,7 +149,7 @@ def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args
 
         # Gradient clipping
         torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=10000, norm_type=2)
-        
+
         optimizer.step()
         if batch_idx % args.log_interval == 0:
             logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
