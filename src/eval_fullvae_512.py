@@ -25,9 +25,6 @@ if __name__ == "__main__":
 
     args = args_parse()
 
-    # Setting up tensorboard writer
-    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs'))
-
     # Set seed
     set_seed(args.seed)
 
@@ -52,26 +49,17 @@ if __name__ == "__main__":
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
     iwt_model.set_filters(inv_filters)
     
-    # If given saved model, load and freeze model
-    if args.iwt_model:
+    # Given saved model, load and freeze model
+    if args.iwt_model and args.wt_model:
         iwt_model.load_state_dict(torch.load(args.iwt_model))
         for param in iwt_model.parameters():
             param.requires_grad = False
-    elif args.wt_model:
+
         wt_model.load_state_dict(torch.load(args.wt_model))
         for param in iwt_model.parameters():
             param.requires_grad = False
             
     full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
-    
-    train_losses = []
-
-    if args.iwt_model:
-        optimizer = optim.Adam(wt_model.parameters(), lr=args.lr)
-    elif args.wt_model:
-        optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
-    else: 
-        optimizer = optim.Adam(list(wt_model.parameters()) + list(iwt_model.parameters()), lr=args.lr)
 
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/fullvae512_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/fullvae512_{}/'.format(args.config))
@@ -82,10 +70,7 @@ if __name__ == "__main__":
     except:
         LOGGER.error('Could not make model & img output directories')
         raise Exception('Could not make model & img output directories')
-    
-    for epoch in range(1, args.epochs + 1):
-        train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args, writer)
-        
+            
         with torch.no_grad():
             full_model.eval()
             full_model.wt_model.eval()
@@ -94,10 +79,10 @@ if __name__ == "__main__":
             for data in sample_loader:
                 z_sample1 = torch.randn(data.shape[0], args.z_dim).to(devices[0])
                 z_sample2 = torch.randn(data.shape[0], args.z_dim).to(devices[1])
-
-                z, mu_wt, logvar_wt, m1_idx, m2_idx = full_model.wt_model.encode(data.to(devices[0]))
-                y = full_model.wt_model.decode(z, m1_idx, m2_idx)
-                y_sample = full_model.wt_model.decode(z_sample1, m1_idx, m2_idx)
+                
+                z, mu_wt, logvar_wt = full_model.wt_model.encode(data.to(devices[0]))
+                y = full_model.wt_model.decode(z)
+                y_sample = full_model.wt_model.decode(z_sample1)
 
                 y_padded = zero_pad(y, target_dim=512, device=devices[1])
                 y_sample_padded = zero_pad(y_sample, target_dim=512, device=devices[1])
@@ -115,10 +100,6 @@ if __name__ == "__main__":
                 save_image(data.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
     
         torch.save(iwt_model.state_dict(), model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
-    
-    # Save train losses and plot
-    np.save(model_dir+'/train_losses.npy', train_losses)
-    save_plot(train_losses, img_output_dir + '/train_loss.png')
     
     LOGGER.info('Full Model parameters: {}'.format(sum(x.numel() for x in full_model.wt_model.parameters()) + sum(x.numel() for x in full_model.iwt_model.parameters())))
 
