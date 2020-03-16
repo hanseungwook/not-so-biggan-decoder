@@ -19,10 +19,10 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
         optimizer.zero_grad()
         
         wt_data, mu, logvar = model(data)
-        loss = model.loss_function(data, wt_data, mu, logvar)
+        loss, loss_bce, loss_kld = model.loss_function(data, wt_data, mu, logvar)
         loss.backward()
         
-        train_losses.append(loss.item())
+        train_losses.append((loss.item(), loss_bce, loss_kld))
         train_loss += loss
         optimizer.step()
         if batch_idx % args.log_interval == 0:
