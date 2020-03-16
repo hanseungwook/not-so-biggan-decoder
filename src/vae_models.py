@@ -491,7 +491,7 @@ class WTVAE_512(nn.Module):
         self.device = None
         self.num_wt = num_wt
         self.leakyrelu = nn.LeakyReLU(0.2)
-        self.sigmoid = nn.Sigmoid()
+        self.relu = nn.ReLU()
         
         self.e1 = nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 32, 256, 256]
         self.instance_norm_e1 = nn.InstanceNorm2d(num_features=32, affine=False)
@@ -596,7 +596,7 @@ class WTVAE_512(nn.Module):
         z = self.leakyrelu(self.instance_norm_d3(self.d3(z)))                       #[b, 64, 64, 64]
         z = self.leakyrelu(self.u2(z, indices=m1_idx))                              #[b, 64, 128, 128]
         z = self.leakyrelu(self.instance_norm_d4(self.d4(z)))                       #[b, 32, 256, 256]
-        z = self.sigmoid(self.instance_norm_d5(self.d5(z)))                         #[b, 3, 512, 512]
+        z = self.relu(self.instance_norm_d5(self.d5(z)))                            #[b, 3, 512, 512]
         z = self.wt(z)                                                              #[b, 3, 128, 128], when num_wt=2
         
         return z
