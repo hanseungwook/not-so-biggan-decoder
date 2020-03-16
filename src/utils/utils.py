@@ -80,8 +80,8 @@ def create_filters(device):
 def create_inv_filters(device):
     w = pywt.Wavelet('bior2.2')
 
-    rec_hi = torch.Tensor(w.rec_hi).to(devices)
-    rec_lo = torch.Tensor(w.rec_lo).to(devices)
+    rec_hi = torch.Tensor(w.rec_hi).to(device)
+    rec_lo = torch.Tensor(w.rec_lo).to(device)
     
     inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
                                rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
