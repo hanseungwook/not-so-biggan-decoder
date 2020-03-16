@@ -1,10 +1,11 @@
-import sys
+import os, sys
 import torch
 import numpy as np
 from utils.utils import zero_patches
 from torch.utils.tensorboard import SummaryWriter
 import logging
 
+log_idx = 0
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
@@ -24,9 +25,11 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
         loss, loss_bce, loss_kld = model.loss_function(data, wt_data, mu, logvar)
         loss.backward()
 
-        writer.add_scalar('Loss/total',loss, batch_idx)
-        writer.add_scalar('Loss/bce', loss_bce, batch_idx)
-        writer.add_scalar('Loss/kld', loss_kld, batch_idx)
+        global log_idx
+        writer.add_scalar('Loss/total', loss, log_idx)
+        writer.add_scalar('Loss/bce', loss_bce, log_idx)
+        writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        log_idx += 1 
         
         train_losses.append((loss.item(), loss_bce, loss_kld))
         train_loss += loss
