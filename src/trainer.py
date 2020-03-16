@@ -73,7 +73,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
 
         # Gradient clipping
         torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=10000, norm_type=2)
-        
+
         optimizer.step()
         if batch_idx % args.log_interval == 0:
             logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
@@ -144,6 +144,9 @@ def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args
         total_norm = total_norm ** (1. / 2)
         logging.info('Gradient Norm: {}'.format(total_norm))
 
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=10000, norm_type=2)
+        
         optimizer.step()
         if batch_idx % args.log_interval == 0:
             logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),

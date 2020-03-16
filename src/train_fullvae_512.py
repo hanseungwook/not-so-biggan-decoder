@@ -55,11 +55,22 @@ if __name__ == "__main__":
 
     wt_model = WTVAE_512(z_dim=100, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
-    iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
+    
+    # If given saved model, load and freeze model
+    if args.iwt_model:
+        iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
+        iwt_model.load_state_dict(torch.load(args.iwt_model))
+        for param in iwt_model.parameters():
+            param.requires_grad = False
+            
     full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
     
     train_losses = []
-    optimizer = optim.Adam(list(wt_model.parameters()) + list(iwt_model.parameters()), lr=args.lr)
+
+    if args.iwt_model:
+        optimizer = optim.Adam(wt_model.parameters(), lr=args.lr)
+    else: 
+        optimizer = optim.Adam(list(wt_model.parameters()) + list(iwt_model.parameters()), lr=args.lr)
 
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/fullvae512_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/fullvae512_{}/'.format(args.config))

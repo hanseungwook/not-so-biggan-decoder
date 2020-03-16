@@ -35,8 +35,10 @@ def args_parse():
                         help='Whether to zero out patches other than the first or not')
     parser.add_argument('--num_upsampling', type=int, default=2,
                         help='Number of upsampling layers')
-    parser.add_argument('--wtvae_model', type=str, default='',
+    parser.add_argument('--wt_model', type=str, default='',
                         help='Saved model state for wtvae (for inference during iwtvae training)')
+    parser.add_argument('--iwt_model', type=str, default='',
+                        help='Saved model state for iwtvae (for training wtvae with iwtvae frozen for full pipeline)')
     parser.add_argument('--mask', action='store_true', default=False,
                         help='Whether to learn z as mask or not')  
     parser.add_argument('--bottleneck_dim', type=int, default=0,
