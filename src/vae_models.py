@@ -681,7 +681,7 @@ class WTVAE_512_1(nn.Module):
 
         # Unflatten before going through layers of decoder
 
-        self.d1 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True)       #[b, 512, 16, 16]
+        self.d1 = nn.ConvTranspose2d(512, 512, 4, stride=2, padding=1, bias=True)       #[b, 512, 16, 16]
         self.instance_norm_d1 = nn.BatchNorm2d(512)
 
         self.d2 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True)       #[b, 256, 32, 32]
