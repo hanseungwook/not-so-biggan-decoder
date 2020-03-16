@@ -71,7 +71,10 @@ if __name__ == "__main__":
                 
                 Y = wt_model(data1)[0]
                 if args.zero:
-                    Y = zero_patches(Y, args.num_iwt)
+                    padded = torch.zeros(img.shape)
+                    patch_dim = img.shape[2] // np.power(2, num_wt)
+                    padded[:, :, :patch_dim, :patch_dim] = img[:, :, :patch_dim, :patch_dim]
+                    Y = padded
                 Y = Y.to(devices[0])
 
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
