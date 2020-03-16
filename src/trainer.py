@@ -18,8 +18,8 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
 
         optimizer.zero_grad()
         
-        wt_batch, mu, logvar = model(data)
-        loss = model.loss_function(wt_batch, data, mu, logvar)
+        wt_data, mu, logvar = model(data)
+        loss = model.loss_function(data, wt_data, mu, logvar)
         loss.backward()
         
         train_losses.append(loss.item())
