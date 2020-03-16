@@ -34,16 +34,17 @@ if __name__ == "__main__":
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
     sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
     
-    if torch.cuda.is_available() and torch.cuda.device_count() >= 2:
-        devices = ['cuda:0', 'cuda:1']
+    if torch.cuda.is_available():
+        device = 'cuda:0'
     else: 
-        devices = ['cpu', 'cpu']
+        device = 'cpu'
 
     # Setting up WT & IWT filters
-    filters = create_filters(device=devices[0])
+    filters = create_filters(device=device)
 
     wt_model = WTVAE_512(z_dim=args.z_dim, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
+    wt_model.set_device(device)
     
     train_losses = []
     optimizer = optim.Adam(wt_model.parameters(), lr=args.lr)
@@ -65,14 +66,14 @@ if __name__ == "__main__":
             wt_model.eval()
             
             for data in sample_loader:
-                z_sample1 = torch.randn(data.shape[0], args.z_dim).to(devices[0])
+                z_sample1 = torch.randn(data.shape[0], args.z_dim).to(device)
 
-                z, mu_wt, logvar_wt, m1_idx, m2_idx = wt_model.encode(data.to(devices[0]))
+                z, mu_wt, logvar_wt, m1_idx, m2_idx = wt_model.encode(data.to(device))
                 y = wt_model.decode(z, m1_idx, m2_idx)
                 y_sample = wt_model.decode(z_sample1, m1_idx, m2_idx)
 
-                y_padded = zero_pad(y, target_dim=512, device=devices[0])
-                y_sample_padded = zero_pad(y_sample, target_dim=512, device=devices[0])
+                y_padded = zero_pad(y, target_dim=512, device=device)
+                y_sample_padded = zero_pad(y_sample, target_dim=512, device=device)
                 
                 save_image(y_padded.cpu(), img_output_dir + '/sample_padded_y{}.png'.format(epoch))
                 save_image(y.cpu(), img_output_dir + '/sample_recon_y{}.png'.format(epoch))
