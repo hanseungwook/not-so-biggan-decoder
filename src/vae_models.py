@@ -654,6 +654,7 @@ class WTVAE_512_1(nn.Module):
         self.num_wt = num_wt
         self.leakyrelu = nn.LeakyReLU(0.2)
         self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
         
         self.e1 = nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 32, 256, 256]
         self.instance_norm_e1 = nn.BatchNorm2d(32)
