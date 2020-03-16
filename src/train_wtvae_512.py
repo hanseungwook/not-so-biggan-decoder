@@ -68,6 +68,7 @@ if __name__ == "__main__":
             
             for data in sample_loader:
                 z_sample1 = torch.randn(data.shape[0], args.z_dim).to(device)
+                x = data.clone().detach()
 
                 z, mu_wt, logvar_wt, m1_idx, m2_idx = wt_model.encode(data.to(device))
                 y = wt_model.decode(z, m1_idx, m2_idx)
@@ -75,11 +76,16 @@ if __name__ == "__main__":
 
                 y_padded = zero_pad(y, target_dim=512, device=device)
                 y_sample_padded = zero_pad(y_sample, target_dim=512, device=device)
+
+                
+                x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), wt_model.filters, levels=2)
+                x_wt = x_wt.reshape(x.shape)
+                x_wt = x_wt[:, :, :128, :128]
                 
                 save_image(y_padded.cpu(), img_output_dir + '/sample_padded_y{}.png'.format(epoch))
                 save_image(y.cpu(), img_output_dir + '/sample_recon_y{}.png'.format(epoch))
                 save_image(y_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
-                save_image(data.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
+                save_image(x_wt.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
     
         torch.save(wt_model.state_dict(), model_dir + '/wtvae_epoch{}.pth'.format(epoch))
     
