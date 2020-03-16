@@ -121,6 +121,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
 
 def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args):
     # toggle model to train mode
+    full_model.train()
     full_model.wt_model.train()
     full_model.iwt_model.train()
     train_loss = 0
@@ -135,7 +136,6 @@ def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args
         
         train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
         train_loss += loss
-        
         
         # Calculating and printing gradient norm
         total_norm = 0
