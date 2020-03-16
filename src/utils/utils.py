@@ -5,10 +5,11 @@ import random
 
 # Zeroing out all other patches than the first for WT image: 4D: B * C * H * W
 def zero_patches(img, num_wt):
+    padded = torch.zeros(img.shape)
     patch_dim = img.shape[2] // np.power(2, num_wt)
-    img[:,:,patch_dim:,patch_dim:].fill_(0)
+    padded[:, :, :patch_dim, :patch_dim] = img[:, :, :patch_dim, :patch_dim]
     
-    return img
+    return padded
 
 # Create padding on patch so that this patch is formed into a square image with other patches as 0
 # 3 x 128 x 128 => 3 x target_dim x target_dim
