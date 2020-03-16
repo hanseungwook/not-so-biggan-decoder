@@ -2,14 +2,12 @@ import os, sys
 import torch
 import numpy as np
 from utils.utils import zero_patches
-from torch.utils.tensorboard import SummaryWriter
 import logging
 
 log_idx = 0
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
 
-def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
-    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs'))
+def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, writer):
     # toggle model to train mode
     model.train()
     train_loss = 0
@@ -25,12 +23,20 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
         loss, loss_bce, loss_kld = model.loss_function(data, wt_data, mu, logvar)
         loss.backward()
 
+        # Calculating and printing gradient norm
+        total_norm = 0
+        for p in model.parameters():
+            param_norm = p.grad.data.norm(2)
+            total_norm += param_norm.item() ** 2
+        total_norm = total_norm ** (1. / 2)
+
         global log_idx
         writer.add_scalar('Loss/total', loss, log_idx)
         writer.add_scalar('Loss/bce', loss_bce, log_idx)
         writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        writer.add_scalar('Gradient_norm', total_norm, log_idx)
         log_idx += 1 
-        
+
         train_losses.append((loss.item(), loss_bce, loss_kld))
         train_loss += loss
         optimizer.step()
@@ -43,7 +49,6 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args):
             n = min(data.size(0), 8)
             
     writer.flush()
-    writer.close()
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
 def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args):

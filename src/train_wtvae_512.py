@@ -2,6 +2,7 @@ import os, sys
 import torch
 from torch import optim
 from torch.utils.data import DataLoader, Subset
+from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import save_image
 import numpy as np
 from vae_models import WTVAE_512, WTVAE_512_1, wt
@@ -19,14 +20,17 @@ if __name__ == "__main__":
     # Accelerate training since fixed input sizes
     torch.backends.cudnn.benchmark = True 
 
+    # Setting up logger and writer
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
     LOGGER = logging.getLogger(__name__)
+    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs'))
 
     args = args_parse()
 
     # Set seed
     set_seed(args.seed)
 
+    # Create training and sample dataset (to test out model and save images for)
     dataset_dir = os.path.join(args.root_dir, 'data/celebaHQ512')
     dataset_files = sample(os.listdir(dataset_dir), 10000)
     train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
@@ -42,6 +46,7 @@ if __name__ == "__main__":
     # Setting up WT & IWT filters
     filters = create_filters(device=device)
 
+    # Create model, set filters for WT (calculating loss), and set device
     wt_model = WTVAE_512_1(z_dim=args.z_dim, num_wt=args.num_iwt)
     wt_model = wt_model.to(device)
     wt_model.set_filters(filters)
@@ -50,6 +55,7 @@ if __name__ == "__main__":
     train_losses = []
     optimizer = optim.Adam(wt_model.parameters(), lr=args.lr)
 
+    # Create output directories
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/wtvae512_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/wtvae512_{}/'.format(args.config))
 
@@ -60,8 +66,9 @@ if __name__ == "__main__":
         LOGGER.error('Could not make model & img output directories')
         raise Exception('Could not make model & img output directories')
     
+    
     for epoch in range(1, args.epochs + 1):
-        train_wtvae(epoch, wt_model, optimizer, train_loader, train_losses, args)
+        train_wtvae(epoch, wt_model, optimizer, train_loader, train_losses, args, writer)
         
         with torch.no_grad():
             wt_model.eval()
@@ -96,6 +103,7 @@ if __name__ == "__main__":
     np.save(model_dir+'/train_losses.npy', train_losses)
     save_plot(train_losses, img_output_dir + '/train_loss.png')
     
+    writer.close()
     LOGGER.info('WT Model parameters: {}'.format(sum(x.numel() for x in wt_model.parameters())))
 
     
