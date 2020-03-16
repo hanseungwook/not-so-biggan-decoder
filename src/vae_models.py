@@ -759,7 +759,7 @@ class WTVAE_512_1(nn.Module):
         # Loss btw original WT 1st patch & reconstructed 1st patch
         BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
 
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.0001
         KLD /= x.shape[0] * 3 * 128 * 128
 
         return BCE + KLD, BCE, KLD
