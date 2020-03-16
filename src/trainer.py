@@ -137,7 +137,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
 
 #     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
-def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args):
+def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args, writer):
     # toggle model to train mode
     full_model.train()
     full_model.wt_model.train()

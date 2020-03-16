@@ -2,6 +2,7 @@ import os, sys
 import torch
 from torch import optim
 from torch.utils.data import DataLoader, Subset
+from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import save_image
 import numpy as np
 from vae_models import WTVAE_512, IWTVAE_512_Mask, FullVAE_512
@@ -24,6 +25,9 @@ if __name__ == "__main__":
 
     args = args_parse()
 
+    # Setting up tensorboard writer
+    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs'))
+
     # Set seed
     set_seed(args.seed)
 
@@ -45,17 +49,18 @@ if __name__ == "__main__":
 
     wt_model = WTVAE_512(z_dim=args.z_dim, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
+    iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
+    iwt_model.set_filters(inv_filters)
     
     # If given saved model, load and freeze model
     if args.iwt_model:
-        iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
         iwt_model.load_state_dict(torch.load(args.iwt_model))
-        iwt_model.set_filters(inv_filters)
         for param in iwt_model.parameters():
             param.requires_grad = False
-    else:
-        iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
-        iwt_model.set_filters(inv_filters)
+    elif args.wt_model:
+        wt_model.load_state_dict(torch.load(args.wt_model))
+        for param in iwt_model.parameters():
+            param.requires_grad = False
             
     full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
     
@@ -63,6 +68,8 @@ if __name__ == "__main__":
 
     if args.iwt_model:
         optimizer = optim.Adam(wt_model.parameters(), lr=args.lr)
+    elif args.wt_model:
+        optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
     else: 
         optimizer = optim.Adam(list(wt_model.parameters()) + list(iwt_model.parameters()), lr=args.lr)
 
