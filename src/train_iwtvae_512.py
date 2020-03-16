@@ -71,9 +71,9 @@ if __name__ == "__main__":
                 
                 Y = wt_model(data1)[0]
                 if args.zero:
-                    padded = torch.zeros(img.shape)
-                    patch_dim = img.shape[2] // np.power(2, num_wt)
-                    padded[:, :, :patch_dim, :patch_dim] = img[:, :, :patch_dim, :patch_dim]
+                    padded = torch.zeros(Y.shape)
+                    patch_dim = Y.shape[2] // np.power(2, args.num_iwt)
+                    padded[:, :, :patch_dim, :patch_dim] = Y[:, :, :patch_dim, :patch_dim]
                     Y = padded
                 Y = Y.to(devices[0])
 
