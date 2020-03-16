@@ -71,35 +71,33 @@ if __name__ == "__main__":
         LOGGER.error('Could not make model & img output directories')
         raise Exception('Could not make model & img output directories')
             
-        with torch.no_grad():
-            full_model.eval()
-            full_model.wt_model.eval()
-            full_model.iwt_model.eval()
+    with torch.no_grad():
+        full_model.eval()
+        full_model.wt_model.eval()
+        full_model.iwt_model.eval()
+        
+        for data in sample_loader:
+            z_sample1 = torch.randn(data.shape[0], args.z_dim).to(devices[0])
+            z_sample2 = torch.randn(data.shape[0], args.z_dim).to(devices[1])
             
-            for data in sample_loader:
-                z_sample1 = torch.randn(data.shape[0], args.z_dim).to(devices[0])
-                z_sample2 = torch.randn(data.shape[0], args.z_dim).to(devices[1])
-                
-                z, mu_wt, logvar_wt = full_model.wt_model.encode(data.to(devices[0]))
-                y = full_model.wt_model.decode(z)
-                y_sample = full_model.wt_model.decode(z_sample1)
+            z, mu_wt, logvar_wt = full_model.wt_model.encode(data.to(devices[0]))
+            y = full_model.wt_model.decode(z)
+            y_sample = full_model.wt_model.decode(z_sample1)
 
-                y_padded = zero_pad(y, target_dim=512, device=devices[1])
-                y_sample_padded = zero_pad(y_sample, target_dim=512, device=devices[1])
-                
-                mu, var, m1_idx, m2_idx = full_model.iwt_model.encode(data.to(devices[1]), y_padded)
-                x_hat = iwt_model.decode(y_padded, mu, m1_idx, m2_idx)
-                x_sample = iwt_model.decode(y_padded, z_sample2, m1_idx, m2_idx)
-                x_sample_y_sample = iwt_model.decode(y_sample_padded, z_sample2, m1_idx, m2_idx)
+            y_padded = zero_pad(y, target_dim=512, device=devices[1])
+            y_sample_padded = zero_pad(y_sample, target_dim=512, device=devices[1])
+            
+            mu, var, m1_idx, m2_idx = full_model.iwt_model.encode(data.to(devices[1]), y_padded)
+            x_hat = iwt_model.decode(y_padded, mu, m1_idx, m2_idx)
+            x_sample = iwt_model.decode(y_padded, z_sample2, m1_idx, m2_idx)
+            x_sample_y_sample = iwt_model.decode(y_sample_padded, z_sample2, m1_idx, m2_idx)
 
-                save_image(x_hat.cpu(), img_output_dir + '/sample_recon_x{}.png'.format(epoch))
-                save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
-                save_image(x_sample_y_sample.cpu(), img_output_dir + '/sample_z_both{}.png'.format(epoch))
-                save_image(y.cpu(), img_output_dir + '/sample_recon_y{}.png'.format(epoch))
-                save_image(y_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
-                save_image(data.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
-    
-        torch.save(iwt_model.state_dict(), model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
+            save_image(x_hat.cpu(), img_output_dir + '/sample_recon_x.png')
+            save_image(x_sample.cpu(), img_output_dir + '/sample_z.png')
+            save_image(x_sample_y_sample.cpu(), img_output_dir + '/sample_z_both.png')
+            save_image(y.cpu(), img_output_dir + '/sample_recon_y.png')
+            save_image(y_sample.cpu(), img_output_dir + '/sample_y.png')
+            save_image(data.cpu(), img_output_dir + '/sample.png')
     
     LOGGER.info('Full Model parameters: {}'.format(sum(x.numel() for x in full_model.wt_model.parameters()) + sum(x.numel() for x in full_model.iwt_model.parameters())))
 
