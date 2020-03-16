@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import random
+import pywt
 
 # Zeroing out all other patches than the first for WT image: 4D: B * C * H * W
 def zero_patches(img, num_wt):
@@ -62,3 +63,29 @@ def save_plot(data, save_file):
     plt.xlabel('Iterations')
     plt.title('Train Loss')
     plt.savefig(save_file)
+
+def create_filters(device):
+    w = pywt.Wavelet('bior2.2')
+
+    dec_hi = torch.Tensor(w.dec_hi[::-1]).to(device)
+    dec_lo = torch.Tensor(w.dec_lo[::-1]).to(device)
+
+    filters = torch.stack([dec_lo.unsqueeze(0)*dec_lo.unsqueeze(1),
+                           dec_lo.unsqueeze(0)*dec_hi.unsqueeze(1),
+                           dec_hi.unsqueeze(0)*dec_lo.unsqueeze(1),
+                           dec_hi.unsqueeze(0)*dec_hi.unsqueeze(1)], dim=0)
+
+    return filters
+
+def create_inv_filters(device):
+    w = pywt.Wavelet('bior2.2')
+
+    rec_hi = torch.Tensor(w.rec_hi).to(devices)
+    rec_lo = torch.Tensor(w.rec_lo).to(devices)
+    
+    inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
+                               rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
+                               rec_hi.unsqueeze(0)*rec_lo.unsqueeze(1),
+                               rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
+     
+    return inv_filters

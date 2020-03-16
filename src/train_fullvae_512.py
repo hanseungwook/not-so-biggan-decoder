@@ -8,7 +8,7 @@ from vae_models import WTVAE_512, IWTVAE_512_Mask, FullVAE_512
 from wt_datasets import CelebaDataset
 from trainer import train_fullvae
 from arguments import args_parse
-from utils.utils import set_seed, save_plot, zero_pad
+from utils.utils import set_seed, save_plot, zero_pad, create_filters, create_inv_filters
 import matplotlib.pyplot as plt
 import logging
 import pywt
@@ -39,19 +39,9 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
-    # Setting up WT filters
-    w = pywt.Wavelet('bior2.2')
-
-    dec_hi = torch.Tensor(w.dec_hi[::-1]).to(devices[0])
-    dec_lo = torch.Tensor(w.dec_lo[::-1]).to(devices[0])
-    rec_hi = torch.Tensor(w.rec_hi).to(devices[0])
-    rec_lo = torch.Tensor(w.rec_lo).to(devices[0])
-
-    filters = torch.stack([dec_lo.unsqueeze(0)*dec_lo.unsqueeze(1),
-                       dec_lo.unsqueeze(0)*dec_hi.unsqueeze(1),
-                       dec_hi.unsqueeze(0)*dec_lo.unsqueeze(1),
-                       dec_hi.unsqueeze(0)*dec_hi.unsqueeze(1)], dim=0)
-
+    # Setting up WT & IWT filters
+    filters = create_filters(device=devices[0])
+    inv_filters = create_inv_filters(device=devices[1])
 
     wt_model = WTVAE_512(z_dim=100, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
@@ -60,8 +50,12 @@ if __name__ == "__main__":
     if args.iwt_model:
         iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
         iwt_model.load_state_dict(torch.load(args.iwt_model))
+        iwt_model.set_filters(inv_filters)
         for param in iwt_model.parameters():
             param.requires_grad = False
+    else:
+        iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
+        iwt_model.set_filters(inv_filters)
             
     full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
     

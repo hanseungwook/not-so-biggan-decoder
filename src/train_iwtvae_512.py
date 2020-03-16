@@ -8,7 +8,7 @@ from vae_models import WTVAE_64, IWTVAE_512_Mask, WT
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
-from utils.utils import zero_patches, set_seed, save_plot
+from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters
 import matplotlib.pyplot as plt
 import logging
 import pywt
@@ -39,12 +39,15 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
+    inv_filters = create_inv_filters(device=devices[0])
+
     wt_model = WT(num_wt=args.num_iwt, device=devices[1])
     wt_model = wt_model.to(devices[1])
 
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
-    iwt_model = iwt_model.to(devices[0])
+    iwt_model.set_filters(inv_filters)
     iwt_model.set_device(devices[0])
+    iwt_model = iwt_model.to(devices[0])
     
     train_losses = []
     optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)

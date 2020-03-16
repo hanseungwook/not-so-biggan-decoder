@@ -124,6 +124,21 @@ class WT(nn.Module):
 
         return (input, )
 
+class IWT(nn.Module):
+    def __init__(self, inv_filters):
+        super(IWT, self).__init__()
+
+        self.inv_filters = inv_filters
+
+    def forward(self, input):
+        batch_size = input.shape[0]
+        h = input.shape[2]
+        w = input.shape[3]
+        input = input.view(-1,1,h,w).contiguous().view(-1,h//2,2,w//2).transpose(1,2).contiguous().view(-1,4,h//2,w//2).clone()
+        input = torch.nn.functional.conv_transpose2d(input, Variable(self.inv_filters[:,None]),stride=2)
+        input = input[:,:,2:-2,2:-2] # Remove padding
+        
+        return input.reshape(batch_size, -1, h, w)
 class IWT0(nn.Module):
     def __init__(self):
         super(IWT0, self).__init__()
@@ -1106,8 +1121,7 @@ class IWTVAE_64_Mask(nn.Module):
         
         return x_hat, mu, var
         
-    def loss_function(self, x, x_hat, mu, var) -> Variable:
-        
+    def loss_function(self, x, x_hat, mu, var) -> Variable:        
         # Loss btw reconstructed img and original img
         BCE = F.mse_loss(x_hat.view(-1), x.view(-1))
         
@@ -1187,7 +1201,7 @@ class IWTVAE_512_Mask(nn.Module):
         weights_init(self.d4)
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=3, affine=False)
         
-        self.iwt = IWT0()
+        self.iwt = None
     
       
     def encode(self, x, y):
@@ -1266,6 +1280,10 @@ class IWTVAE_512_Mask(nn.Module):
         self.device = device
         if 'cuda' in self.device:
             self.cuda = True
+    
+    def set_filters(self, filters):
+        self.filters = filters
+        self.iwt = IWT(filters)
 
 class FullVAE_512(nn.Module):
     def __init__(self, wt_model, iwt_model, devices):
