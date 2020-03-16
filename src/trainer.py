@@ -37,6 +37,9 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, write
         writer.add_scalar('Gradient_norm', total_norm, log_idx)
         log_idx += 1 
 
+        # Gradient clipping
+        torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=2, norm_type=2)
+
         train_losses.append((loss.item(), loss_bce, loss_kld))
         train_loss += loss
         optimizer.step()
