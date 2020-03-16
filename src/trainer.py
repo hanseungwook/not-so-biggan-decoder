@@ -53,11 +53,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         
         # Zeroing out all other patches, if given zero arg
         if args.zero:
-            print('Zeroing out other patches during training')
-            padded = torch.zeros(Y.shape)
-            patch_dim = Y.shape[2] // np.power(2, args.num_iwt)
-            padded[:, :, :patch_dim, :patch_dim] = Y[:, :, :patch_dim, :patch_dim]
-            Y = padded
+            Y = zero_patches(Y, num_wt=args.num_iwt)
 
         x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.device))
         
