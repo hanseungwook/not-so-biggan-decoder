@@ -87,5 +87,5 @@ def create_inv_filters(device):
                                rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
                                rec_hi.unsqueeze(0)*rec_lo.unsqueeze(1),
                                rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
-     
+
     return inv_filters
