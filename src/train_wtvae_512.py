@@ -43,6 +43,7 @@ if __name__ == "__main__":
     filters = create_filters(device=device)
 
     wt_model = WTVAE_512(z_dim=args.z_dim, num_wt=args.num_iwt)
+    wt_model = wt_model.to(device)
     wt_model.set_filters(filters)
     wt_model.set_device(device)
     
