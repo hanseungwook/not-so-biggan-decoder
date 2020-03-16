@@ -68,7 +68,7 @@ if __name__ == "__main__":
             
             for data in sample_loader:
                 z_sample1 = torch.randn(data.shape[0], args.z_dim).to(device)
-                x = data.clone().detach()
+                x = data.clone().detach().to(device)
 
                 # z, mu_wt, logvar_wt, m1_idx, m2_idx = wt_model.encode(data.to(device))
                 # y = wt_model.decode(z, m1_idx, m2_idx)
