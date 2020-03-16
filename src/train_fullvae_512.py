@@ -84,7 +84,7 @@ if __name__ == "__main__":
             full_model.iwt_model.eval()
             
             for data in sample_loader:
-                z_sample1 = torch.randn(data.shape[0], 100).to(devices[0])
+                z_sample1 = torch.randn(data.shape[0], args.z_dim).to(devices[0])
                 z_sample2 = torch.randn(data.shape[0], args.z_dim).to(devices[1])
 
                 z, mu_wt, logvar_wt, m1_idx, m2_idx = full_model.wt_model.encode(data.to(devices[0]))
