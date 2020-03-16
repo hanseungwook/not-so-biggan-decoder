@@ -1187,7 +1187,7 @@ class IWTVAE_512_Mask(nn.Module):
         weights_init(self.d4)
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=3, affine=False)
         
-        self.iwt = IWT1()
+        self.iwt = IWT0()
     
       
     def encode(self, x, y):
