@@ -670,9 +670,8 @@ class WTVAE_512_1(nn.Module):
         self.e5 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 16, 16]
         self.instance_norm_e5 = nn.BatchNorm2d(512)
 
-
         self.e6 = nn.Conv2d(512, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 8, 8]
-        self.instance_norm_e5 = nn.BatchNorm2d(512)
+        self.instance_norm_e6 = nn.BatchNorm2d(512)
 
         # Flatten after this maxpool for linear layer
 
