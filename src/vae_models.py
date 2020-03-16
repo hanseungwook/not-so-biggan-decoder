@@ -730,9 +730,9 @@ class WTVAE_512_1(nn.Module):
 
         z, mu, logvar = self.bottleneck(h.reshape(h.shape[0], -1))                  #[b, z_dim]
 
-        return z, mu, logvar, m1_idx, m2_idx
+        return z, mu, logvar
 
-    def decode(self, z, m1_idx, m2_idx):
+    def decode(self, z):
         z = self.fc_dec(z)                                                          #[b, h_dim (512*8*8)]
         z = self.relu(self.instance_norm_d1(self.d1(z.reshape(-1, 512, 8, 8))))     #[b, 512, 16, 16]
         z = self.relu(self.instance_norm_d2(self.d2(z)))                            #[b, 256, 32, 32]
@@ -745,8 +745,8 @@ class WTVAE_512_1(nn.Module):
         return z
 
     def forward(self, x):
-        z, mu, logvar, m1_idx, m2_idx = self.encode(x)
-        z = self.decode(z, m1_idx, m2_idx)
+        z, mu, logvar = self.encode(x)
+        z = self.decode(z)
         return z, mu, logvar
 
     def loss_function(self, x, x_wt_hat, mu, logvar) -> Variable:
