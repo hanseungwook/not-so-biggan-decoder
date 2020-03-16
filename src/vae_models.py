@@ -644,6 +644,135 @@ class WTVAE_512(nn.Module):
         
         self.device = device
 
+# Testing out more of a similar architecture to WTVAE_64
+class WTVAE_512_1(nn.Module):
+    def __init__(self, image_channels=3, h_dim=512*8*8, z_dim=100, num_wt=2):
+        super(WTVAE_512, self).__init__()
+        
+        self.cuda = False
+        self.device = None
+        self.num_wt = num_wt
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.relu = nn.ReLU()
+        
+        self.e1 = nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 32, 256, 256]
+        self.instance_norm_e1 = nn.BatchNorm2d(32)
+
+        self.e2 = nn.Conv2d(32, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 128, 128]
+        self.instance_norm_e2 = nn.BatchNorm2d(64)
+        
+        self.e3 = nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 128, 64, 64]
+        self.instance_norm_e3 = nn.BatchNorm2d(128)
+
+        self.e4 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 32, 32]
+        self.instance_norm_e4 = nn.BatchNorm2d(256)
+
+        self.e5 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 16, 16]
+        self.instance_norm_e5 = nn.BatchNorm2d(512)
+
+
+        self.e6 = nn.Conv2d(512, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 8, 8]
+        self.instance_norm_e5 = nn.BatchNorm2d(512)
+
+        # Flatten after this maxpool for linear layer
+
+        self.fc_mean = nn.Linear(h_dim, z_dim)
+        self.fc_logvar = nn.Linear(h_dim, z_dim)
+        self.fc_dec = nn.Linear(z_dim, h_dim)
+
+        # Unflatten before going through layers of decoder
+
+        self.d1 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True)       #[b, 512, 16, 16]
+        self.instance_norm_d1 = nn.BatchNorm2d(512)
+
+        self.d2 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True)       #[b, 256, 32, 32]
+        self.instance_norm_d2 = nn.BatchNorm2d(256)
+
+        self.d3 = nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True)       #[b, 128, 64, 64]
+        self.instance_norm_d3 = nn.BatchNorm2d(128)
+
+        self.d4 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True)        #[b, 64, 128, 128]
+        self.instance_norm_d4 = nn.BatchNorm2d(64)
+
+        self.d5 = nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, bias=True)         #[b, 32, 256, 256]
+        self.instance_norm_d5 = nn.BatchNorm2d(32)
+
+        self.d6 = nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1, bias=True)          #[b, 3, 512, 512]
+        self.instance_norm_d6 = nn.BatchNorm2d(3)
+        # weights_init(self.d5)
+
+        self.wt = nn.Sequential()
+        for i in range(self.num_wt):
+            self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=4, stride=2, padding=1)) # N * 3 * 128 * 128, when num_wt=2
+            self.wt.add_module('wt{}_in'.format(i), nn.BatchNorm2d(image_channels))
+
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = logvar.mul(0.5).exp_()
+            # return torch.normal(mu, std)
+            esp = torch.randn(*mu.size()).to(self.device)
+            z = mu + std * esp
+            return z
+        else:
+            return mu
+    
+    def bottleneck(self, h):
+        mu, logvar = self.fc_mean(h), self.fc_logvar(h)
+        z = self.reparameterize(mu, logvar)
+        return z, mu, logvar
+
+    def encode(self, x):
+        h = self.relu(self.instance_norm_e1(self.e1(x)))                       #[b, 32, 256, 256]
+        h = self.relu(self.instance_norm_e2(self.e2(h)))                       #[b, 64, 128, 128]
+        h = self.relu(self.instance_norm_e3(self.e3(h)))                       #[b, 128, 64, 64]                                                       
+        h = self.relu(self.instance_norm_e4(self.e4(h)))                       #[b, 256, 32, 32]
+        h = self.relu(self.instance_norm_e5(self.e5(h)))                       #[b, 512, 16, 16]
+        h = self.relu(self.instance_norm_e6(self.e6(h)))                       #[b, 512, 8, 8]
+
+        z, mu, logvar = self.bottleneck(h.reshape(h.shape[0], -1))                  #[b, z_dim]
+
+        return z, mu, logvar, m1_idx, m2_idx
+
+    def decode(self, z, m1_idx, m2_idx):
+        z = self.fc_dec(z)                                                          #[b, h_dim (512*8*8)]
+        z = self.relu(self.instance_norm_d1(self.d1(z.reshape(-1, 512, 8, 8))))     #[b, 512, 16, 16]
+        z = self.relu(self.instance_norm_d2(self.d2(z)))                            #[b, 256, 32, 32]
+        z = self.relu(self.instance_norm_d3(self.d3(z)))                            #[b, 128, 64, 64]
+        z = self.relu(self.instance_norm_d4(self.d4(z)))                            #[b, 64, 128, 128]
+        z = self.relu(self.instance_norm_d5(self.d5(z)))                            #[b, 32, 256, 256]
+        z = self.sigmoid(self.instance_norm_d6(self.d6(z)))                         #[b, 3, 512, 512]
+        z = self.wt(z)                                                              #[b, 3, 128, 128], when num_wt=2
+        
+        return z
+
+    def forward(self, x):
+        z, mu, logvar, m1_idx, m2_idx = self.encode(x)
+        z = self.decode(z, m1_idx, m2_idx)
+        return z, mu, logvar
+
+    def loss_function(self, x, x_wt_hat, mu, logvar) -> Variable:
+        
+        x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), self.filters, levels=2)
+        x_wt = x_wt.reshape(x.shape)
+        x_wt = x_wt[:, :, :128, :128]
+        
+        # Loss btw original WT 1st patch & reconstructed 1st patch
+        BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
+
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
+        KLD /= x.shape[0] * 3 * 128 * 128
+
+        return BCE + KLD, BCE, KLD
+
+    def set_filters(self, filters):
+        self.filters = filters
+    
+    def set_device(self, device):
+        if device != 'cpu':
+            self.cuda = True
+        
+        self.device = device
+
 # IWT VAE for 64 x 64 images
 # Assumes that 2 GPUs available
 class IWTVAE_64(nn.Module):
