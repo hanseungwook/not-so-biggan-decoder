@@ -43,7 +43,7 @@ if __name__ == "__main__":
     filters = create_filters(device=devices[0])
     inv_filters = create_inv_filters(device=devices[1])
 
-    wt_model = WTVAE_512(z_dim=100, num_wt=args.num_iwt)
+    wt_model = WTVAE_512(z_dim=args.z_dim, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
     
     # If given saved model, load and freeze model
