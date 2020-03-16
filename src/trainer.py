@@ -41,8 +41,8 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
     
     for batch_idx, data in enumerate(train_loader):
         
-        data0 = data.to(iwt_model.devices[0])
-        data1 = data.to(iwt_model.devices[1])
+        data0 = data.to(iwt_model.device)
+        data1 = data.to(wt_model.device)
 
         optimizer.zero_grad()
         
@@ -53,20 +53,20 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         if args.zero:
             Y = zero_patches(Y, args.num_iwt)
 
-        x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.devices[0]))
+        x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.device))
         
         loss, loss_bce, loss_kld = iwt_model.loss_function(data0, x_hat, mu, var)
         loss.backward()
 
         # Calculating and printing gradient norm
         total_norm = 0
-        for p in full_model.parameters():
+        for p in iwt_model.parameters():
             param_norm = p.grad.data.norm(2)
             total_norm += param_norm.item() ** 2
         total_norm = total_norm ** (1. / 2)
         logging.info('Gradient Norm: {}'.format(total_norm))
         
-        train_losses.append([loss.item(), loss_bce.item(), loss_kld.item()])
+        train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
         train_loss += loss
         optimizer.step()
         if batch_idx % args.log_interval == 0:
