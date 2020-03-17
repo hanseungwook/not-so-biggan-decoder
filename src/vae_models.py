@@ -785,13 +785,13 @@ class WTVAE_512_2(nn.Module):
         self.sigmoid = nn.Sigmoid()
         
         self.wt = nn.Sequential(
-            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'),  #[b, 32, 256, 256]
+            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 3, 256, 256]
             nn.BatchNorm2d(3),
-            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 128, 128]
+            nn.Conv2d(3, 3, 5, stride=1, padding=2, bias=True, padding_mode='zeros'), #[b, 3, 256, 256]
             nn.BatchNorm2d(3),
-            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 64, 64]
+            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 3, 128, 128]
             nn.BatchNorm2d(3),
-            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 64, 64]
+            nn.Conv2d(3, 3, 5, stride=1, padding=2, bias=True, padding_mode='zeros'), #[b, 3, 128, 128]
             nn.BatchNorm2d(3)
         )
 
