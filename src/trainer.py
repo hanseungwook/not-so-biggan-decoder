@@ -13,7 +13,7 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, write
     train_loss = 0
 
     # Annealing of KL weight
-    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * len(train_loader))
+    anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup * len(train_loader))
 
     for batch_idx, data in enumerate(train_loader):
         
