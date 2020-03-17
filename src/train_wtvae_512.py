@@ -68,10 +68,10 @@ if __name__ == "__main__":
         LOGGER.error('Could not make model & img output directories')
         raise Exception('Could not make model & img output directories')
 
+    # Setting current kl weight to start weight
+    args.kl_weight = args.kl_start
+    
     for epoch in range(1, args.epochs + 1):
-        # Setting current kl weight to start weight
-        args.kl_weight = args.kl_start
-
         train_wtvae(epoch, wt_model, optimizer, train_loader, train_losses, args, writer)
         
         with torch.no_grad():
