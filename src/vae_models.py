@@ -851,7 +851,7 @@ class WTVAE_512_2(nn.Module):
 
     def decode(self, z):
         z = self.fc_dec(z)                                                          #[b, h_dim (128*32*32)]
-        z = self.decoder(z)                                                         #[b, 3, 512, 512]
+        z = self.decoder(z.reshape(-1, 128, 32, 32))                                #[b, 3, 512, 512]
         z = self.wt(z)                                                              #[b, 3, 128, 128], when num_wt=2
         
         return z
