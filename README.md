@@ -12,6 +12,12 @@ python3 train_iwtvae_64.py --epochs=100 --root_dir=/disk_c/han/ --log_interval=1
 ```
 Change `root_dir`, `config`, `unflatten`, `num_wt`, `upsampling`, `reuse`, `zero`, `num_upampling`, and `wtvae_model` as necessary.
 
+Example command for training IWTVAE 512 pipeline (deterministic WT and IWT)
+```{bash}
+python3 train_iwtvae_512.py --root_dir=/disk_c/han/ --batch_size=16 --z_dim=500 --zero --config=dynmask_rest0_freezewtiwt_2wt --num_iwt=2
+```
+
 ## Requirements
 
 Under `requirements.yml` for conda environment setup
+

@@ -23,6 +23,19 @@ def args_parse():
                         help='How many WT in WT VAE')
     parser.add_argument('--z_dim', type=int, default=100,
                         help='Z dimension (whether in WTVAE or IWTVAE)')
+    parser.add_argument('--seed', type=int, default=2020,
+                        help='Random seed')
+    
+    # Arguments for controlling KL weight anneal
+    parser.add_argument('--kl_start', type=float, default=1.0,
+                        help='Starting KL weight')
+    parser.add_argument('--kl_warmup', type=int, default=2,
+                        help='Number of annealing epochs (weight increases from kl_start to 1.0 linearly in the first warm_up epochs)')    
+    parser.add_argument('--kl_weight', type=float, default=1.0,
+                        help='Saving current KL weight as arg') 
+
+    parser.add_argument('--grad_clip', type=float, default=0.0,
+                        help='Max norm to clip the gradient at (>0 in order to do any gradient clipping)') 
 
     # Arguments exclusively for IWTVAE
     parser.add_argument('--upsampling', type=str, default='linear',
@@ -33,12 +46,20 @@ def args_parse():
                         help='Whether to zero out patches other than the first or not')
     parser.add_argument('--num_upsampling', type=int, default=2,
                         help='Number of upsampling layers')
-    parser.add_argument('--wtvae_model', type=str, default='',
+    parser.add_argument('--wt_model', type=str, default='',
                         help='Saved model state for wtvae (for inference during iwtvae training)')
+    parser.add_argument('--iwt_model', type=str, default='',
+                        help='Saved model state for iwtvae (for training wtvae with iwtvae frozen for full pipeline)')
     parser.add_argument('--mask', action='store_true', default=False,
                         help='Whether to learn z as mask or not')  
     parser.add_argument('--bottleneck_dim', type=int, default=0,
-                        help='Bottleneck dim for Y bottleneck (>0 to use this model)')            
+                        help='Bottleneck dim for Y bottleneck (>0 to use this model)')    
+    parser.add_argument('--freeze_iwt', action='store_true', default=False,
+                        help='Whether to train model with frozen IWT')       
+    parser.add_argument('--num_iwt', type=int, default=2,
+                        help='Number of times to apply deterministic IWT')
+    
+
 
     args = parser.parse_args()
 

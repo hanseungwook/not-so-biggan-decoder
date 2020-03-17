@@ -8,7 +8,6 @@ from vae_models import WTVAE_64, iwt
 from wt_datasets import CelebaDataset
 from trainer import train_wtvae
 from arguments import args_parse
-from utils.utils import save_plot
 import logging
 import pywt
 
@@ -29,7 +28,7 @@ if __name__ == "__main__":
     DEVICE = ('cuda:0' if torch.cuda.is_available() else 'cpu')
     logging.info('Device: {}'.format(DEVICE))
 
-    model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt, unflatten=args.unflatten)
+    model = WTVAE_128(z_dim=args.z_dim, num_wt=args.num_wt, unflatten=args.unflatten)
     model = model.to(DEVICE)
 
     w = pywt.Wavelet('bior2.2')
@@ -76,9 +75,6 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), model_dir + '/wtvae_epoch{}.pth'.format(epoch))
     
     np.save(model_dir+'/train_losses.npy', train_losses)
-    save_plot(train_losses, img_output_dir + '/train_loss.png')
-
-    LOGGER.info('Model parameters: {}'.format(sum(x.numel() for x in model.parameters())))
     
     
     

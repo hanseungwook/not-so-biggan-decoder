@@ -4,11 +4,11 @@ from torch import optim
 from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import WTVAE_64, IWTVAE_64, IWTVAE_64_Mask, IWTVAE_64_Bottleneck, IWTVAE_64_FreezeIWT
+from vae_models import WTVAE_64, IWTVAE_512_Mask, WT
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
-from utils.utils import zero_patches, set_seed, save_plot
+from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters
 import matplotlib.pyplot as plt
 import logging
 import pywt
@@ -27,8 +27,9 @@ if __name__ == "__main__":
     # Set seed
     set_seed(args.seed)
 
-    dataset_dir = os.path.join(args.root_dir, 'celeba64')
-    train_dataset = CelebaDataset(dataset_dir, os.listdir(dataset_dir), WT=False)
+    dataset_dir = os.path.join(args.root_dir, 'data/celebaHQ512')
+    dataset_files = sample(os.listdir(dataset_dir), 10000)
+    train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
     sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
@@ -38,36 +39,21 @@ if __name__ == "__main__":
     else: 
         devices = ['cpu', 'cpu']
 
-    if args.mask:
-        iwt_model = IWTVAE_64_Mask(z_dim=args.z_dim, num_upsampling=args.num_upsampling, reuse=args.reuse)
-        LOGGER.info('Running mask model')
-    elif args.bottleneck_dim > 0:
-        iwt_model = IWTVAE_64_Bottleneck(z_dim=args.z_dim, bottleneck_dim=args.bottleneck_dim)
-        LOGGER.info('Running bottleneck model with dim = {}'.format(args.bottleneck_dim))
-    elif args.freeze_iwt:
-        iwt_model = IWTVAE_64_FreezeIWT(z_dim=args.z_dim, bottleneck_dim=args.bottleneck_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
-        LOGGER.info('Running freeze IWT model with upsampling = {}'.format(args.upsampling))
-    else:
-        iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
-        LOGGER.info('Running original model with upsampling = {}'.format(args.upsampling))
-    
-    if args.zero:
-        LOGGER.info('Zero-ing out all patches other than 1st')
+    inv_filters = create_inv_filters(device=devices[0])
 
+    wt_model = WT(num_wt=args.num_iwt, device=devices[1])
+    wt_model = wt_model.to(devices[1])
+
+    iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
+    iwt_model.set_filters(inv_filters)
+    iwt_model.set_device(devices[0])
     iwt_model = iwt_model.to(devices[0])
-    iwt_model.set_devices(devices)
-
-    wt_model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt, unflatten=args.unflatten)
-    wt_model.load_state_dict(torch.load(args.wt_model))
-    wt_model.set_device(devices[1])
-    wt_model.to(devices[1])
-    wt_model.eval()
     
     train_losses = []
     optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
 
-    img_output_dir = os.path.join(args.root_dir, 'image_samples/iwtvae64_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'models/iwtvae64_{}/'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtvae512_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae512_{}/'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
@@ -86,16 +72,16 @@ if __name__ == "__main__":
                 data0 = data.to(devices[0])
                 data1 = data.to(devices[1])
                 
-                z_sample = torch.randn(data.shape[0],100).to(devices[0])
-                
                 Y = wt_model(data1)[0]
                 if args.zero:
-                    Y = zero_patches(Y)
+                    Y = zero_patches(Y, num_wt=args.num_iwt)
                 Y = Y.to(devices[0])
+
+                z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
-                mu, var = iwt_model.encode(data0, Y)
-                x_hat = iwt_model.decode(Y, mu)
-                x_sample = iwt_model.decode(Y, z_sample)
+                mu, var, m1_idx, m2_idx = iwt_model.encode(data0, Y)
+                x_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
+                x_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
 
                 save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
                 save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
@@ -106,7 +92,9 @@ if __name__ == "__main__":
     
     # Save train losses and plot
     np.save(model_dir+'/train_losses.npy', train_losses)
-    save_plot(train_losses, img_output_dir + '/train_loss.png')
+    save_plot([x[0] for x in train_losses], img_output_dir + '/train_loss_total.png')
+    save_plot([x[1] for x in train_losses], img_output_dir + '/train_loss_bce.png')
+    save_plot([x[2] for x in train_losses], img_output_dir + '/train_loss_kld.png')
     
     LOGGER.info('IWT Model parameters: {}'.format(sum(x.numel() for x in iwt_model.parameters())))
 
