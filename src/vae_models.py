@@ -645,8 +645,8 @@ class WTVAE_512(nn.Module):
         self.device = device
 
 # Testing out more of a similar architecture to WTVAE_64
-class WTCNN_512(nn.Module):
-    def __init__(self, image_channels=3):
+class WTVAE_512_1(nn.Module):
+    def __init__(self, image_channels=3, h_dim=512*8*8, z_dim=100, num_wt=2):
         super(WTVAE_512_1, self).__init__()
         
         self.cuda = False
