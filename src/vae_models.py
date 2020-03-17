@@ -810,16 +810,16 @@ class WTVAE_512_2(nn.Module):
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(128, 128, 4, stride=2, padding=1, bias=True),      #[b, 128, 64, 64]
             nn.BatchNorm2d(128),
-            self.relu(),
+            self.relu,
             nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True),       #[b, 64, 128, 128]
             nn.BatchNorm2d(64),
-            self.relu(),
+            self.relu,
             nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, bias=True),        #[b, 32, 256, 256]
             nn.BatchNorm2d(32),
-            self.relu(),
+            self.relu,
             nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1, bias=True),          #[b, 3, 512, 512]
             nn.BatchNorm2d(3),
-            self.sigmoid()
+            self.sigmoid
         )
 
         self.wt = nn.Sequential()
