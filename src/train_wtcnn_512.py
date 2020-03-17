@@ -82,7 +82,7 @@ if __name__ == "__main__":
                 x_wt = x_wt.reshape(x.shape)
                 x_wt = x_wt[:, :, :128, :128]
                 
-                save_image(wt_data.cpu(), img_output_dir + '/sample_recon_y{}.png'.format(epoch)))
+                save_image(wt_data.cpu(), img_output_dir + '/sample_recon_y{}.png'.format(epoch))
                 save_image(x_wt.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
     
         torch.save(wt_model.state_dict(), model_dir + '/wtvae_epoch{}.pth'.format(epoch))
