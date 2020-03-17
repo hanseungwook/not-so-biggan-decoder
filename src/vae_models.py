@@ -773,6 +773,117 @@ class WTVAE_512_1(nn.Module):
         
         self.device = device
 
+# Version 2: with 4 layers in each encoder + decoder
+class WTVAE_512_2(nn.Module):
+    def __init__(self, image_channels=3, h_dim=128*32*32, z_dim=100, num_wt=2):
+        super(WTVAE_512_2, self).__init__()
+        
+        self.cuda = False
+        self.device = None
+        self.num_wt = num_wt
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 32, 256, 256]
+            nn.BatchNorm2d(32),
+            self.relu(),
+            nn.Conv2d(32, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 128, 128]
+            nn.BatchNorm2d(64),
+            self.relu(),
+            nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 64, 64]
+            nn.BatchNorm2d(128),
+            self.relu(),
+            nn.Conv2d(128, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 32, 32]
+            nn.BatchNorm2d(128),
+            self.relu()
+        )
+
+        # Flatten after this maxpool for linear layer
+
+        self.fc_mean = nn.Linear(h_dim, z_dim)
+        self.fc_logvar = nn.Linear(h_dim, z_dim)
+        self.fc_dec = nn.Linear(z_dim, h_dim)
+
+        # Unflatten before going through layers of decoder
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(128, 128, 4, stride=2, padding=1, bias=True),      #[b, 128, 64, 64]
+            nn.BatchNorm2d(128),
+            self.relu(),
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True),       #[b, 64, 128, 128]
+            nn.BatchNorm2d(64),
+            self.relu(),
+            nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, bias=True),        #[b, 32, 256, 256]
+            nn.BatchNorm2d(32),
+            self.relu(),
+            nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1, bias=True),          #[b, 3, 512, 512]
+            nn.BatchNorm2d(3),
+            self.sigmoid()
+        )
+
+        self.wt = nn.Sequential()
+        for i in range(self.num_wt):
+            self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=4, stride=2, padding=1)) # N * 3 * 128 * 128, when num_wt=2
+            self.wt.add_module('wt{}_in'.format(i), nn.BatchNorm2d(image_channels))
+
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = logvar.mul(0.5).exp_()
+            # return torch.normal(mu, std)
+            esp = torch.randn(*mu.size()).to(self.device)
+            z = mu + std * esp
+            return z
+        else:
+            return mu
+    
+    def bottleneck(self, h):
+        mu, logvar = self.fc_mean(h), self.fc_logvar(h)
+        z = self.reparameterize(mu, logvar)
+        return z, mu, logvar
+
+    def encode(self, x):
+        h = self.encoder(x)                                                         #[b, 128, 32, 32]
+
+        z, mu, logvar = self.bottleneck(h.reshape(h.shape[0], -1))                  #[b, z_dim]
+
+        return z, mu, logvar
+
+    def decode(self, z):
+        z = self.fc_dec(z)                                                          #[b, h_dim (128*32*32)]
+        z = self.decoder(z)                                                         #[b, 3, 512, 512]
+        z = self.wt(z)                                                              #[b, 3, 128, 128], when num_wt=2
+        
+        return z
+
+    def forward(self, x):
+        z, mu, logvar = self.encode(x)
+        z = self.decode(z)
+        return z, mu, logvar
+
+    def loss_function(self, x, x_wt_hat, mu, logvar, kl_weight=1.0) -> Variable:
+        
+        x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), self.filters, levels=2)
+        x_wt = x_wt.reshape(x.shape)
+        x_wt = x_wt[:, :, :128, :128]
+        
+        # Loss btw original WT 1st patch & reconstructed 1st patch
+        BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
+
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
+        KLD /= x.shape[0] * 3 * 512 * 512
+
+        return BCE + KLD, BCE, KLD
+
+    def set_filters(self, filters):
+        self.filters = filters
+    
+    def set_device(self, device):
+        if device != 'cpu':
+            self.cuda = True
+        
+        self.device = device
+
 # Simple 4 layer CNN
 class WTCNN_512(nn.Module):
     def __init__(self, image_channels=3, h_dim=512*8*8, z_dim=100, num_wt=2):
