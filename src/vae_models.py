@@ -788,16 +788,16 @@ class WTVAE_512_2(nn.Module):
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 32, 256, 256]
             nn.BatchNorm2d(32),
-            self.relu(),
+            self.relu,
             nn.Conv2d(32, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 128, 128]
             nn.BatchNorm2d(64),
-            self.relu(),
+            self.relu,
             nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 64, 64]
             nn.BatchNorm2d(128),
-            self.relu(),
+            self.relu,
             nn.Conv2d(128, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 32, 32]
             nn.BatchNorm2d(128),
-            self.relu()
+            self.relu
         )
 
         # Flatten after this maxpool for linear layer
