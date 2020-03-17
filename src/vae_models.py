@@ -809,7 +809,7 @@ class WTCNN_512(nn.Module):
         # Loss btw original WT 1st patch & reconstructed 1st patch
         BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
 
-        return BCE, 
+        return BCE
 
     def set_filters(self, filters):
         self.filters = filters
