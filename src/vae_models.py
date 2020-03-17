@@ -645,8 +645,8 @@ class WTVAE_512(nn.Module):
         self.device = device
 
 # Testing out more of a similar architecture to WTVAE_64
-class WTVAE_512_1(nn.Module):
-    def __init__(self, image_channels=3, h_dim=512*8*8, z_dim=100, num_wt=2):
+class WTCNN_512(nn.Module):
+    def __init__(self, image_channels=3):
         super(WTVAE_512_1, self).__init__()
         
         self.cuda = False
@@ -763,6 +763,53 @@ class WTVAE_512_1(nn.Module):
         KLD /= x.shape[0] * 3 * 512 * 512
 
         return BCE + KLD, BCE, KLD
+
+    def set_filters(self, filters):
+        self.filters = filters
+    
+    def set_device(self, device):
+        if device != 'cpu':
+            self.cuda = True
+        
+        self.device = device
+
+# Simple 4 layer CNN
+class WTVAE_512_2(nn.Module):
+    def __init__(self, image_channels=3, h_dim=512*8*8, z_dim=100, num_wt=2):
+        super(WTVAE_512_1, self).__init__()
+        
+        self.cuda = False
+        self.device = None
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        
+        self.wt = nn.Sequential(
+            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'),  #[b, 32, 256, 256]
+            nn.BatchNorm2d(3),
+            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 128, 128]
+            nn.BatchNorm2d(3),
+            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 64, 64]
+            nn.BatchNorm2d(3),
+            nn.Conv2d(3, 3, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 64, 64]
+            nn.BatchNorm2d(3)
+        )
+
+    def forward(self, x):
+        h = self.wt(x)
+        
+        return h
+
+    def loss_function(self, x, x_wt_hat) -> Variable:
+        
+        x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), self.filters, levels=2)
+        x_wt = x_wt.reshape(x.shape)
+        x_wt = x_wt[:, :, :128, :128]
+        
+        # Loss btw original WT 1st patch & reconstructed 1st patch
+        BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
+
+        return BCE, 
 
     def set_filters(self, filters):
         self.filters = filters
