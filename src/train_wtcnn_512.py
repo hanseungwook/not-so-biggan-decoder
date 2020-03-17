@@ -9,7 +9,7 @@ from vae_models import WTCNN_512, wt
 from wt_datasets import CelebaDataset
 from trainer import train_wtcnn
 from arguments import args_parse
-from .utils.utils import set_seed, save_plot, zero_pad, create_filters, create_inv_filters
+from utils.utils import set_seed, save_plot, zero_pad, create_filters, create_inv_filters
 import matplotlib.pyplot as plt
 import logging
 import pywt
