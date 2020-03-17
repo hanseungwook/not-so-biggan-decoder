@@ -12,15 +12,19 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, write
     model.train()
     train_loss = 0
 
+    # Annealing of KL weight
+    anneal_rate = (1.0 - args.kl_start) / (args.warm_up * len(train_loader))
+
     for batch_idx, data in enumerate(train_loader):
         
         if model.cuda:
             data = data.to(model.device)
 
+        args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
         optimizer.zero_grad()
         
         wt_data, mu, logvar = model(data)
-        loss, loss_bce, loss_kld = model.loss_function(data, wt_data, mu, logvar)
+        loss, loss_bce, loss_kld = model.loss_function(data, wt_data, mu, logvar, kl_weight=args.kl_weight)
         loss.backward()
 
         # Calculating and printing gradient norm
@@ -35,10 +39,12 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, write
         writer.add_scalar('Loss/bce', loss_bce, log_idx)
         writer.add_scalar('Loss/kld', loss_kld, log_idx)
         writer.add_scalar('Gradient_norm', total_norm, log_idx)
+        writer.add_scalar('KL_weight', args.kl_weight, log_idx)
         log_idx += 1 
 
         # Gradient clipping
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=2, norm_type=2)
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip, norm_type=2)
 
         train_losses.append((loss.item(), loss_bce, loss_kld))
         train_loss += loss
@@ -90,7 +96,8 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         train_loss += loss
 
         # Gradient clipping
-        torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=10000, norm_type=2)
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=10000, norm_type=2)
 
         optimizer.step()
         if batch_idx % args.log_interval == 0:
@@ -167,7 +174,8 @@ def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args
         logging.info('Gradient Norm: {}'.format(total_norm))
 
         # Gradient clipping
-        torch.nn.utils.clip_grad_norm_(full_model.parameters(), max_norm=10000, norm_type=2)
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(full_model.parameters(), max_norm=10000, norm_type=2)
 
         optimizer.step()
         if batch_idx % args.log_interval == 0:

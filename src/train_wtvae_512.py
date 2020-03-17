@@ -67,8 +67,7 @@ if __name__ == "__main__":
     except:
         LOGGER.error('Could not make model & img output directories')
         raise Exception('Could not make model & img output directories')
-    
-    
+
     for epoch in range(1, args.epochs + 1):
         train_wtvae(epoch, wt_model, optimizer, train_loader, train_losses, args, writer)
         

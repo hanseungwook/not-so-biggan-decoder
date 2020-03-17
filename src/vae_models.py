@@ -750,7 +750,7 @@ class WTVAE_512_1(nn.Module):
         z = self.decode(z)
         return z, mu, logvar
 
-    def loss_function(self, x, x_wt_hat, mu, logvar) -> Variable:
+    def loss_function(self, x, x_wt_hat, mu, logvar, kl_weight=1.0) -> Variable:
         
         x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), self.filters, levels=2)
         x_wt = x_wt.reshape(x.shape)
@@ -759,7 +759,7 @@ class WTVAE_512_1(nn.Module):
         # Loss btw original WT 1st patch & reconstructed 1st patch
         BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
 
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.0001
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
         KLD /= x.shape[0] * 3 * 512 * 512
 
         return BCE + KLD, BCE, KLD
