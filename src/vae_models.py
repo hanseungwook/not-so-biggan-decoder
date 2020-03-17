@@ -774,7 +774,7 @@ class WTVAE_512_1(nn.Module):
         self.device = device
 
 # Simple 4 layer CNN
-class WTVAE_512_2(nn.Module):
+class WTCNN_512(nn.Module):
     def __init__(self, image_channels=3, h_dim=512*8*8, z_dim=100, num_wt=2):
         super(WTVAE_512_1, self).__init__()
         
