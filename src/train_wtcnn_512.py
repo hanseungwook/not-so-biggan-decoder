@@ -75,7 +75,7 @@ if __name__ == "__main__":
             wt_model.eval()
             
             for data in sample_loader:
-                x = data.clone().detach()
+                x = data.clone().detach().to(device)
                 wt_data = wt_model(data.to(device))
                 
                 x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), wt_model.filters, levels=2)
