@@ -871,7 +871,7 @@ class WTVAE_512_2(nn.Module):
         BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
 
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
-        KLD /= x.shape[0] * 3 * 512 * 512
+        KLD /= x.shape[0]
 
         return BCE + KLD, BCE, KLD
 
