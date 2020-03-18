@@ -70,8 +70,11 @@ if __name__ == "__main__":
 
     # Setting current kl weight to start weight
     args.kl_weight = args.kl_start
+    # Annealing of KL weight
+    anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup)
 
     for epoch in range(1, args.epochs + 1):
+        args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
         train_wtvae(epoch, wt_model, optimizer, train_loader, train_losses, args, writer)
         
         with torch.no_grad():

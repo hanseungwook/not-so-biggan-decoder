@@ -12,15 +12,11 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, write
     model.train()
     train_loss = 0
 
-    # Annealing of KL weight
-    anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup * len(train_loader))
-
     for batch_idx, data in enumerate(train_loader):
         
         if model.cuda:
             data = data.to(model.device)
 
-        args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
         optimizer.zero_grad()
         
         wt_data, mu, logvar = model(data)
