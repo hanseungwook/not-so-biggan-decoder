@@ -27,9 +27,7 @@ def weights_init(m):
         nn.init.constant_(m.bias.data, 0.0)
     elif isinstance(m, nn.Sequential):
         for sub_m in m:
-            nn.init.normal_(sub_m.weight.data, mean=0, std=0.02)
-            nn.init.constant_(sub_m.bias.data, 0.0)
-
+            weights_init(sub_m)
 
 def iwt(vres, inv_filters, levels=1):
     h = vres.size(2)
@@ -800,11 +798,17 @@ class WTVAE_512_2(nn.Module):
             self.relu
         )
 
+        # Initializing weights for encoder conv layers
+        weights_init(self.encoder)
+
         # Flatten after this maxpool for linear layer
 
         self.fc_mean = nn.Linear(h_dim, z_dim)
+        weights_init(self.fc_mean)
         self.fc_logvar = nn.Linear(h_dim, z_dim)
+        weights_init(self.fc_logvar)
         self.fc_dec = nn.Linear(z_dim, h_dim)
+        weights_init(self.fc_dec)
 
         # Unflatten before going through layers of decoder
         self.decoder = nn.Sequential(
@@ -821,6 +825,9 @@ class WTVAE_512_2(nn.Module):
             nn.BatchNorm2d(3),
             self.sigmoid
         )
+
+        # Initializing weights for decoder conv layers
+        weights_init(self.decoder)
 
         self.wt = nn.Sequential()
         for i in range(self.num_wt):
