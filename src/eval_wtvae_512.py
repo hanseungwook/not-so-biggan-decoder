@@ -69,7 +69,7 @@ if __name__ == "__main__":
     with torch.no_grad():
         wt_model.eval()
         
-        for data in train_loader:
+        for batch_idx, data in enumerate(train_loader):
             x = data.clone().detach().to(device)      
             z, mu_wt, logvar_wt = wt_model.encode(data.to(device))
             z_stds.extend(z.std(dim=1).cpu().numpy())
@@ -86,10 +86,17 @@ if __name__ == "__main__":
             x_wt = x_wt.reshape(x.shape)
             x_wt = x_wt[:, :, :128, :128]
             
-            save_image(y_padded.cpu(), img_output_dir + '/sample_padded_y.png')
-            save_image(y.cpu(), img_output_dir + '/sample_recon_y.png')
-            save_image(y_sample.cpu(), img_output_dir + '/sample_y.png')
-            save_image(x_wt.cpu(), img_output_dir + '/sample.png')
+            save_image(y_padded.cpu(), img_output_dir + '/sample_padded_y{}.png'.format(batch_idx))
+            save_image(y.cpu(), img_output_dir + '/sample_recon_y{}.png'.format(batch_idx))
+            save_image(y_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(batch_idx))
+            save_image(x_wt.cpu(), img_output_dir + '/sample{}.png'.format(batch_idx))
+
+            if batch_idx % args.log_interval == 0:
+                logging.info('Evaluation: [{}/{} ({:.0f}%)]'.format(batch_idx * len(data),
+                                                                                len(train_loader.dataset),
+                                                                                100. * batch_idx / len(train_loader))
+                
+                n = min(data.size(0), 8)
         
     # Save train losses and plot
     np.save(model_dir+'/z_stds.npy', z_stds)
