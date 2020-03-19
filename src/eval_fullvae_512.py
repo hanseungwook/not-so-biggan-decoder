@@ -77,10 +77,12 @@ if __name__ == "__main__":
         full_model.iwt_model.eval()
         
         for data in sample_loader:
-            z_sample1 = torch.randn(data.shape[0], args.z_dim).to(devices[0])
-            z_sample2 = torch.randn(data.shape[0], args.z_dim).to(devices[1])
-            
             z, mu_wt, logvar_wt = full_model.wt_model.encode(data.to(devices[0]))
+
+            # Creating z sample for WT model by adding Gaussian noise ~ N(0,1)
+            z_sample1 = z + torch.randn(z.shape).to(devices[0])
+            z_sample2 = torch.randn(data.shape[0], args.z_dim).to(devices[1])
+
             y = full_model.wt_model.decode(z)
             y_sample = full_model.wt_model.decode(z_sample1)
 
