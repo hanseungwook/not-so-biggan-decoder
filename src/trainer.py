@@ -117,7 +117,7 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
                                                                             100. * batch_idx / len(train_loader),
                                                                             loss / len(data)))
             
-            n = min(data.size(0), 8)
+            n = min(data128.size(0), 8)
             
     writer.flush()
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
