@@ -86,13 +86,11 @@ if __name__ == "__main__":
             x_wt = x_wt.reshape(x.shape)
             x_wt = x_wt[:, :, :128, :128]
             
-            save_image(y_padded.cpu(), img_output_dir + '/sample_padded_y{}.png'.format(epoch))
-            save_image(y.cpu(), img_output_dir + '/sample_recon_y{}.png'.format(epoch))
-            save_image(y_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
-            save_image(x_wt.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
+            save_image(y_padded.cpu(), img_output_dir + '/sample_padded_y.png')
+            save_image(y.cpu(), img_output_dir + '/sample_recon_y.png')
+            save_image(y_sample.cpu(), img_output_dir + '/sample_y.png')
+            save_image(x_wt.cpu(), img_output_dir + '/sample.png')
         
-        
-    
     # Save train losses and plot
     np.save(model_dir+'/z_stds.npy', z_stds)
     LOGGER.info('WT Model parameters: {}'.format(sum(x.numel() for x in wt_model.parameters())))
