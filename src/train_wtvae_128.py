@@ -5,8 +5,8 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import WTVAE_512, WTVAE_512_1, WTVAE_512_2, wt
-from wt_datasets import CelebaDataset
+from vae_models import WTVAE_128_1, wt
+from wt_datasets import CelebaDatasetPair
 from trainer import train_wtvae
 from arguments import args_parse
 from utils.utils import set_seed, save_plot, zero_pad, create_filters, create_inv_filters
@@ -33,9 +33,10 @@ if __name__ == "__main__":
     set_seed(args.seed)
 
     # Create training and sample dataset (to test out model and save images for)
-    dataset_dir = os.path.join(args.root_dir, 'data/celebaHQ512')
-    dataset_files = sample(os.listdir(dataset_dir), 10000)
-    train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
+    dataset_dir_128 = os.path.join(args.root_dir, 'data/celeba128')
+    dataset_dir_256 = os.path.join(args.root_dir, 'data/celeba256')
+    dataset_files = sample(os.listdir(dataset_dir_256), 10000)
+    train_dataset = CelebaDatasetPair(dataset_dir_128, dataset_dir_256, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
     sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     filters = create_filters(device=device)
 
     # Create model, set filters for WT (calculating loss), and set device
-    wt_model = WTVAE_512_2(z_dim=args.z_dim, num_wt=args.num_iwt)
+    wt_model = WTVAE_128_1(z_dim=args.z_dim, num_wt=args.num_wt)
     wt_model = wt_model.to(device)
     wt_model.set_filters(filters)
     wt_model.set_device(device)
@@ -58,8 +59,8 @@ if __name__ == "__main__":
     optimizer = optim.Adam(wt_model.parameters(), lr=args.lr)
 
     # Create output directories
-    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/wtvae512_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/wtvae512_{}/'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/wtvae128_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/wtvae128_{}/'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
@@ -81,21 +82,23 @@ if __name__ == "__main__":
             wt_model.eval()
             
             for data in sample_loader:
-                z_sample1 = torch.randn(data.shape[0], args.z_dim).to(device)
-                x = data.clone().detach().to(device)
+                data128 = data[0]
+                data256 = data[1]
+                z_sample1 = torch.randn(data128.shape[0], args.z_dim).to(device)
+                x = data256.clone().detach().to(device)
 
                 # z, mu_wt, logvar_wt, m1_idx, m2_idx = wt_model.encode(data.to(device))
                 # y = wt_model.decode(z, m1_idx, m2_idx)
                 # y_sample = wt_model.decode(z_sample1, m1_idx, m2_idx)
                 
-                z, mu_wt, logvar_wt = wt_model.encode(data.to(device))
+                z, mu_wt, logvar_wt = wt_model.encode(data128.to(device))
                 y = wt_model.decode(z)
                 y_sample = wt_model.decode(z_sample1)
 
                 y_padded = zero_pad(y, target_dim=512, device=device)
                 y_sample_padded = zero_pad(y_sample, target_dim=512, device=device)
 
-                x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), wt_model.filters, levels=2)
+                x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), wt_model.filters, levels=1)
                 x_wt = x_wt.reshape(x.shape)
                 x_wt = x_wt[:, :, :128, :128]
                 
