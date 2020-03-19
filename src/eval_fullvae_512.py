@@ -56,7 +56,7 @@ if __name__ == "__main__":
             param.requires_grad = False
 
         wt_model.load_state_dict(torch.load(args.wt_model))
-        for param in iwt_model.parameters():
+        for param in wt_model.parameters():
             param.requires_grad = False
             
     full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
