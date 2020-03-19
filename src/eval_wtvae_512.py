@@ -26,9 +26,6 @@ if __name__ == "__main__":
 
     args = args_parse()
 
-    # Setting up tensorboard writer
-    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs'))
-
     # Set seed
     set_seed(args.seed)
 
@@ -37,8 +34,6 @@ if __name__ == "__main__":
     dataset_files = sample(os.listdir(dataset_dir), 10000)
     train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
-    # sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
-    # sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
     
     if torch.cuda.is_available():
         device = 'cuda:0'
@@ -100,7 +95,6 @@ if __name__ == "__main__":
     
     # Save train losses and plot
     np.save(model_dir+'/z_stds.npy', z_stds)
-    writer.close()
     LOGGER.info('WT Model parameters: {}'.format(sum(x.numel() for x in wt_model.parameters())))
 
     
