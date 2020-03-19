@@ -94,7 +94,7 @@ if __name__ == "__main__":
             if batch_idx % args.log_interval == 0:
                 logging.info('Evaluation: [{}/{} ({:.0f}%)]'.format(batch_idx * len(data),
                                                                                 len(train_loader.dataset),
-                                                                                100. * batch_idx / len(train_loader))
+                                                                                100. * batch_idx / len(train_loader)))
                 
                 n = min(data.size(0), 8)
         
