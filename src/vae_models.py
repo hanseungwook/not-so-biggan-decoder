@@ -496,7 +496,7 @@ class WTVAE_128(nn.Module):
         self.device = device
 
 class WTVAE_128_1(nn.Module):
-    def __init__(self, image_channels=3, h_dim=256*8*8, z_dim=100, num_wt):
+    def __init__(self, image_channels=3, h_dim=256*8*8, z_dim=100, num_wt=2):
         super(WTVAE_128_1, self).__init__()
         
         self.cuda = False
