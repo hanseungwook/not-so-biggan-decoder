@@ -67,8 +67,8 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
     # toggle model to train mode
     model.train()
     train_loss = 0
-    anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup)
-    
+    anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup * len(train_loader))
+
     for batch_idx, data in enumerate(train_loader):
         args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
         data128 = data[0]
