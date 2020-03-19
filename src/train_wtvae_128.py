@@ -7,7 +7,7 @@ from torchvision.utils import save_image
 import numpy as np
 from vae_models import WTVAE_128_1, wt
 from wt_datasets import CelebaDatasetPair
-from trainer import train_wtvae
+from trainer import train_wtvae_128
 from arguments import args_parse
 from utils.utils import set_seed, save_plot, zero_pad, create_filters, create_inv_filters
 import matplotlib.pyplot as plt
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     for epoch in range(1, args.epochs + 1):
         args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
-        train_wtvae(epoch, wt_model, optimizer, train_loader, train_losses, args, writer)
+        train_wtvae_128(epoch, wt_model, optimizer, train_loader, train_losses, args, writer)
         
         with torch.no_grad():
             wt_model.eval()
