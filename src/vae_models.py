@@ -517,7 +517,7 @@ class WTVAE_128_1(nn.Module):
             nn.BatchNorm2d(128),
             self.relu,
             nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 256, 8, 8]
-            nn.BatchNorm2d(128),
+            nn.BatchNorm2d(256),
             self.relu
         )
 
