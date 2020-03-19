@@ -555,6 +555,8 @@ class WTVAE_128_1(nn.Module):
         for i in range(self.num_wt):
             self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=3, stride=1, padding=1)) # N * 3 * 128 * 128, when num_wt=2
             self.wt.add_module('wt{}_in'.format(i), nn.BatchNorm2d(image_channels))
+        
+        weights_init(self.wt)
 
     def reparameterize(self, mu, logvar):
         if self.training:
