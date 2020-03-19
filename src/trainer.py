@@ -112,10 +112,10 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
         train_loss += loss
         optimizer.step()
         if batch_idx % args.log_interval == 0:
-            logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
+            logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data128),
                                                                             len(train_loader.dataset),
                                                                             100. * batch_idx / len(train_loader),
-                                                                            loss / len(data)))
+                                                                            loss / len(data128)))
             
             n = min(data128.size(0), 8)
             
