@@ -36,7 +36,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
     
     if torch.cuda.is_available():
-        device = 'cuda:0'
+        device = 'cuda:1'
     else: 
         device = 'cpu'
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     # Given saved model, load and freeze model
     if args.wt_model:
-        wt_model.load_state_dict(torch.load(args.wt_model))
+        wt_model.load_state_dict(torch.load(args.wt_model, map_location=device))
 
     # Create output directories
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/wtvae512_{}'.format(args.config))
@@ -72,10 +72,10 @@ if __name__ == "__main__":
         for data in train_loader:
             x = data.clone().detach().to(device)      
             z, mu_wt, logvar_wt = wt_model.encode(data.to(device))
-            z_stds.extend(z.std(dim=1).numpy())
+            z_stds.extend(z.std(dim=1).cpu().numpy())
             
             # Add gaussian noise to z
-            z_sample = z + torch.randn(z.shape)
+            z_sample = z + torch.randn(z.shape).to(device)
             y = wt_model.decode(z)
             y_sample = wt_model.decode(z_sample)
 
