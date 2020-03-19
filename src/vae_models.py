@@ -602,7 +602,7 @@ class WTVAE_128_1(nn.Module):
         BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
 
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
-        KLD /= x.shape[0]
+        KLD /= x.shape[0] * 128 * 128
 
         return BCE + KLD, BCE, KLD
 
