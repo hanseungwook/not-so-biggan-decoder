@@ -594,7 +594,7 @@ class WTVAE_128_1(nn.Module):
 
     def loss_function(self, x, x_wt_hat, mu, logvar, kl_weight=1.0) -> Variable:
         
-        x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), self.filters, levels=1)
+        x_wt = wt(x.reshape(x.shape[0] * x.shape[1], 1, x.shape[2], x.shape[3]), self.filters, levels=2)
         x_wt = x_wt.reshape(x.shape)
         x_wt = x_wt[:, :, :128, :128]
         
