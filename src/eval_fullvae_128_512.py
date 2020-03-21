@@ -47,9 +47,9 @@ if __name__ == "__main__":
     filters = create_filters(device=devices[0])
     inv_filters = create_inv_filters(device=devices[1])
 
-    wt_model = WTVAE_128_1(z_dim=args.z_dim, num_wt=args.num_iwt)
+    wt_model = WTVAE_128_1(z_dim=args.z_dim_wt, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
-    iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
+    iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim_iwt, num_iwt=args.num_iwt)
     iwt_model.set_filters(inv_filters)
     
     # Given saved model, load and freeze model
@@ -59,8 +59,8 @@ if __name__ == "__main__":
             
     full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
 
-    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/fullvae512_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/fullvae512_{}/'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/fullvae128512_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/fullvae128512_{}/'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)

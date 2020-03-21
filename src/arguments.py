@@ -58,6 +58,12 @@ def args_parse():
                         help='Whether to train model with frozen IWT')       
     parser.add_argument('--num_iwt', type=int, default=2,
                         help='Number of times to apply deterministic IWT')
+
+    # Arguments for FullVAE
+    parser.add_argument('--z_dim_wt', type=int, default=100,
+                        help='Z dimension for WTVAE model')
+    parser.add_argument('--z_dim_iwt', type=int, default=100,
+                        help='Z dimension for IWTVAE model')
     
 
 
