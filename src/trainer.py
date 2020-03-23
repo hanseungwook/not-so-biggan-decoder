@@ -73,6 +73,7 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
     model.train()
     train_loss = 0
     anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup * len(train_loader))
+    global decoder_outputs
 
     # Register hook onto decoder so that we can compute additional loss on reconstruction of original image (in adddition to patch loss)
     model.decoder.register_forward_hook(get_decoder_output)
@@ -91,6 +92,10 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
         decoder_output = decoder_outputs[-1]
         loss, loss_bce, loss_kld = model.loss_function(data512, data128, wt_data, decoder_output, mu, logvar, kl_weight=args.kl_weight)
         loss.backward()
+        
+        # Clearing saved outputs
+        decoder_outputs.clear()
+
 
         # Calculating and printing gradient norm
         total_norm = 0
