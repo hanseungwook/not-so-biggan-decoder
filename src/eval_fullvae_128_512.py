@@ -99,15 +99,17 @@ if __name__ == "__main__":
             
             x_sample_y_sample = iwt_model.decode(y_sample_padded, z_sample2, m1_idx, m2_idx)
             x_sample_y_sample_gaussian = iwt_model.decode(y_sample_padded_gaussian, z_sample2, m1_idx, m2_idx)
+            x_y_sample_gaussian = iwt_model.decode(y_sample_padded_gaussian, mu, m1_idx, m2_idx)
 
             save_image(x_hat.cpu(), img_output_dir + '/sample_recon_x.png')
             save_image(x_sample.cpu(), img_output_dir + '/sample_z.png')
             save_image(x_sample_y_sample.cpu(), img_output_dir + '/sample_z_both.png')
-            save_image(x_sample_y_sample.cpu(), img_output_dir + '/sample_z_both_gaussian.png')
+            save_image(x_sample_y_sample_gaussian.cpu(), img_output_dir + '/sample_z_both_gaussian.png')
+            save_image(x_y_sample_gaussian.cpu(), img_output_dir + '/sample_z_wt_gaussian.png')
             save_image(y.cpu(), img_output_dir + '/sample_recon_y.png')
             save_image(y_sample.cpu(), img_output_dir + '/sample_y.png')
             save_image(data128.cpu(), img_output_dir + '/sample128.png')
-            save_image(data512.cpu(), img_output_dir + '/sample128.png')
+            save_image(data512.cpu(), img_output_dir + '/sample512.png')
             
     
     LOGGER.info('Full Model parameters: {}'.format(sum(x.numel() for x in full_model.wt_model.parameters()) + sum(x.numel() for x in full_model.iwt_model.parameters())))
