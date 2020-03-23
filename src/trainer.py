@@ -155,7 +155,6 @@ def train_wtvae_128_fixed_wt(epoch, model, optimizer, train_loader, train_losses
         optimizer.zero_grad()
         
         wt_data, mu, logvar = model(data128)
-        decoder_output = decoder_outputs[-1]
         loss, loss_bce, loss_kld = model.loss_function(data512, wt_data, mu, logvar, kl_weight=args.kl_weight)
         loss.backward()
     
