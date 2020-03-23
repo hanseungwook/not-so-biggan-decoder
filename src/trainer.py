@@ -5,7 +5,12 @@ from utils.utils import zero_patches
 import logging
 
 log_idx = 0
+decoder_outputs = []
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
+
+def get_decoder_output(self, input, output):
+    global decoder_outputs
+    decoded_outputs.append(output)
 
 def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, writer):
     # toggle model to train mode
@@ -69,18 +74,22 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
     train_loss = 0
     anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup * len(train_loader))
 
+    # Register hook onto decoder so that we can compute additional loss on reconstruction of original image (in adddition to patch loss)
+    model.decoder.register_forward_hook(get_decoder_output)
+
     for batch_idx, data in enumerate(train_loader):
         args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
         data128 = data[0]
-        data256 = data[1]
+        data512 = data[1]
         if model.cuda:
             data128 = data128.to(model.device)
-            data256 = data256.to(model.device)
+            data512 = data512.to(model.device)
 
         optimizer.zero_grad()
         
         wt_data, mu, logvar = model(data128)
-        loss, loss_bce, loss_kld = model.loss_function(data256, wt_data, mu, logvar, kl_weight=args.kl_weight)
+        decoder_output = decoder_outputs[-1]
+        loss, loss_bce, loss_kld = model.loss_function(data512, wt_data, decoder_output, mu, logvar, kl_weight=args.kl_weight)
         loss.backward()
 
         # Calculating and printing gradient norm
