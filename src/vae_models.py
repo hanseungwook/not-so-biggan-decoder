@@ -664,7 +664,7 @@ class WTVAE_128_FixedWT(nn.Module):
         # Initializing weights for decoder conv layers
         weights_init(self.decoder)
 
-        self.wt = WT(num_wt=args.num_wt)
+        self.wt = WT(num_wt=num_wt)
 
     def reparameterize(self, mu, logvar):
         if self.training:
