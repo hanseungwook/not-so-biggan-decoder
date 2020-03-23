@@ -610,7 +610,7 @@ class WTVAE_128_1(nn.Module):
 
 class WTVAE_128_FixedWT(nn.Module):
     def __init__(self, image_channels=3, h_dim=256*8*8, z_dim=100, num_wt=2):
-        super(WTVAE_128_2, self).__init__()
+        super(WTVAE_128_FixedWT, self).__init__()
         
         self.cuda = False
         self.device = None
