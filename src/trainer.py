@@ -89,7 +89,7 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
         
         wt_data, mu, logvar = model(data128)
         decoder_output = decoder_outputs[-1]
-        loss, loss_bce, loss_kld = model.loss_function(data512, wt_data, decoder_output, mu, logvar, kl_weight=args.kl_weight)
+        loss, loss_bce, loss_kld = model.loss_function(data512, data128, wt_data, decoder_output, mu, logvar, kl_weight=args.kl_weight)
         loss.backward()
 
         # Calculating and printing gradient norm
