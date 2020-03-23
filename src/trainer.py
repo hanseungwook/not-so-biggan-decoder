@@ -10,7 +10,7 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s 
 
 def get_decoder_output(self, input, output):
     global decoder_outputs
-    decoded_outputs.append(output)
+    decoder_outputs.append(output)
 
 def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, writer):
     # toggle model to train mode
