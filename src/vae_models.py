@@ -95,22 +95,10 @@ class WT_layer(nn.Module):
         return res.reshape(batch_size, -1, h, w)
 
 class WT(nn.Module):
-    def __init__(self, num_wt=2, device='cpu'):
+    def __init__(self, num_wt=2):
         super(WT, self).__init__()
 
         self.num_wt = num_wt
-        self.device = device
-
-        w = pywt.Wavelet('bior2.2')
-        dec_hi = torch.Tensor(w.dec_hi[::-1]).to(self.device)
-        dec_lo = torch.Tensor(w.dec_lo[::-1]).to(self.device)
-        rec_hi = torch.Tensor(w.rec_hi).to(self.device)
-        rec_lo = torch.Tensor(w.rec_lo).to(self.device)
-
-        self.filters = torch.stack([dec_lo.unsqueeze(0)*dec_lo.unsqueeze(1),
-                       dec_lo.unsqueeze(0)*dec_hi.unsqueeze(1),
-                       dec_hi.unsqueeze(0)*dec_lo.unsqueeze(1),
-                       dec_hi.unsqueeze(0)*dec_hi.unsqueeze(1)], dim=0)
         
         self.wt = nn.Sequential()
         for i in range(self.num_wt):
@@ -120,7 +108,10 @@ class WT(nn.Module):
         for m in self.wt:
             input = m(input, self.filters)
 
-        return (input, )
+        return input
+
+    def set_filters(self, filters):
+        self.filters = filters        
 
 class IWT(nn.Module):
     def __init__(self, inv_filters):
@@ -610,6 +601,123 @@ class WTVAE_128_1(nn.Module):
 
     def set_filters(self, filters):
         self.filters = filters
+    
+    def set_device(self, device):
+        if device != 'cpu':
+            self.cuda = True
+        
+        self.device = device
+
+class WTVAE_128_FixedWT(nn.Module):
+    def __init__(self, image_channels=3, h_dim=256*8*8, z_dim=100, num_wt=2):
+        super(WTVAE_128_2, self).__init__()
+        
+        self.cuda = False
+        self.device = None
+        self.num_wt = num_wt
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 32, 64, 64]
+            nn.BatchNorm2d(32),
+            self.relu,
+            nn.Conv2d(32, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 32, 32]
+            nn.BatchNorm2d(64),
+            self.relu,
+            nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 16, 16]
+            nn.BatchNorm2d(128),
+            self.relu,
+            nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 256, 8, 8]
+            nn.BatchNorm2d(256),
+            self.relu
+        )
+
+        # Initializing weights for encoder conv layers
+        weights_init(self.encoder)
+
+        # Flatten after this maxpool for linear layer
+        self.fc_mean = nn.Linear(h_dim, z_dim)
+        weights_init(self.fc_mean)
+        self.fc_logvar = nn.Linear(h_dim, z_dim)
+        weights_init(self.fc_logvar)
+        self.fc_dec = nn.Linear(z_dim, h_dim)
+        weights_init(self.fc_dec)
+
+        # Unflatten before going through layers of decoder
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True),      #[b, 128, 16, 16]
+            nn.BatchNorm2d(128),
+            self.relu,
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True),       #[b, 64, 32, 32]
+            nn.BatchNorm2d(64),
+            self.relu,
+            nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, bias=True),        #[b, 32, 64, 64]
+            nn.BatchNorm2d(32),
+            self.relu,
+            nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1, bias=True),          #[b, 3, 128, 128]
+            nn.BatchNorm2d(3),
+            self.sigmoid
+        )
+
+        # Initializing weights for decoder conv layers
+        weights_init(self.decoder)
+
+        self.wt = WT(num_wt=args.num_wt)
+
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = logvar.mul(0.5).exp_()
+            # return torch.normal(mu, std)
+            esp = torch.randn(*mu.size()).to(self.device)
+            z = mu + std * esp
+            return z
+        else:
+            return mu
+    
+    def bottleneck(self, h):
+        mu, logvar = self.fc_mean(h), self.fc_logvar(h)
+        z = self.reparameterize(mu, logvar)
+        return z, mu, logvar
+
+    def encode(self, x):
+        h = self.encoder(x)                                                         #[b, 128, 32, 32]
+
+        z, mu, logvar = self.bottleneck(h.reshape(h.shape[0], -1))                  #[b, z_dim]
+
+        return z, mu, logvar
+
+    def decode(self, z):
+        z = self.fc_dec(z)                                                          #[b, h_dim (256*8*8)]
+        z = self.decoder(z.reshape(-1, 256, 8, 8))                                  #[b, 3, 128, 128]
+        z = self.wt(z)
+        
+        return z
+
+    def forward(self, x):
+        z, mu, logvar = self.encode(x)
+        z = self.decode(z)
+        z = self.wt(z)
+        return z, mu, logvar
+
+    def loss_function(self, x_512, x_wt_hat, mu, logvar, kl_weight=1.0) -> Variable:
+        
+        x_wt = wt(x_512.reshape(x_512.shape[0] * x_512.shape[1], 1, x_512.shape[2], x_512.shape[3]), self.filters, levels=2)
+        x_wt = x_wt.reshape(x_512.shape)
+        x_wt = x_wt[:, :, :128, :128]
+        
+        # Loss btw original WT 1st patch & reconstructed 1st patch
+        BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
+
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
+        KLD /= x_512.shape[0] * 128 * 128
+
+        return BCE + BCE_img + KLD, BCE + BCE_img, KLD
+
+    def set_filters(self, filters):
+        self.filters = filters
+        self.wt.set_filters(filters)
     
     def set_device(self, device):
         if device != 'cpu':
