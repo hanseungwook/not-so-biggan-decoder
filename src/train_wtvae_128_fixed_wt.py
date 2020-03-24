@@ -91,7 +91,9 @@ if __name__ == "__main__":
                 
                 z, mu_wt, logvar_wt = wt_model.encode(data128.to(device))
                 y = wt_model.decode(z)
+                y_wt = wt_model.wt(y)
                 y_sample = wt_model.decode(z_sample1)
+                y_sample_wt = wt_model.wt(y_sample)
 
                 y_padded = zero_pad(y, target_dim=512, device=device)
                 y_sample_padded = zero_pad(y_sample, target_dim=512, device=device)
@@ -101,7 +103,9 @@ if __name__ == "__main__":
                 x_wt = x_wt[:, :, :128, :128]
                 
                 save_image(y_padded.cpu(), img_output_dir + '/sample_padded_y{}.png'.format(epoch))
+                save_image(y_wt.cpu(), img_output_dir + '/sample_recon_y_wt{}.png'.format(epoch))
                 save_image(y.cpu(), img_output_dir + '/sample_recon_y{}.png'.format(epoch))
+                save_image(y_sample_wt.cpu(), img_output_dir + '/sample_y_wt{}.png'.format(epoch))
                 save_image(y_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
                 save_image(x_wt.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
     

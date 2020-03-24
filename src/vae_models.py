@@ -691,14 +691,14 @@ class WTVAE_128_FixedWT(nn.Module):
     def decode(self, z):
         z = self.fc_dec(z)                                                          #[b, h_dim (256*8*8)]
         z = self.decoder(z.reshape(-1, 256, 8, 8))                                  #[b, 3, 128, 128]
-        z = self.wt(z)
         
         return z
 
     def forward(self, x):
         z, mu, logvar = self.encode(x)
         z = self.decode(z)
-    
+        z = self.wt(z)
+
         return z, mu, logvar
 
     def loss_function(self, x_512, x_wt_hat, mu, logvar, kl_weight=1.0) -> Variable:
