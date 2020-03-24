@@ -53,7 +53,9 @@ if __name__ == "__main__":
     filters = create_filters(device=devices[0])
 
     wt_model = WT(num_wt=args.num_iwt)
+    wt_model.set_filters(filters)
     wt_model = wt_model.to(devices[0])
+    wt_model.set_device(devices[0])
 
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
     iwt_model.set_filters(inv_filters)
@@ -107,9 +109,6 @@ if __name__ == "__main__":
     
     # Save train losses and plot
     np.save(model_dir+'/train_losses.npy', train_losses)
-    save_plot([x[0] for x in train_losses], img_output_dir + '/train_loss_total.png')
-    save_plot([x[1] for x in train_losses], img_output_dir + '/train_loss_bce.png')
-    save_plot([x[2] for x in train_losses], img_output_dir + '/train_loss_kld.png')
     
     LOGGER.info('IWT Model parameters: {}'.format(sum(x.numel() for x in iwt_model.parameters())))
 

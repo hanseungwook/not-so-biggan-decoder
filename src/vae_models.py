@@ -99,6 +99,7 @@ class WT(nn.Module):
         super(WT, self).__init__()
 
         self.num_wt = num_wt
+        self.device = None
         
         self.wt = nn.Sequential()
         for i in range(self.num_wt):
@@ -111,7 +112,10 @@ class WT(nn.Module):
         return input
 
     def set_filters(self, filters):
-        self.filters = filters        
+        self.filters = filters     
+
+    def set_device(self, device):
+        self.device = device
 
 class IWT(nn.Module):
     def __init__(self, inv_filters):
