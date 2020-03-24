@@ -59,8 +59,8 @@ if __name__ == "__main__":
     optimizer = optim.Adam(wt_model.parameters(), lr=args.lr)
 
     # Create output directories
-    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/wtvae128_fixedwt{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/wtvae128_fixedwt{}/'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/wtvae128_fixedwt_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/wtvae128_fixedwt_{}/'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
