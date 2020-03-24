@@ -120,8 +120,8 @@ if __name__ == "__main__":
             save_image(y.cpu(), img_output_dir + '/sample_recon_y.png')
             save_image(y_sample.cpu(), img_output_dir + '/sample_y.png')
 
-            save_image(x_hat.cpu(), img_output_dir + '/sample_recon_x_iwt.png')
-            save_image(x_sample.cpu(), img_output_dir + '/sample_z_iwt.png')
+            save_image(x_hat_iwt.cpu(), img_output_dir + '/sample_recon_x_iwt.png')
+            save_image(x_sample_iwt.cpu(), img_output_dir + '/sample_z_iwt.png')
             save_image(x_sample_y_sample_iwt.cpu(), img_output_dir + '/sample_z_both_iwt.png')
             save_image(x_sample_y_sample_gaussian_iwt.cpu(), img_output_dir + '/sample_z_both_gaussian_iwt.png')
             save_image(x_y_sample_gaussian_iwt.cpu(), img_output_dir + '/sample_z_wt_gaussian_iwt.png')
