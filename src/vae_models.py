@@ -713,7 +713,7 @@ class WTVAE_128_FixedWT(nn.Module):
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
         KLD /= x_512.shape[0] * 128 * 128
 
-        return BCE + BCE_img + KLD, BCE + BCE_img, KLD
+        return BCE + KLD, BCE, KLD
 
     def set_filters(self, filters):
         self.filters = filters
