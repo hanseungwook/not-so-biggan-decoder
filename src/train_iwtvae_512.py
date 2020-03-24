@@ -97,7 +97,8 @@ if __name__ == "__main__":
 
                 x_hat_wt = wt_model(x_hat)
                 masked_x = x_hat_wt[:,:,128:,128:]
-                writer.add_histogram('Masked region values', masked_x.reshape(-1).cpu(), epoch)
+                writer.add_histogram('Masked_values', masked_x.reshape(-1).cpu(), epoch)
+                writer.flush()
                 
                 save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
                 save_image(x_hat_wt.cpu(), img_output_dir + '/sample_recon_wt{}.png'.format(epoch))
