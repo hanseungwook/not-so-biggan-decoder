@@ -115,7 +115,7 @@ if __name__ == "__main__":
             x_sample_y_sample_gaussian_iwt = iwt_model.decode(y_sample_padded_gaussian, z_sample2, m1_idx_iwt, m2_idx_iwt)
             x_y_sample_gaussian_iwt = iwt_model.decode(y_sample_padded_gaussian, mu_iwt, m1_idx_iwt, m2_idx_iwt)
 
-            x_hat_2wt = wt(x_hat)
+            x_hat_2wt = wt(x_hat.to(devices[0]))
 
             save_image(x_hat_2wt.cpu(), img_output_dir + '/sample_recon_x_2wt.png')
 
