@@ -89,3 +89,12 @@ def create_inv_filters(device):
                                rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
 
     return inv_filters
+
+def calc_grad_norm_2(model):
+    total_norm = 0
+    for p in model.parameters():
+        param_norm = p.grad.data.norm(2)
+        total_norm += param_norm.item() ** 2
+    total_norm = total_norm ** (1. / 2)
+
+    return total_norm

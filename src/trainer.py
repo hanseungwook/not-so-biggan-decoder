@@ -1,7 +1,7 @@
 import os, sys
 import torch
 import numpy as np
-from utils.utils import zero_patches
+from utils.utils import zero_patches, calc_grad_norm_2
 import logging
 
 log_idx = 0
@@ -29,11 +29,7 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, write
         loss.backward()
 
         # Calculating and printing gradient norm
-        total_norm = 0
-        for p in model.parameters():
-            param_norm = p.grad.data.norm(2)
-            total_norm += param_norm.item() ** 2
-        total_norm = total_norm ** (1. / 2)
+        total_norm = calc_grad_norm_2(model)
 
         global log_idx
         writer.add_scalar('Loss/total', loss, log_idx)
@@ -46,12 +42,9 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, write
         # Gradient clipping
         if args.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip, norm_type=2)
-            # Calculating and printing gradient norm
-            total_norm = 0
-            for p in model.parameters():
-                param_norm = p.grad.data.norm(2)
-                total_norm += param_norm.item() ** 2
-            total_norm = total_norm ** (1. / 2)
+            
+            # Re-calculating and printing gradient norm
+            total_norm = calc_grad_norm_2(model)
             writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
 
         train_losses.append((loss.item(), loss_bce, loss_kld))
@@ -96,13 +89,8 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
         # Clearing saved outputs
         decoder_outputs.clear()
 
-
         # Calculating and printing gradient norm
-        total_norm = 0
-        for p in model.parameters():
-            param_norm = p.grad.data.norm(2)
-            total_norm += param_norm.item() ** 2
-        total_norm = total_norm ** (1. / 2)
+        total_norm = calc_grad_norm_2(model)
 
         global log_idx
         writer.add_scalar('Loss/total', loss, log_idx)
@@ -115,12 +103,8 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
         # Gradient clipping
         if args.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip, norm_type=2)
-            # Calculating and printing gradient norm
-            total_norm = 0
-            for p in model.parameters():
-                param_norm = p.grad.data.norm(2)
-                total_norm += param_norm.item() ** 2
-            total_norm = total_norm ** (1. / 2)
+            # Re-calculating and printing gradient norm
+            total_norm = calc_grad_norm_2(model)
             writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
 
         train_losses.append((loss.item(), loss_bce, loss_kld))
@@ -159,11 +143,7 @@ def train_wtvae_128_fixed_wt(epoch, model, optimizer, train_loader, train_losses
         loss.backward()
     
         # Calculating and printing gradient norm
-        total_norm = 0
-        for p in model.parameters():
-            param_norm = p.grad.data.norm(2)
-            total_norm += param_norm.item() ** 2
-        total_norm = total_norm ** (1. / 2)
+        total_norm = calc_grad_norm_2(model)
 
         global log_idx
         writer.add_scalar('Loss/total', loss, log_idx)
@@ -176,12 +156,8 @@ def train_wtvae_128_fixed_wt(epoch, model, optimizer, train_loader, train_losses
         # Gradient clipping
         if args.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip, norm_type=2)
-            # Calculating and printing gradient norm
-            total_norm = 0
-            for p in model.parameters():
-                param_norm = p.grad.data.norm(2)
-                total_norm += param_norm.item() ** 2
-            total_norm = total_norm ** (1. / 2)
+            # Re-calculating and printing gradient norm
+            total_norm = calc_grad_norm_2(model)
             writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
 
         train_losses.append((loss.item(), loss_bce, loss_kld))
@@ -199,7 +175,7 @@ def train_wtvae_128_fixed_wt(epoch, model, optimizer, train_loader, train_losses
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
 
-def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args):
+def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer):
     # toggle model to train mode
     iwt_model.train()
     train_loss = 0
@@ -224,12 +200,23 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         loss.backward()
 
         # Calculating and printing gradient norm
-        total_norm = 0
-        for p in iwt_model.parameters():
-            param_norm = p.grad.data.norm(2)
-            total_norm += param_norm.item() ** 2
-        total_norm = total_norm ** (1. / 2)
-        logging.info('Gradient Norm: {}'.format(total_norm))
+        total_norm = calc_grad_norm_2(model)
+
+        # Calculating and printing gradient norm
+        global log_idx
+        writer.add_scalar('Loss/total', loss, log_idx)
+        writer.add_scalar('Loss/bce', loss_bce, log_idx)
+        writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
+        writer.add_scalar('KL_weight', args.kl_weight, log_idx)
+        log_idx += 1 
+
+        # Gradient clipping
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip, norm_type=2)
+            # Re-calculating total norm after gradient clipping
+            total_norm = calc_grad_norm_2(model)
+            writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
         
         train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
         train_loss += loss

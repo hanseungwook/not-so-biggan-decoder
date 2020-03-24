@@ -8,7 +8,7 @@ from vae_models import WTVAE_64, IWTVAE_512_Mask, WT
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
-from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters
+from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters, create_filters
 import matplotlib.pyplot as plt
 import logging
 import pywt
@@ -23,6 +23,15 @@ if __name__ == "__main__":
     LOGGER = logging.getLogger(__name__)
 
     args = args_parse()
+
+    # Setting up tensorboard writer
+    log_dir = os.path.join(args.root_dir, 'runs/{}'.format(config))
+    try:
+        os.mkdir(log_dir)
+    except:
+        raise Exception('Cannot create log directory')
+
+    writer = SummaryWriter(log_dir=log_dir)
 
     # Set seed
     set_seed(args.seed)
@@ -40,9 +49,10 @@ if __name__ == "__main__":
         devices = ['cpu', 'cpu']
 
     inv_filters = create_inv_filters(device=devices[0])
+    filters = create_filters(device=devices[0])
 
-    wt_model = WT(num_wt=args.num_iwt, device=devices[1])
-    wt_model = wt_model.to(devices[1])
+    wt_model = WT(num_wt=args.num_iwt)
+    wt_model = wt_model.to(devices[0])
 
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim, num_iwt=args.num_iwt)
     iwt_model.set_filters(inv_filters)
@@ -63,27 +73,31 @@ if __name__ == "__main__":
         raise Exception('Could not make model & img output directories')
     
     for epoch in range(1, args.epochs + 1):
-        train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args)
+        train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer)
         
         with torch.no_grad():
             iwt_model.eval()
             
             for data in sample_loader:
-                data0 = data.to(devices[0])
-                data1 = data.to(devices[1])
+                data = data.to(devices[0])
                 
-                Y = wt_model(data1)[0]
+                Y = wt_model(data)
                 if args.zero:
                     Y = zero_patches(Y, num_wt=args.num_iwt)
                 Y = Y.to(devices[0])
 
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
-                mu, var, m1_idx, m2_idx = iwt_model.encode(data0, Y)
+                mu, var, m1_idx, m2_idx = iwt_model.encode(data, Y)
                 x_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
                 x_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
 
+                x_hat_wt = wt_model(x_hat)
+                masked_x = x_hat_wt[:,:,128:,128:]
+                writer.add_histogram('Masked region values', masked_x.reshape(-1).cpu(), epoch)
+                
                 save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
+                save_image(x_hat_wt.cpu(), img_output_dir + '/sample_recon_wt{}.png'.format(epoch))
                 save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
                 save_image(Y.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
                 save_image(data.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
