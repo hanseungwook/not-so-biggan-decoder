@@ -128,6 +128,7 @@ class IWT(nn.Module):
         input = input[:,:,2:-2,2:-2] # Remove padding
         
         return input.reshape(batch_size, -1, h, w)
+        
 class IWT0(nn.Module):
     def __init__(self):
         super(IWT0, self).__init__()
@@ -1757,7 +1758,7 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                   #[b, 128, 64, 64]
         h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
-        h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                   #[b, 1, 256, 512]
+        h = self.instance_norm_d4(self.d4(h))                                   #[b, 1, 256, 512]
         mask_og = h.clone().detach()
 
         # Dynamic masks (covering all irrelevant patches at each IWT)
