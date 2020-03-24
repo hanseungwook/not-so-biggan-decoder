@@ -126,6 +126,8 @@ if __name__ == "__main__":
             save_image(x_sample_y_sample_gaussian_iwt.cpu(), img_output_dir + '/sample_z_both_gaussian_iwt.png')
             save_image(x_y_sample_gaussian_iwt.cpu(), img_output_dir + '/sample_z_wt_gaussian_iwt.png')
 
+            save_image(y_padded_iwt.cpu(), img_output_dir + '/sample_y_iwt.png')
+
             save_image(data128.cpu(), img_output_dir + '/sample128.png')
             save_image(data512.cpu(), img_output_dir + '/sample512.png')
             
