@@ -48,6 +48,7 @@ if __name__ == "__main__":
 
 
     wt = WT(num_wt=2)
+    wt.set_filters(filters)
     wt_model = WTVAE_128_1(z_dim=args.z_dim_wt, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim_iwt, num_iwt=args.num_iwt)
