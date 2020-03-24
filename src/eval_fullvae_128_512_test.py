@@ -46,6 +46,8 @@ if __name__ == "__main__":
     filters = create_filters(device=devices[0])
     inv_filters = create_inv_filters(device=devices[1])
 
+
+    wt = WT(num_wt=2)
     wt_model = WTVAE_128_1(z_dim=args.z_dim_wt, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
     iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim_iwt, num_iwt=args.num_iwt)
@@ -111,6 +113,10 @@ if __name__ == "__main__":
             x_sample_y_sample_iwt = iwt_model.decode(y_sample_padded, z_sample2, m1_idx_iwt, m2_idx_iwt)
             x_sample_y_sample_gaussian_iwt = iwt_model.decode(y_sample_padded_gaussian, z_sample2, m1_idx_iwt, m2_idx_iwt)
             x_y_sample_gaussian_iwt = iwt_model.decode(y_sample_padded_gaussian, mu_iwt, m1_idx_iwt, m2_idx_iwt)
+
+            x_hat_2wt = wt(x_hat)
+
+            save_image(x_hat_2wt.cpu(), img_output_dir + '/sample_recon_x_2wt.png')
 
             save_image(x_hat.cpu(), img_output_dir + '/sample_recon_x.png')
             save_image(x_sample.cpu(), img_output_dir + '/sample_z.png')
