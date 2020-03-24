@@ -96,8 +96,10 @@ if __name__ == "__main__":
                 x_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
 
                 x_hat_wt = wt_model(x_hat)
-                masked_x = x_hat_wt[:,:,128:,128:]
-                writer.add_histogram('Masked_values', masked_x.reshape(-1).cpu(), epoch)
+                unmasked_x = x_hat_wt[:, :, :128, :128]
+                masked_x = x_hat_wt[:, :, 128:, 128:]
+                writer.add_histogram('Mask/unmasked_values', unmasked_x.reshape(-1).cpu(), epoch)
+                writer.add_histogram('Mask/masked_values', masked_x.reshape(-1).cpu(), epoch)
                 writer.flush()
                 
                 save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
