@@ -703,9 +703,9 @@ class WTVAE_128_FixedWT(nn.Module):
 
     def loss_function(self, x_512, x_wt_hat, mu, logvar, kl_weight=1.0) -> Variable:
         
-        x_wt = wt(x_512.reshape(x_512.shape[0] * x_512.shape[1], 1, x_512.shape[2], x_512.shape[3]), self.filters, levels=2)
+        x_wt = wt(x_512.reshape(x_512.shape[0] * x_512.shape[1], 1, x_512.shape[2], x_512.shape[3]), self.filters, levels=3)
         x_wt = x_wt.reshape(x_512.shape)
-        x_wt = x_wt[:, :, :128, :128]
+        x_wt = x_wt[:, :, :64, :64]
         
         # Loss btw original WT 1st patch & reconstructed 1st patch
         BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
