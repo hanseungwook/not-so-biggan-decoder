@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import WTVAE_128_1, IWTVAE_512_Mask, FullVAE_512
+from vae_models import WTVAE_128_1, IWTVAE_512_Mask, FullVAE_512, WT
 from wt_datasets import CelebaDatasetPair
 from trainer import train_fullvae
 from arguments import args_parse
