@@ -3,6 +3,7 @@ import torch
 from torch import optim
 from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
+from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from vae_models import WTVAE_64, IWTVAE_512_Mask, WT
 from wt_datasets import CelebaDataset
