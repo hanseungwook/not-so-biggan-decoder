@@ -188,7 +188,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         optimizer.zero_grad()
         
         # Get Y
-        Y = wt_model(data1)[0]
+        Y = wt_model(data1)
         
         # Zeroing out all other patches, if given zero arg
         if args.zero:
