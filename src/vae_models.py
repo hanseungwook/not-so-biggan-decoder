@@ -708,7 +708,7 @@ class WTVAE_128_FixedWT(nn.Module):
         x_wt = x_wt[:, :, :64, :64]
         
         # Loss btw original WT 1st patch & reconstructed 1st patch
-        BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
+        BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt[:, :, :64, :64].reshape(-1))
 
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
         KLD /= x_512.shape[0] * 128 * 128
