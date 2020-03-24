@@ -26,7 +26,7 @@ if __name__ == "__main__":
     args = args_parse()
 
     # Setting up tensorboard writer
-    log_dir = os.path.join(args.root_dir, 'runs/{}'.format(config))
+    log_dir = os.path.join(args.root_dir, 'runs/{}'.format(args.config))
     try:
         os.mkdir(log_dir)
     except:
