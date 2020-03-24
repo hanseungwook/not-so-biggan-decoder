@@ -1776,7 +1776,9 @@ class IWTVAE_512_Mask(nn.Module):
         # Static mask (covering the first patch)
         with torch.no_grad():
             h = zero_mask(h.squeeze(1), self.num_iwt, 1)
-        h = y - h.unsqueeze(1)
+            assert (h[:, :128, :128] == 0).all()
+            
+        h = y + h.unsqueeze(1)
         for i in range(self.num_iwt):
             h = self.iwt(h)
         
