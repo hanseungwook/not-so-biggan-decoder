@@ -189,6 +189,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         
         # Get Y
         Y = wt_model(data1)
+        Y += torch.randn(Y.shape, device=wt_model.device)
         
         # Zeroing out all other patches, if given zero arg
         if args.zero:
