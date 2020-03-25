@@ -1806,7 +1806,7 @@ class IWTVAE_512_Mask(nn.Module):
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
-        KLD /= x.shape[0] * 3 * 512 * 512
+        KLD /= x.shape[0] * 3 * 128 * 128
 
         return BCE + BCE_wt + KLD, BCE + BCE_wt, KLD
 
