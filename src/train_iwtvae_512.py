@@ -85,6 +85,7 @@ if __name__ == "__main__":
                 data = data.to(devices[0])
                 
                 Y = wt_model(data)
+                Y += torch.randn(Y.shape, device=devices[0])
                 save_image(Y.cpu(), img_output_dir + '/sample_y_before_zero{}.png'.format(epoch))
 
                 if args.zero:
