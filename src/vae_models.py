@@ -120,7 +120,7 @@ class IWT(nn.Module):
         return input.reshape(batch_size, -1, h, w)
     
     def set_filters(self, filters):
-        self.filters = filters     
+        self.inv_filters = filters
 
     def set_device(self, device):
         self.device = device
