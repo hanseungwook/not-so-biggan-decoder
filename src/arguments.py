@@ -58,6 +58,8 @@ def args_parse():
                         help='Whether to train model with frozen IWT')       
     parser.add_argument('--num_iwt', type=int, default=2,
                         help='Number of times to apply deterministic IWT')
+    parser.add_argument('--img_loss_epoch', type=int, default=0,
+                        help='Epoch # to introduce l2 img reconstruction loss on top of WT-space l1 loss')                 
 
     # Arguments for FullVAE
     parser.add_argument('--z_dim_wt', type=int, default=100,

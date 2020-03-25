@@ -1794,16 +1794,21 @@ class IWTVAE_512_Mask(nn.Module):
         
         return x_hat, mu, var
         
-    def loss_function(self, x, x_hat, mu, var) -> Variable:
+    def loss_function(self, x, x_hat, x_wt, x_wt_hat, mu, var, img_loss=False) -> Variable:
         
         # Loss btw reconstructed img and original img
-        BCE = F.l1_loss(x_hat.reshape(-1), x.reshape(-1))
+        BCE = 0
+        if img_loss:
+            BCE = F.mse_loss(x_hat.reshape(-1), x.reshape(-1))
+
+        # WT-space loss on patch level other than 1st patch
+        BCE_wt = F.l1_loss(x_wt_hat[:, :, 128:, 128:].reshape(-1), x_wt[:, :, 128:, 128:].reshape(-1))
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
         # KLD /= x.shape[0] * 3 * 64 * 64
 
-        return BCE + KLD, BCE, KLD
+        return BCE + BCE_wt + KLD, BCE + BCE_wt, KLD
 
     def set_device(self, device):
         self.device = device

@@ -195,8 +195,12 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
             Y = zero_patches(Y, num_wt=args.num_iwt)
 
         x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.device))
+
+        x_wt = wt_model(data0)
+        x_wt_hat = wt_model(x_hat)
         
-        loss, loss_bce, loss_kld = iwt_model.loss_function(data0, x_hat, mu, var)
+        img_loss = (epoch >= args.img_loss_epoch)
+        loss, loss_bce, loss_kld = iwt_model.loss_function(data0, x_hat, x_wt, x_wt_hat, mu, var, img_loss)
         loss.backward()
 
         # Calculating and printing gradient norm
