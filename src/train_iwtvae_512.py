@@ -85,6 +85,8 @@ if __name__ == "__main__":
                 data = data.to(devices[0])
                 
                 Y = wt_model(data)
+                save_image(Y.cpu(), img_output_dir + '/sample_y_before_zero{}.png'.format(epoch))
+
                 if args.zero:
                     Y = zero_patches(Y, num_wt=args.num_iwt)
                 Y = Y.to(devices[0])
