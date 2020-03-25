@@ -1720,8 +1720,7 @@ class IWTVAE_512_Mask(nn.Module):
             assert (h[:, :128, :128] == 0).all()
             
         h = y + h.unsqueeze(1)
-        for i in range(self.num_iwt):
-            h = self.iwt(h)
+        h = self.iwt(h)
         
         return h
         
@@ -1746,8 +1745,8 @@ class IWTVAE_512_Mask(nn.Module):
         BCE_wt = F.l1_loss(x_wt_hat[:, :, 128:, 128:].reshape(-1), x_wt[:, :, 128:, 128:].reshape(-1))
         
         logvar = torch.log(var)
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
-        # KLD /= x.shape[0] * 3 * 128 * 128
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        KLD /= x.shape[0] * 3 * 128 * 128
 
         return BCE + BCE_wt + KLD, BCE + BCE_wt, KLD
 
@@ -1757,8 +1756,8 @@ class IWTVAE_512_Mask(nn.Module):
             self.cuda = True
     
     def set_filters(self, filters):
-        self.filters = filters
-        self.iwt = IWT(filters)
+        self.iwt = IWT(iwt=iwt, num_iwt=self.num_iwt)
+        self.iwt.set_filters(filters)
 
 class FullVAE_512(nn.Module):
     def __init__(self, wt_model, iwt_model, devices):
