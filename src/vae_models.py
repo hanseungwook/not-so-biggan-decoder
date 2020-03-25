@@ -30,19 +30,23 @@ def weights_init(m):
             weights_init(sub_m)
 
 def iwt(vres, inv_filters, levels=1):
+    bs = vres.shape[0]
     h = vres.size(2)
     w = vres.size(3)
+    vres = vres.reshape(-1, 1, h, w)
     res = vres.contiguous().view(-1, h//2, 2, w//2).transpose(1, 2).contiguous().view(-1, 4, h//2, w//2).clone()
     if levels > 1:
         res[:,:1] = iwt(res[:,:1], inv_filters, levels=levels-1)
     res = torch.nn.functional.conv_transpose2d(res, Variable(inv_filters[:,None]),stride=2)
     res = res[:,:,2:-2,2:-2] #removing padding
 
-    return res
+    return res.reshape(bs, -1, h, w)
 
 def wt(vimg, filters, levels=1):
+    bs = vimg.shape[0]
     h = vimg.size(2)
     w = vimg.size(3)
+    vimg = vimg.reshape(-1, 1, h, w)
     padded = torch.nn.functional.pad(vimg,(2,2,2,2))
     res = torch.nn.functional.conv2d(padded, Variable(filters[:,None]),stride=2)
     if levels>1:
@@ -52,7 +56,8 @@ def wt(vimg, filters, levels=1):
         res[:,1:] = res[:,1:]*1.
     res = res.view(-1,2,h//2,w//2).transpose(1,2).contiguous().view(-1,1,h,w)
 
-    return res
+    return res.reshape(bs, -1, h, w)
+
 
 def get_upsampling_layer(name, res, bottleneck_dim=100):
     layer = None
@@ -82,34 +87,17 @@ def get_upsampling_dims(name, res):
     
     return sizes
 
-class WT_layer(nn.Module):    
-    def forward(self, input, filters):
-        batch_size = input.shape[0]
-        h = input.shape[2]
-        w = input.shape[3]
-        input = input.reshape(-1,1,h,w)
-        padded = torch.nn.functional.pad(input,(2,2,2,2))
-        res = torch.nn.functional.conv2d(padded, Variable(filters[:,None]),stride=2)
-        res = res.view(-1,2,h//2,w//2).transpose(1,2).contiguous().view(-1,1,h,w)
-
-        return res.reshape(batch_size, -1, h, w)
-
 class WT(nn.Module):
-    def __init__(self, num_wt=2):
+    def __init__(self, wt, num_wt=2):
         super(WT, self).__init__()
 
         self.num_wt = num_wt
+        self.filters = None
         self.device = None
-        
-        self.wt = nn.Sequential()
-        for i in range(self.num_wt):
-            self.wt.add_module('wt_{}'.format(i), WT_layer())
+        self.wt = wt
         
     def forward(self, input):
-        for m in self.wt:
-            input = m(input, self.filters)
-
-        return input
+        return self.wt(input, filters=self.filters, levels=self.num_wt)
 
     def set_filters(self, filters):
         self.filters = filters     
@@ -118,72 +106,25 @@ class WT(nn.Module):
         self.device = device
 
 class IWT(nn.Module):
-    def __init__(self, inv_filters):
+    def __init__(self, iwt, num_iwt=2):
         super(IWT, self).__init__()
 
-        self.inv_filters = inv_filters
+        self.num_iwt = num_iwt
+        self.inv_filters = None
+        self.device = None
+        self.iwt = iwt
 
     def forward(self, input):
-        batch_size = input.shape[0]
-        h = input.shape[2]
-        w = input.shape[3]
-        input = input.view(-1,1,h,w).contiguous().view(-1,h//2,2,w//2).transpose(1,2).contiguous().view(-1,4,h//2,w//2).clone()
-        input = torch.nn.functional.conv_transpose2d(input, Variable(self.inv_filters[:,None]),stride=2)
-        input = input[:,:,2:-2,2:-2] # Remove padding
+        return self.iwt(input, inv_filters=self.inv_filters, levels=self.num_iwt)
         
         return input.reshape(batch_size, -1, h, w)
-        
-class IWT0(nn.Module):
-    def __init__(self):
-        super(IWT0, self).__init__()
+    
+    def set_filters(self, filters):
+        self.filters = filters     
 
-        #self.device = 'cpu'
-        w = pywt.Wavelet('bior2.2')
-        rec_hi = torch.Tensor(w.rec_hi).cuda()
-        rec_lo = torch.Tensor(w.rec_lo).cuda()
-
-        self.inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
-                                    rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
-                                    rec_hi.unsqueeze(0)*rec_lo.unsqueeze(1),
-                                    rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
-
-    def forward(self, input):
-        batch_size = input.shape[0]
-        h = input.shape[2]
-        w = input.shape[3]
-        input = input.view(-1,1,h,w).contiguous().view(-1,h//2,2,w//2).transpose(1,2).contiguous().view(-1,4,h//2,w//2).clone()
-        input = torch.nn.functional.conv_transpose2d(input, Variable(self.inv_filters[:,None]),stride=2)
-        input = input[:,:,2:-2,2:-2] # Remove padding
-        
-        return input.reshape(batch_size, -1, h, w)
-
-class IWT1(nn.Module):
-    def __init__(self):
-        super(IWT1, self).__init__()
-
-        #self.device = 'cpu'
-        w = pywt.Wavelet('bior2.2')
-        rec_hi = torch.Tensor(w.rec_hi).to('cuda:1')
-        rec_lo = torch.Tensor(w.rec_lo).cuda('cuda:1')
-
-        self.inv_filters = torch.stack([rec_lo.unsqueeze(0)*rec_lo.unsqueeze(1),
-                                    rec_lo.unsqueeze(0)*rec_hi.unsqueeze(1),
-                                    rec_hi.unsqueeze(0)*rec_lo.unsqueeze(1),
-                                    rec_hi.unsqueeze(0)*rec_hi.unsqueeze(1)], dim=0)
-
-    def forward(self, input):
-        batch_size = input.shape[0]
-        h = input.shape[2]
-        w = input.shape[3]
-        input = input.view(-1,1,h,w).contiguous().view(-1,h//2,2,w//2).transpose(1,2).contiguous().view(-1,4,h//2,w//2).clone()
-        input = torch.nn.functional.conv_transpose2d(input, Variable(self.inv_filters[:,None]),stride=2)
-        input = input[:,:,2:-2,2:-2] # Remove padding
-        
-        return input.reshape(batch_size, -1, h, w)
-
-    # def set_device(device):
-    #     self.device = device
-
+    def set_device(self, device):
+        self.device = device
+    
 class Flatten(nn.Module):
     def forward(self, input):
         return input.view(input.size(0), -1)
@@ -1806,7 +1747,7 @@ class IWTVAE_512_Mask(nn.Module):
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * 0.01
-        KLD /= x.shape[0] * 3 * 128 * 128
+        # KLD /= x.shape[0] * 3 * 128 * 128
 
         return BCE + BCE_wt + KLD, BCE + BCE_wt, KLD
 

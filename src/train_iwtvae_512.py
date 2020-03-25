@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
-from vae_models import WTVAE_64, IWTVAE_512_Mask, WT
+from vae_models import WTVAE_64, IWTVAE_512_Mask, WT, wt
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     inv_filters = create_inv_filters(device=devices[0])
     filters = create_filters(device=devices[0])
 
-    wt_model = WT(num_wt=args.num_iwt)
+    wt_model = WT(wt=wt, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
     wt_model = wt_model.to(devices[0])
     wt_model.set_device(devices[0])
