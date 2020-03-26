@@ -1,6 +1,6 @@
 import torch
 from torchvision.utils import save_image
-from utils.utils import zero_patches, save_plot
+from utils.utils import zero_mask, save_plot
 
 def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir, writer):
     with torch.no_grad():
@@ -13,7 +13,7 @@ def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, mo
             Y = wt_model(data)
             
             # Zeroing out all other patches
-            Y = zero_patches(Y, num_wt=args.num_wt)
+            Y = zero_mask(Y, num_iwt=args.num_wt, cur_iwt=1)
 
             x_hat = model(Y.to(model.device))
 
