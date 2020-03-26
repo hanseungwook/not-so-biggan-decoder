@@ -1485,7 +1485,7 @@ class IWTVAE_64_Bottleneck(nn.Module):
 
 class AE_Mask(nn.Module):
     def __init__(self, image_channels=3, z_dim=100):
-        super(IWTVAE_512_Mask, self).__init__()
+        super(AE_Mask, self).__init__()
         # Resolution of images (512 x 512)
         self.res = 512
         self.device = None
