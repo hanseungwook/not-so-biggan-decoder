@@ -15,7 +15,7 @@ def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, mo
             # Zeroing out all other patches
             Y = zero_patches(Y, num_wt=args.num_wt)
 
-            x_hat = model(Y)
+            x_hat = model(Y.to(model.device))
 
             save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
             save_image(Y.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
