@@ -1557,7 +1557,7 @@ class AE_Mask(nn.Module):
 
         return h, m1_idx, m2_idx                                                    #[b, z_dim]
     
-    def decode(self, x):
+    def decode(self, x, m1_idx, m2_idx):
         h = self.leakyrelu(self.fc_dec(x))                                      #[b, 512*8*8]
         h = self.leakyrelu(self.u1(h.reshape(-1, 512, 8, 8), indices=m2_idx))   #[b, 512, 16, 16]
         h = self.leakyrelu(self.instance_norm_d1(self.d1(h)))                   #[b, 256, 32, 32]
@@ -1567,8 +1567,8 @@ class AE_Mask(nn.Module):
         h = self.instance_norm_d4(self.d4(h))                                   #[b, 1, 256, 512]
     
     def forward(self, x):
-        x = self.encode(x)
-        x = self.decode(x)
+        x, m1_idx, m2_idx = self.encode(x)
+        x = self.decode(x, m1_idx, m2_idx)
         
         return x
 
