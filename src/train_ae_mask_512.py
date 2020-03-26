@@ -57,6 +57,7 @@ if __name__ == "__main__":
 
     model = AE_Mask(z_dim=args.z_dim)
     model.set_device(devices[0])
+    model = model.to(devices[0])
     
     train_losses = []
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
