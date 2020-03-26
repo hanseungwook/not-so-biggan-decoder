@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # Set seed
     set_seed(args.seed)
 
-    dataset_dir = os.path.join(args.root_dir, 'data/celebaHQ512')
+    dataset_dir = os.path.join(args.root_dir, 'data/celeba_org/celeba64')
     dataset_files = sample(os.listdir(dataset_dir), 10000)
     train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
