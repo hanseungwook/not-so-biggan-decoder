@@ -344,7 +344,7 @@ def train_ae_mask(epoch, wt_model, model, criterion, optimizer, train_loader, tr
         Y = zero_mask(Y, num_iwt=args.num_wt, cur_iwt=1)
 
         x_hat = model(Y.to(model.device))
-        loss = model.loss_function(data, x_hat, criterion)
+        loss = model.loss_function(Y, x_hat, criterion)
         loss.backward()
 
         # Calculating and printing gradient norm
