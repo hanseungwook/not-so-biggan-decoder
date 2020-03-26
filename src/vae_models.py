@@ -1722,7 +1722,7 @@ class IWTVAE_512_Mask(nn.Module):
             
         h = y + h.unsqueeze(1)
         h = postprocess_low_freq(h)
-        h = self.iwt(h)
+        # h = self.iwt(h)
         
         return h
         

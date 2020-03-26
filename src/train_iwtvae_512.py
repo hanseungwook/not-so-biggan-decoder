@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from vae_models import WTVAE_64, IWTVAE_512_Mask, WT, wt
 from wt_datasets import CelebaDataset
-from trainer import train_iwtvae
+from trainer import train_iwtvae_test
 from arguments import args_parse
 from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters, create_filters
 import matplotlib.pyplot as plt
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         raise Exception('Could not make model & img output directories')
     
     for epoch in range(1, args.epochs + 1):
-        train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer)
+        train_iwtvae_test(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer)
         
         with torch.no_grad():
             iwt_model.eval()

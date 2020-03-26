@@ -179,6 +179,9 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
     # toggle model to train mode
     iwt_model.train()
     train_loss = 0
+
+    # iwt_fn = IWT(iwt=iwt, num_iwt=self.num_iwt)
+    # iwt_fn.set_filters(filters)
     
     for batch_idx, data in enumerate(train_loader):
         
@@ -247,6 +250,81 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
 
+def train_iwtvae_test(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer):
+    # toggle model to train mode
+    iwt_model.train()
+    train_loss = 0
+
+    iwt_fn = IWT(iwt=iwt, num_iwt=self.num_iwt)
+    iwt_fn.set_filters(filters)
+    
+    for batch_idx, data in enumerate(train_loader):
+        
+        data0 = data.to(iwt_model.device)
+        data1 = data.to(wt_model.device)
+
+        optimizer.zero_grad()
+        
+        # Get Y
+        Y = wt_model(data1)
+        Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=wt_model.device)
+        
+        # Zeroing out all other patches, if given zero arg
+        if args.zero:
+            Y = zero_patches(Y, num_wt=args.num_iwt)
+
+        x_wt_hat, mu, var = iwt_model(data0, Y.to(iwt_model.device))
+
+        x_hat = iwt_fn(x_wt_hat)
+
+        # Get WT space of x and x hat, but preprocess them to normalize the range to (0, 1)
+        x_wt = wt_model(data0)
+        x_wt = preprocess_low_freq(x_wt)
+        assert ((x_wt[:, :, 128:, 128:] >= 0).all() and (x_wt[:, :, 128:, 128:] <= 1).all())
+        # x_wt_hat = wt_model(x_hat)
+        # x_wt_hat = preprocess_low_freq(x_wt_hat)
+        assert ((x_wt_hat[:, :, 128:, 128:] >= 0).all() and (x_wt_hat[:, :, 128:, 128:] <= 1).all())
+        
+        img_loss = (epoch >= args.img_loss_epoch)
+        loss, loss_bce, loss_kld = iwt_model.loss_function(data0, x_hat, x_wt, x_wt_hat, mu, var, img_loss)
+        loss.backward()
+
+        # Calculating and printing gradient norm
+        total_norm = calc_grad_norm_2(iwt_model)
+
+        # Calculating and printing gradient norm
+        global log_idx
+        writer.add_scalar('Loss/total', loss, log_idx)
+        writer.add_scalar('Loss/bce', loss_bce, log_idx)
+        writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
+        writer.add_scalar('KL_weight', args.kl_weight, log_idx)
+        log_idx += 1 
+
+        # Gradient clipping
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip, norm_type=2)
+            # Re-calculating total norm after gradient clipping
+            total_norm = calc_grad_norm_2(iwt_model)
+            writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
+        
+        train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
+        train_loss += loss
+
+        # Gradient clipping
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=10000, norm_type=2)
+
+        optimizer.step()
+        if batch_idx % args.log_interval == 0:
+            logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
+                                                                           len(train_loader.dataset),
+                                                                           100. * batch_idx / len(train_loader),
+                                                                           loss / len(data)))
+            
+            n = min(data.size(0), 8)  
+
+    logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 # def train_iwtvae_512(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args):
 #     # toggle model to train mode
 #     iwt_model.train()
