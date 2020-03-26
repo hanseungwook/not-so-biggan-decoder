@@ -102,7 +102,8 @@ def calc_grad_norm_2(model):
 # Maximum value in low frequency patches in training dataset = 1.6612
 def preprocess_low_freq(batch):
     low_freq = batch[:, :, 128:, 128:]
-    low_freq = (low_freq + 1.953) / 3.795
+    # low_freq = (low_freq + 1.953) / 3.795
+    low_freq = (low_freq + 1.953) * 100
 
     batch[:, :, 128:, 128:] = low_freq
     
@@ -111,8 +112,8 @@ def preprocess_low_freq(batch):
 # Revert low frequency back to original range
 def postprocess_low_freq(batch):
     low_freq = batch[:, :, 128:, 128:]
-    low_freq = (low_freq * 3.795) - 1.953
-
+    # low_freq = (low_freq * 3.795) - 1.953
+    low_freq = (low_freq / 100) - 1.953
     batch[:, :, 128:, 128:] = low_freq
     
     return batch
