@@ -24,12 +24,6 @@ class CelebaDataset(Dataset):
         img = img / 255
         img = torch.from_numpy(img.transpose(2,0,1)).float()
         
-        # Returning both original image and WT image if self.WT
-        if self.WT:
-            img_wt = wt(img_wt.unsqueeze(1)).squeeze()
-
-            return img, img_wt
-        
         return img
 
 # CelebaDataset that returns a pair of same images in different dimensions
