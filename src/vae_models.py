@@ -1705,7 +1705,7 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
         h = self.sigmoid(self.instance_norm_d4(self.d4(h)))                     #[b, 1, 256, 512]
-        # mask_og = h.clone().detach()
+        h = h.clone()
 
         # Dynamic masks (covering all irrelevant patches at each IWT)
         # for i in range(self.num_iwt):
@@ -1719,7 +1719,8 @@ class IWTVAE_512_Mask(nn.Module):
         with torch.no_grad():
             h = zero_mask(h.squeeze(1), self.num_iwt, 1)
             assert (h[:, :128, :128] == 0).all()
-            
+        
+        assert((y[:, :, 128:, 128:] == 0).all())
         h = y + h.unsqueeze(1)
         # h = postprocess_low_freq(h)
         # h = self.iwt(h)
