@@ -200,10 +200,10 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         # Get WT space of x and x hat, but preprocess them to normalize the range to (0, 1)
         x_wt = wt_model(data0)
         x_wt = preprocess_low_freq(x_wt)
-        assert (x_wt[:, :, 128:, 128:] >= 0 and x_wt[:, :, 128:, 128:] <= 1)
+        assert ((x_wt[:, :, 128:, 128:] >= 0).all() and (x_wt[:, :, 128:, 128:] <= 1).all())
         x_wt_hat = wt_model(x_hat)
         x_wt_hat = preprocess_low_freq(x_wt_hat)
-        assert (x_wt_hat[:, :, 128:, 128:] >= 0 and x_wt_hat[:, :, 128:, 128:] <= 1)
+        assert ((x_wt_hat[:, :, 128:, 128:] >= 0).all() and (x_wt_hat[:, :, 128:, 128:] <= 1).all())
         
         img_loss = (epoch >= args.img_loss_epoch)
         loss, loss_bce, loss_kld = iwt_model.loss_function(data0, x_hat, x_wt, x_wt_hat, mu, var, img_loss)
