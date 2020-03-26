@@ -1483,7 +1483,7 @@ class IWTVAE_64_Bottleneck(nn.Module):
         if 'cuda' in self.devices[0] and 'cuda' in self.devices[1]:
             self.cuda = True
 
-class AE_Mask(nn.Module):
+class AE_Mask_512(nn.Module):
     def __init__(self, image_channels=3, z_dim=100):
         super(AE_Mask, self).__init__()
         # Resolution of images (512 x 512)
