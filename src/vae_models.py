@@ -1522,7 +1522,7 @@ class AE_Mask_64(nn.Module):
 
         self.d1 = nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True) #[b, 512, 4, 4]
         weights_init(self.d1)
-        self.instance_norm_d1 = nn.BatchNorm2d(num_features=256, affine=False)
+        self.instance_norm_d1 = nn.BatchNorm2d(num_features=512, affine=False)
         
         self.d2 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True) #[b, 256, 8, 8]
         weights_init(self.d2)
