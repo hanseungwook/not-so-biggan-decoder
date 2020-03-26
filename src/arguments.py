@@ -27,6 +27,8 @@ def args_parse():
                         help='Random seed')
     parser.add_argument('--device', type=int, default=-1,
                         help='GPU device # (-1 if CPU)')
+    parser.add_argument('--loss', type=str, default='l1',
+                        help='Type of loss/criterino to use for loss function')
     
     # Arguments for controlling KL weight anneal
     parser.add_argument('--kl_start', type=float, default=1.0,
