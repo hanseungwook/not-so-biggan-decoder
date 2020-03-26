@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from vae_models import IWT, iwt
-from utils.utils import zero_patches, calc_grad_norm_2, preprocess_low_freq, create_inv_filters
+from utils.utils import zero_patches, zero_mask, calc_grad_norm_2, preprocess_low_freq, create_inv_filters
 import logging
 
 log_idx = 0
@@ -341,7 +341,7 @@ def train_ae_mask(epoch, wt_model, model, criterion, optimizer, train_loader, tr
         Y = wt_model(data)
         
         # Zeroing out all other patches
-        Y = zero_patches(Y, num_wt=args.num_wt)
+        Y = zero_mask(Y, num_wt=args.num_wt, cur_iwt=1)
 
         x_hat = model(Y.to(model.device))
         loss = model.loss_function(data, x_hat, criterion)
