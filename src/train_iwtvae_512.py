@@ -5,11 +5,11 @@ from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
-from vae_models import WTVAE_64, IWTVAE_512_Mask, WT, wt
+from vae_models import WTVAE_64, IWTVAE_512_Mask, WT, wt, IWT, iwt
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae_test
 from arguments import args_parse
-from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters, create_filters
+from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters, create_filters, postprocess_low_freq
 import matplotlib.pyplot as plt
 import logging
 import pywt
@@ -61,6 +61,9 @@ if __name__ == "__main__":
     iwt_model.set_filters(inv_filters)
     iwt_model.set_device(devices[0])
     iwt_model = iwt_model.to(devices[0])
+
+    iwt_fn = IWT(iwt=iwt, num_iwt=args.num_iwt)
+    iwt_fn.set_filters(inv_filters)
     
     train_losses = []
     optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
@@ -95,10 +98,18 @@ if __name__ == "__main__":
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
                 mu, var, m1_idx, m2_idx = iwt_model.encode(data, Y)
-                x_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
-                x_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
+                # x_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
+                # x_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
+                x_wt_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
+                x_wt_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
 
-                x_hat_wt = wt_model(x_hat)
+                x_wt_hat = postprocess_low_freq(x_wt_hat)
+                x_wt_sample = postprocess_low_freq(x_wt_hat)
+                x_hat = iwt_fn(x_wt_hat)
+                x_sample = iwt_fn(x_wt_sample)
+
+                # x_hat_wt = wt_model(x_hat)
+                x_hat_wt = x_wt_hat
                 unmasked_x = x_hat_wt[:, :, :128, :128]
                 masked_x = x_hat_wt[:, :, 128:, 128:]
                 writer.add_histogram('Unmasked_values', unmasked_x.reshape(-1).cpu(), epoch)

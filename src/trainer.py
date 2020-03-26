@@ -255,8 +255,9 @@ def train_iwtvae_test(epoch, wt_model, iwt_model, optimizer, train_loader, train
     iwt_model.train()
     train_loss = 0
 
+    inv_filters = create_inv_filters(iwt_model.device)
     iwt_fn = IWT(iwt=iwt, num_iwt=self.num_iwt)
-    iwt_fn.set_filters(filters)
+    iwt_fn.set_filters(inv_filters)
     
     for batch_idx, data in enumerate(train_loader):
         
