@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
-from vae_models import WT, wt, IWT, iwt, AE_Mask
+from vae_models import WT, wt, IWT, iwt, AE_Mask_512
 from wt_datasets import CelebaDataset
 from trainer import train_ae_mask
 from evaluator import eval_ae_mask
@@ -44,20 +44,20 @@ if __name__ == "__main__":
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
     sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
     
-    if torch.cuda.is_available() and torch.cuda.device_count() >= 2:
-        devices = ['cuda:0', 'cuda:1']
-    else: 
-        devices = ['cpu', 'cpu']
+    if args.device > 0:
+        device = 'cuda:{}'.format(args.device)
+    else:
+        device = 'cpu'
 
-    filters = create_filters(device=devices[0])
+    filters = create_filters(device=device)
     wt_model = WT(wt=wt, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
-    wt_model = wt_model.to(devices[0])
-    wt_model.set_device(devices[0])
+    wt_model = wt_model.to(device)
+    wt_model.set_device(device)
 
-    model = AE_Mask(z_dim=args.z_dim)
-    model.set_device(devices[0])
-    model = model.to(devices[0])
+    model = AE_Mask_512(z_dim=args.z_dim)
+    model.set_device(device)
+    model = model.to(device)
     
     train_losses = []
     optimizer = optim.Adam(model.parameters(), lr=args.lr)

@@ -25,6 +25,8 @@ def args_parse():
                         help='Z dimension (whether in WTVAE or IWTVAE)')
     parser.add_argument('--seed', type=int, default=2020,
                         help='Random seed')
+    parser.add_argument('--device', type=int, default=-1,
+                        help='GPU device # (-1 if CPU)')
     
     # Arguments for controlling KL weight anneal
     parser.add_argument('--kl_start', type=float, default=1.0,
