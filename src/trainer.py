@@ -343,7 +343,7 @@ def train_ae_mask(epoch, wt_model, model, criterion, optimizer, train_loader, tr
         # Zeroing out all other patches
         Y = zero_patches(Y, num_wt=args.num_wt)
 
-        x_hat = model(Y)
+        x_hat = model(Y.to(model.device))
         loss = model.loss_function(data, x_hat, criterion)
         loss.backward()
 
