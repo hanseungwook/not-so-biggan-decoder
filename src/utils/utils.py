@@ -38,8 +38,6 @@ def zero_mask(mask, num_iwt, cur_iwt):
     # Masking outer patches, only if we are not already at the edges of the image
     if outer_patch_h0 < h and outer_patch_w0 < w:
         mask[:, outer_patch_h0:, outer_patch_w0:].fill_(0)
-
-    # mask[:, :h//(np.power(2, num_iwt)), :w//np.power(2, num_iwt)].fill_(0)
     
     return mask
 
@@ -98,3 +96,25 @@ def calc_grad_norm_2(model):
     total_norm = total_norm ** (1. / 2)
 
     return total_norm
+
+# Normalize all values to range (0, 1)
+# Minimum value in low frequency patches in training dataset = -1.9527
+# Maximum value in low frequency patches in training dataset = 1.6612
+def preprocess_low_freq(batch):
+    low_freq = batch[:, :, 128:, 128:]
+    low_freq = (low_freq + 1.9527) / 1.6612
+
+    batch[:, :, 128:, 128:] = low_freq
+    
+    return batch
+
+# Revert low frequency back to original range
+def postprocess_low_freq(batch):
+    low_freq = batch[:, :, 128:, 128:]
+    low_freq = (low_freq * 1.6612) - 1.9527
+
+    batch[:, :, 128:, 128:] = low_freq
+    
+    return batch
+    
+    

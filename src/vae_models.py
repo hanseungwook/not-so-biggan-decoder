@@ -4,7 +4,7 @@ from torch import nn, optim
 from torch.autograd import Variable
 from torch.nn import functional as F
 from torchvision.utils import save_image
-from utils.utils import zero_mask, zero_pad
+from utils.utils import zero_mask, zero_pad, postprocess_low_freq
 import numpy as np
 import pywt
 
@@ -1615,6 +1615,7 @@ class IWTVAE_512_Mask(nn.Module):
         self.z_dim = z_dim
         self.num_iwt = num_iwt
         self.leakyrelu = nn.LeakyReLU(0.2)
+        self.sigmoid = nn.Sigmoid()
 
         # Z Encoder - Decoder                                                                [b, 3, 512, 512]
         self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 256, 256]
@@ -1703,8 +1704,8 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                   #[b, 128, 64, 64]
         h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
-        h = self.instance_norm_d4(self.d4(h))                                   #[b, 1, 256, 512]
-        mask_og = h.clone().detach()
+        h = self.sigmoid(self.instance_norm_d4(self.d4(h)))                     #[b, 1, 256, 512]
+        # mask_og = h.clone().detach()
 
         # Dynamic masks (covering all irrelevant patches at each IWT)
         # for i in range(self.num_iwt):
@@ -1720,6 +1721,7 @@ class IWTVAE_512_Mask(nn.Module):
             assert (h[:, :128, :128] == 0).all()
             
         h = y + h.unsqueeze(1)
+        h = postprocess_low_freq(h)
         h = self.iwt(h)
         
         return h
@@ -1742,7 +1744,8 @@ class IWTVAE_512_Mask(nn.Module):
             BCE = F.mse_loss(x_hat.reshape(-1), x.reshape(-1))
 
         # WT-space loss on patch level other than 1st patch
-        BCE_wt = F.l1_loss(x_wt_hat[:, :, 128:, 128:].reshape(-1), x_wt[:, :, 128:, 128:].reshape(-1))
+        # BCE_wt = F.l1_loss(x_wt_hat[:, :, 128:, 128:].reshape(-1), x_wt[:, :, 128:, 128:].reshape(-1))
+        BCE_wt = F.binary_cross_entropy(x_wt_hat[:, :, 128:, 128:].reshape(-1), x_wt[:, :, 128:, 128:].reshape(-1))
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())

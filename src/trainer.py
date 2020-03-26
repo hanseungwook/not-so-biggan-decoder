@@ -1,7 +1,7 @@
 import os, sys
 import torch
 import numpy as np
-from utils.utils import zero_patches, calc_grad_norm_2
+from utils.utils import zero_patches, calc_grad_norm_2, preprocess_low_freq
 import logging
 
 log_idx = 0
@@ -197,8 +197,11 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
 
         x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.device))
 
+        # Get WT space of x and x hat, but preprocess them to normalize the range to (0, 1)
         x_wt = wt_model(data0)
+        x_wt = preprocess_low_freq(x_wt)
         x_wt_hat = wt_model(x_hat)
+        x_wt_hat = preprocess_low_freq(x_wt_hat)
         
         img_loss = (epoch >= args.img_loss_epoch)
         loss, loss_bce, loss_kld = iwt_model.loss_function(data0, x_hat, x_wt, x_wt_hat, mu, var, img_loss)
