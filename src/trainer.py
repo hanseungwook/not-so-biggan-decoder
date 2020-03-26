@@ -1,5 +1,6 @@
 import os, sys
 import torch
+import torch.nn as nn
 import numpy as np
 from vae_models import IWT, iwt
 from utils.utils import zero_patches, calc_grad_norm_2, preprocess_low_freq, create_inv_filters
@@ -324,6 +325,57 @@ def train_iwtvae_test(epoch, wt_model, iwt_model, optimizer, train_loader, train
 
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
+
+def train_ae_mask(epoch, wt_model, model, criterion, optimizer, train_loader, train_losses, args, writer):
+    # toggle model to train mode
+    model.train()
+    train_loss = 0
+    
+    for batch_idx, data in enumerate(train_loader):
+        
+        data = data.to(model.device)
+
+        optimizer.zero_grad()
+        
+        # Get Y
+        Y = wt_model(data)
+        
+        # Zeroing out all other patches
+        Y = zero_patches(Y, num_wt=args.num_wt)
+
+        x_hat = model(Y)
+        loss = model.loss_function(data, x_hat, criterion)
+        loss.backward()
+
+        # Calculating and printing gradient norm
+        total_norm = calc_grad_norm_2(model)
+
+        # Calculating and printing gradient norm
+        global log_idx
+        writer.add_scalar('Loss', loss, log_idx)
+        writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
+        log_idx += 1 
+
+        # Gradient clipping
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.grad_clip, norm_type=2)
+            # Re-calculating total norm after gradient clipping
+            total_norm = calc_grad_norm_2(model)
+            writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
+        
+        train_losses.append(loss.cpu().item())
+        train_loss += loss
+
+        optimizer.step()
+        if batch_idx % args.log_interval == 0:
+            logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
+                                                                           len(train_loader.dataset),
+                                                                           100. * batch_idx / len(train_loader),
+                                                                           loss / len(data)))
+            
+            n = min(data.size(0), 8)  
+
+    logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
 def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args, writer):
     # toggle model to train mode
