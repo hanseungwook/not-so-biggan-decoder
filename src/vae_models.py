@@ -1538,7 +1538,7 @@ class AE_Mask(nn.Module):
         weights_init(self.d3)
         self.instance_norm_d3 = nn.InstanceNorm2d(num_features=32, affine=False)
 
-        self.d4 = nn.ConvTranspose2d(32, 1, 4, stride=2, padding=1, bias=True) #[b, 1, 512, 512]
+        self.d4 = nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1, bias=True) #[b, 1, 512, 512]
         weights_init(self.d4)
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=3, affine=False)
     
