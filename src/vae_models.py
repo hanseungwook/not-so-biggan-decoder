@@ -1582,6 +1582,106 @@ class AE_Mask_512(nn.Module):
     def set_device(self, device):
         self.device = device
 
+
+class AE_Mask_512_1(nn.Module):
+    def __init__(self, image_channels=3, z_dim=100):
+        super(AE_Mask, self).__init__()
+        # Resolution of images (64 x 64)
+        self.res = 64
+        self.device = None
+        self.cuda = False
+        
+        self.z_dim = z_dim
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.sigmoid = nn.Sigmoid()
+
+        # Z Encoder - Decoder                                                                [b, 3, 512, 512]
+        self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 256, 256]
+        weights_init(self.e1)
+        self.instance_norm_e1 = nn.BatchNorm2d(num_features=64, affine=False)
+
+        self.e2 = nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 128, 16, 16]
+        weights_init(self.e2)
+        self.instance_norm_e2 = nn.BatchNorm2d(num_features=128, affine=False)
+
+        self.m1 = nn.MaxPool2d(kernel_size=4, stride=2, padding=1, return_indices=True) #[b, 128, 64, 64]
+
+        self.e3 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 32, 32]
+        weights_init(self.e3)
+        self.instance_norm_e3 = nn.BatchNorm2d(num_features=256, affine=False)
+
+        self.e4 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 16, 16]
+        weights_init(self.e4)
+        self.instance_norm_e4 = nn.BatchNorm2d(num_features=512, affine=False)
+
+        self.m2 = nn.MaxPool2d(kernel_size=4, stride=2, padding=1, return_indices=True) #[b, 512, 8, 8]
+        
+        self.fc_enc = nn.Linear(512 * 8 * 8, z_dim)
+        weights_init(self.fc_enc)
+        
+        self.fc_dec = nn.Linear(z_dim, 512 * 8 * 8)
+        weights_init(self.fc_dec)
+
+        self.u1 = nn.MaxUnpool2d(kernel_size=4, stride=2, padding=1) #[b, 512, 16, 16]
+
+        self.d1 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True) #[b, 256, 32, 32]
+        weights_init(self.d1)
+        self.instance_norm_d1 = nn.BatchNorm2d(num_features=256, affine=False)
+
+        self.d2= nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True) #[b, 128, 64, 64]
+        weights_init(self.d2)
+        self.instance_norm_d2 = nn.BatchNorm2d(num_features=128, affine=False)
+    
+        self.u2 = nn.MaxUnpool2d(kernel_size=4, stride=2, padding=1) #[b, 128, 128, 128]
+
+        self.d3 = nn.ConvTranspose2d(128, 32, 4, stride=2, padding=1, bias=True) #[b, 32, 256, 256]
+        weights_init(self.d3)
+        self.instance_norm_d3 = nn.BatchNorm2d(num_features=32, affine=False)
+
+        self.d4 = nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1, bias=True) #[b, 1, 512, 512]
+        weights_init(self.d4)
+        self.instance_norm_d4 = nn.BatchNorm2d(num_features=3, affine=False)
+    
+      
+    def encode(self, x):
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))                       #[b, 64, 256, 256]
+        h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))                       #[b, 128, 128, 128]
+        h, m1_idx = self.m1(h)                                                      #[b, 128, 64, 64]
+        h = self.leakyrelu(h)                                                       
+        h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))                       #[b, 256, 32, 32]
+        h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))                       #[b, 512, 16, 16]
+
+        h, m2_idx = self.m2(h)                                                      #[b, 512, 8, 8]
+        h = self.leakyrelu(h)
+        h = self.leakyrelu(self.fc_enc(h.reshape(-1,512*8*8)))                      #[b, z_dim]
+
+        return h, m1_idx, m2_idx                                                    #[b, z_dim]
+    
+    def decode(self, x, m1_idx, m2_idx):
+        h = self.leakyrelu(self.fc_dec(x))                                      #[b, 512*8*8]
+        h = self.leakyrelu(self.u1(h.reshape(-1, 512, 8, 8), indices=m2_idx))   #[b, 512, 16, 16]
+        h = self.leakyrelu(self.instance_norm_d1(self.d1(h)))                   #[b, 256, 32, 32]
+        h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                   #[b, 128, 64, 64]
+        h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
+        h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
+        h = self.instance_norm_d4(self.d4(h))                                   #[b, 1, 256, 512]
+
+        return h
+    
+    def forward(self, x):
+        x, m1_idx, m2_idx = self.encode(x)
+        x = self.decode(x, m1_idx, m2_idx)
+        
+        return x
+
+    def loss_function(self, x, x_hat, criterion):
+        loss = criterion(x_hat.reshape(-1), x.reshape(-1))
+
+        return loss
+    
+    def set_device(self, device):
+        self.device = device
+
 # IWT VAE for 64 x 64 images
 # Assumes that 2 GPUs available
 class IWTVAE_64_Mask(nn.Module):
