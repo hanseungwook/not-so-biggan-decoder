@@ -7,8 +7,8 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from vae_models import WT, wt, IWT, iwt, AE_Mask_128_Channels
 from wt_datasets import CelebaDataset
-from trainer import train_ae_mask
-from evaluator import eval_ae_mask
+from trainer import train_ae_mask_channels
+from evaluator import eval_ae_mask_channels
 from arguments import args_parse
 from utils.utils import zero_patches, set_seed, save_plot, create_filters
 import matplotlib.pyplot as plt
@@ -81,8 +81,8 @@ if __name__ == "__main__":
         raise Exception('Could not make model & img output directories')
     
     for epoch in range(1, args.epochs + 1):
-        train_ae_mask(epoch, wt_model, model, criterion, optimizer, train_loader, train_losses, args, writer)
-        eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir, writer)
+        train_ae_mask_channels(epoch, wt_model, model, criterion, optimizer, train_loader, train_losses, args, writer)
+        eval_ae_mask_channels(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir, writer)
 
     
     # Save train losses and plot
