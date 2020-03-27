@@ -393,9 +393,9 @@ def train_ae_mask_channels(epoch, wt_model, model, criterion, optimizer, train_l
         
         # Zeroing out all other patches
         Y = zero_mask(Y, num_iwt=args.num_wt, cur_iwt=1)
-        Y = hf_collate_to_channels(Y)
+        Y = hf_collate_to_channels(Y, device=model.device)
 
-        x_hat = model(Y.to(model.device))
+        x_hat = model(Y)
         loss = model.loss_function(Y, x_hat, criterion)
         loss.backward()
 
