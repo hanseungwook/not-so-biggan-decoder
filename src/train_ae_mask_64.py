@@ -50,7 +50,7 @@ if __name__ == "__main__":
         device = 'cpu'
     print('Device: {}'.format(device))
     filters = create_filters(device=device)
-    wt_model = WT(wt=wt, num_wt=args.num_iwt)
+    wt_model = WT(wt=wt, num_wt=args.num_wt)
     wt_model.set_filters(filters)
     wt_model = wt_model.to(device)
     wt_model.set_device(device)
