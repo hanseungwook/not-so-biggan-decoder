@@ -1728,9 +1728,9 @@ class AE_Mask_128_Channels(nn.Module):
         weights_init(self.d4)
         self.instance_norm_d4 = nn.BatchNorm2d(num_features=64, affine=False)
 
-        self.d5 = nn.ConvTranspose2d(64, 9, 4, stride=2, padding=1, bias=True) #[b, 3, 64, 64]
+        self.d5 = nn.ConvTranspose2d(64, 9, 4, stride=2, padding=1, bias=True) #[b, 9, 64, 64]
         weights_init(self.d5)
-        self.instance_norm_d5 = nn.BatchNorm2d(num_features=3, affine=False)
+        self.instance_norm_d5 = nn.BatchNorm2d(num_features=9, affine=False)
     
       
     def encode(self, x):
