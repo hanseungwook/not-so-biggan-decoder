@@ -102,8 +102,8 @@ def calc_grad_norm_2(model):
 # Maximum value in low frequency patches in training dataset = 1.6612
 def preprocess_low_freq(batch):
     low_freq = batch[:, :, 128:, 128:]
-    # low_freq = (low_freq + 1.953) / 3.795
-    low_freq = (low_freq + 1.953) * 100
+    low_freq = (low_freq + 1.953) / 3.795
+    # low_freq = (low_freq + 1.953) * 100
 
     batch[:, :, 128:, 128:] = low_freq
     
@@ -112,10 +112,34 @@ def preprocess_low_freq(batch):
 # Revert low frequency back to original range
 def postprocess_low_freq(batch):
     low_freq = batch[:, :, 128:, 128:]
-    # low_freq = (low_freq * 3.795) - 1.953
-    low_freq = (low_freq / 100) - 1.953
+    low_freq = (low_freq * 3.795) - 1.953
+    # low_freq = (low_freq / 100) - 1.953
     batch[:, :, 128:, 128:] = low_freq
     
     return batch
+
+# Collates the high frequency patches to channels in the order of 1st, 3rd, and 4th quadrants
+# Assumes number of wt = 1
+def hf_collate_to_channels(wt_img, device='cpu'):
+    h = wt_img.shape[2]
+    w = wt_img.shape[3]
+    first_quad = wt_img[:, :, :h // 2, w // 2:]
+    third_quad = wt_img[:, :, h // 2:, :w // 2]
+    fourth_quad = wt_img[:, :, h // 2:, w // 2:]
+
+    return torch.cat((first_quad, third_quad, fourth_quad), dim=1).to(device)
+
+# Collates high frequency patches back to image format with first patch = 0
+# Assumes number of wt = 1
+def hf_collate_to_img(wt_channels, device='cpu'):
+    bs = wt_channels.shape[0]
+    c = wt_channels.shape[1]
+    h = wt_channels.shape[2] * 2
+    w = wt_channels.shape[3] * 2
     
-    
+    wt_img = torch.zeros((bs, 3, h, w), device=device)
+    wt_img[:, :, :h // 2, w // 2:] = wt_channels[:, :c // 3, :, :]
+    wt_img[:, :, h // 2:, :w // 2] = wt_channels[:, c // 3: c // 3 * 2, :, :]
+    wt_img[:, :, h // 2:, w // 2:] = wt_channels[:, c // 3 * 2:, :, :]
+
+    return wt_img
