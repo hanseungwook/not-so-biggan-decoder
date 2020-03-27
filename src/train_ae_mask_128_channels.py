@@ -26,7 +26,7 @@ if __name__ == "__main__":
     args = args_parse()
 
     # Setting up tensorboard writer
-    log_dir = os.path.join(args.root_dir, 'runs/aemask128_{}'.format(args.config))
+    log_dir = os.path.join(args.root_dir, 'runs/aemask128c_{}'.format(args.config))
     try:
         os.mkdir(log_dir)
     except:
@@ -70,8 +70,8 @@ if __name__ == "__main__":
     elif args.loss == 'bce':
         criterion = torch.nn.BCELoss()
 
-    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/aemask128_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/aemask128_{}/'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/aemask128c_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/aemask128c_{}/'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
