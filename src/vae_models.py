@@ -1579,7 +1579,7 @@ class AE_Mask_64(nn.Module):
 
 class AE_Mask_128(nn.Module):
     def __init__(self, image_channels=3, z_dim=100):
-        super(AE_Mask_64, self).__init__()
+        super(AE_Mask_128, self).__init__()
         # Resolution of images (128 x 128)
         self.res = 128
         self.device = None
