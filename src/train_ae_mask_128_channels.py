@@ -37,7 +37,10 @@ if __name__ == "__main__":
     # Set seed
     set_seed(args.seed)
 
-    dataset_dir = os.path.join(args.root_dir, 'data/celeba128/')
+    if args.num_wt == 1:
+        dataset_dir = os.path.join(args.root_dir, 'data/celeba128/')
+    elif args.num_wt == 2:
+        dataset_dir = os.path.join(args.root_dir, 'data/celebaHQ512/')
     dataset_files = sample(os.listdir(dataset_dir), 10000)
     train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
@@ -50,7 +53,8 @@ if __name__ == "__main__":
         device = 'cpu'
     print('Device: {}'.format(device))
     filters = create_filters(device=device)
-    wt_model = WT(wt=wt, num_wt=args.num_iwt)
+    wt_model = WT(wt=wt, num_wt=args.num_wt)
+    print('WT model: {} operations'.format(args.num_wt))
     wt_model.set_filters(filters)
     wt_model = wt_model.to(device)
     wt_model.set_device(device)
