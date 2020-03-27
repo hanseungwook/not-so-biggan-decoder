@@ -20,7 +20,7 @@ def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, mo
             save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
             save_image(Y.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
 
-    torch.save(model.state_dict(), model_dir + '/aemask512_epoch{}.pth'.format(epoch))
+    torch.save(model.state_dict(), model_dir + '/aemask_epoch{}.pth'.format(epoch))
 
 def eval_ae_mask_channels(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir, writer):
     with torch.no_grad():
@@ -46,4 +46,4 @@ def eval_ae_mask_channels(epoch, wt_model, model, sample_loader, args, img_outpu
             save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
             save_image(Y.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
 
-    torch.save(model.state_dict(), model_dir + '/aemask512_epoch{}.pth'.format(epoch))
+    torch.save(model.state_dict(), model_dir + '/aemask_epoch{}.pth'.format(epoch))
