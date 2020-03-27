@@ -139,7 +139,7 @@ def hf_collate_to_channels_wt2(wt_img, device='cpu'):
     first_quad = wt_img[:, :, :inner_dim, inner_dim:outer_dim]
     third_quad = wt_img[:, :, inner_dim:outer_dim, :inner_dim]
     fourth_quad = wt_img[:, :, inner_dim:outer_dim, inner_dim:outer_dim]
-    IPython.embed()
+    
     return torch.cat((first_quad, third_quad, fourth_quad), dim=1).to(device)
 
 # Collates high frequency patches back to image format with first patch = 0
