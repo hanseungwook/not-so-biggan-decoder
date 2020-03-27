@@ -62,8 +62,8 @@ def save_plot(data, save_file):
     plt.title('Train Loss')
     plt.savefig(save_file)
 
-def create_filters(device):
-    w = pywt.Wavelet('bior2.2')
+def create_filters(device, wt_fn='bior2.2'):
+    w = pywt.Wavelet(wt_fn)
 
     dec_hi = torch.Tensor(w.dec_hi[::-1]).to(device)
     dec_lo = torch.Tensor(w.dec_lo[::-1]).to(device)
@@ -75,8 +75,8 @@ def create_filters(device):
 
     return filters
 
-def create_inv_filters(device):
-    w = pywt.Wavelet('bior2.2')
+def create_inv_filters(device, wt_fn='bior2.2'):
+    w = pywt.Wavelet(wt_fn)
 
     rec_hi = torch.Tensor(w.rec_hi).to(device)
     rec_lo = torch.Tensor(w.rec_lo).to(device)

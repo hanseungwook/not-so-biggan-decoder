@@ -42,6 +42,18 @@ def iwt(vres, inv_filters, levels=1):
 
     return res.reshape(bs, -1, h, w)
 
+def iwt_haar(vres, inv_filters, levels=1):
+    bs = vres.shape[0]
+    h = vres.size(2)
+    w = vres.size(3)
+    vres = vres.reshape(-1, 1, h, w)
+    res = vres.contiguous().view(-1, h//2, 2, w//2).transpose(1, 2).contiguous().view(-1, 4, h//2, w//2).clone()
+    if levels > 1:
+        res[:,:1] = iwt(res[:,:1], inv_filters, levels=levels-1)
+    res = torch.nn.functional.conv_transpose2d(res, Variable(inv_filters[:,None]),stride=2)
+
+    return res.reshape(bs, -1, h, w)
+
 def wt(vimg, filters, levels=1):
     bs = vimg.shape[0]
     h = vimg.size(2)
@@ -58,6 +70,21 @@ def wt(vimg, filters, levels=1):
 
     return res.reshape(bs, -1, h, w)
 
+def wt_haar(vimg, filters, levels=1):
+    bs = vimg.shape[0]
+    h = vimg.size(2)
+    w = vimg.size(3)
+    vimg = vimg.reshape(-1, 1, h, w)
+    padded = torch.nn.functional.pad(vimg,(0,0,0,0))
+    res = torch.nn.functional.conv2d(padded, Variable(filters[:,None]),stride=2)
+    if levels>1:
+        res[:,:1] = wt(res[:,:1], filters, levels-1)
+        res[:,:1,32:,:] = res[:,:1,32:,:]*1.
+        res[:,:1,:,32:] = res[:,:1,:,32:]*1.
+        res[:,1:] = res[:,1:]*1.
+    res = res.view(-1,2,h//2,w//2).transpose(1,2).contiguous().view(-1,1,h,w)
+
+    return res.reshape(bs, -1, h, w)
 
 def get_upsampling_layer(name, res, bottleneck_dim=100):
     layer = None
