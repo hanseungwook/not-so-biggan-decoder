@@ -1644,14 +1644,14 @@ class AE_Mask_128(nn.Module):
         h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))                       #[b, 512, 8, 8]
         h = self.leakyrelu(self.instance_norm_e5(self.e5(h)))                       #[b, 1024, 4, 4]
 
-        h = self.leakyrelu(self.fc_enc(h.reshape(-1,1024*2*2)))                     #[b, z_dim]
+        h = self.leakyrelu(self.fc_enc(h.reshape(-1,1024*4*4)))                     #[b, z_dim]
 
         return h
     
     def decode(self, x):
         h = self.leakyrelu(self.fc_dec(x))                                          #[b, 1024*4*4]
 
-        h = self.leakyrelu(self.instance_norm_d1(self.d1(h.reshape(-1, 1024, 2, 2))))#[b, 512, 8, 8]
+        h = self.leakyrelu(self.instance_norm_d1(self.d1(h.reshape(-1, 1024, 4, 4))))#[b, 512, 8, 8]
         h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                       #[b, 256, 16, 16]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                       #[b, 128, 32, 32]
         h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                       #[b, 64, 64, 64]
