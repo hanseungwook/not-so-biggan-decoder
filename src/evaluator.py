@@ -12,7 +12,7 @@ def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, mo
             # Get Y
             Y = wt_model(data)
             
-            # Zeroing out all other patches
+            # Zeroing out first patch
             Y = zero_mask(Y, num_iwt=args.num_wt, cur_iwt=1)
 
             x_hat = model(Y.to(model.device))
