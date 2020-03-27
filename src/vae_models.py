@@ -1577,6 +1577,102 @@ class AE_Mask_64(nn.Module):
     def set_device(self, device):
         self.device = device
 
+class AE_Mask_128(nn.Module):
+    def __init__(self, image_channels=3, z_dim=100):
+        super(AE_Mask_64, self).__init__()
+        # Resolution of images (128 x 128)
+        self.res = 128
+        self.device = None
+        self.cuda = False
+        
+        self.z_dim = z_dim
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.sigmoid = nn.Sigmoid()
+
+        # Z Encoder - Decoder                                                                [b, 3, 128, 128]
+        self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 64, 64]
+        weights_init(self.e1)
+        self.instance_norm_e1 = nn.BatchNorm2d(num_features=64, affine=False)
+
+        self.e2 = nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 128, 32, 32]
+        weights_init(self.e2)
+        self.instance_norm_e2 = nn.BatchNorm2d(num_features=128, affine=False)
+
+        self.e3 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 16, 16]
+        weights_init(self.e3)
+        self.instance_norm_e3 = nn.BatchNorm2d(num_features=256, affine=False)
+
+        self.e4 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 8, 8]
+        weights_init(self.e4)
+        self.instance_norm_e4 = nn.BatchNorm2d(num_features=512, affine=False)
+
+        self.e5 = nn.Conv2d(512, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 1024, 4, 4]
+        weights_init(self.e5)
+        self.instance_norm_e5 = nn.BatchNorm2d(num_features=1024, affine=False)
+        
+        self.fc_enc = nn.Linear(1024 * 4 * 4, z_dim)
+        weights_init(self.fc_enc)
+        
+        self.fc_dec = nn.Linear(z_dim, 1024 * 4 * 4)
+        weights_init(self.fc_dec)
+
+        self.d1 = nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True) #[b, 512, 8, 8]
+        weights_init(self.d1)
+        self.instance_norm_d1 = nn.BatchNorm2d(num_features=512, affine=False)
+        
+        self.d2 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True) #[b, 256, 16, 16]
+        weights_init(self.d2)
+        self.instance_norm_d2 = nn.BatchNorm2d(num_features=256, affine=False)
+
+        self.d3= nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True) #[b, 128, 32, 32]
+        weights_init(self.d3)
+        self.instance_norm_d3 = nn.BatchNorm2d(num_features=128, affine=False)
+
+        self.d4 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True) #[b, 64, 64, 64]
+        weights_init(self.d4)
+        self.instance_norm_d4 = nn.BatchNorm2d(num_features=64, affine=False)
+
+        self.d5 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True) #[b, 3, 128, 128]
+        weights_init(self.d5)
+        self.instance_norm_d5 = nn.BatchNorm2d(num_features=3, affine=False)
+    
+      
+    def encode(self, x):
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))                       #[b, 64, 64, 64]
+        h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))                       #[b, 128, 32, 32]
+        h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))                       #[b, 256, 16, 16]
+        h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))                       #[b, 512, 8, 8]
+        h = self.leakyrelu(self.instance_norm_e5(self.e5(h)))                       #[b, 1024, 4, 4]
+
+        h = self.leakyrelu(self.fc_enc(h.reshape(-1,1024*2*2)))                     #[b, z_dim]
+
+        return h
+    
+    def decode(self, x):
+        h = self.leakyrelu(self.fc_dec(x))                                          #[b, 1024*4*4]
+
+        h = self.leakyrelu(self.instance_norm_d1(self.d1(h.reshape(-1, 1024, 2, 2))))#[b, 512, 8, 8]
+        h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                       #[b, 256, 16, 16]
+        h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                       #[b, 128, 32, 32]
+        h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                       #[b, 64, 64, 64]
+        h = self.leakyrelu(self.instance_norm_d5(self.d5(h)))                       #[b, 3, 128, 128]
+
+        return h
+    
+    def forward(self, x):
+        x = self.encode(x)
+        x = self.decode(x)
+        
+        return x
+
+    def loss_function(self, x, x_hat, criterion):
+        loss = criterion(x_hat.reshape(-1), x.reshape(-1))
+
+        return loss
+    
+    def set_device(self, device):
+        self.device = device
+
 class AE_Mask_512(nn.Module):
     def __init__(self, image_channels=3, z_dim=100):
         super(AE_Mask, self).__init__()
@@ -1681,7 +1777,7 @@ class AE_Mask_512_1(nn.Module):
     def __init__(self, image_channels=3, z_dim=100):
         super(AE_Mask, self).__init__()
         # Resolution of images (64 x 64)
-        self.res = 64
+        self.res = 512
         self.device = None
         self.cuda = False
         
