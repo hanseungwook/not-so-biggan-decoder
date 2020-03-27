@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 from vae_models import IWT, iwt
-from utils.utils import zero_patches, zero_mask, calc_grad_norm_2, preprocess_low_freq, create_inv_filters, hf_collate_to_channels, hf_collate_to_img
+from utils.utils import zero_patches, zero_mask, calc_grad_norm_2, preprocess_low_freq, create_inv_filters, hf_collate_to_channels, hf_collate_to_channels_wt2, hf_collate_to_img
 import logging
 
 log_idx = 0
@@ -340,7 +340,7 @@ def train_ae_mask(epoch, wt_model, model, criterion, optimizer, train_loader, tr
         # Get Y
         Y = wt_model(data)
         
-        # Zeroing out all other patches
+        # Zeroing out first patch
         Y = zero_mask(Y, num_iwt=args.num_wt, cur_iwt=1)
 
         x_hat = model(Y.to(model.device))
@@ -391,9 +391,12 @@ def train_ae_mask_channels(epoch, wt_model, model, criterion, optimizer, train_l
         # Get Y
         Y = wt_model(data)
         
-        # Zeroing out all other patches
+        # Zeroing out first patch
         Y = zero_mask(Y, num_iwt=args.num_wt, cur_iwt=1)
-        Y = hf_collate_to_channels(Y, device=model.device)
+        if args.num_wt == 1:
+            Y = hf_collate_to_channels(Y, device=model.device)
+        elif args.num_wt == 2:
+            Y = hf_collate_to_channels_wt2(Y, device=model.device)
 
         x_hat = model(Y)
         loss = model.loss_function(Y, x_hat, criterion)

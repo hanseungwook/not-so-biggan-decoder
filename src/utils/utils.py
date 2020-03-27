@@ -129,6 +129,19 @@ def hf_collate_to_channels(wt_img, device='cpu'):
 
     return torch.cat((first_quad, third_quad, fourth_quad), dim=1).to(device)
 
+# Collates the high frequency patches to channels in the order of 1st, 3rd, and 4th quadrants (smaller quadrants)
+# Assumes number of wt = 2
+def hf_collate_to_channels_wt2(wt_img, device='cpu'):
+    h = wt_img.shape[2]
+    w = wt_img.shape[3]
+    inner_dim = h // 4
+    outer_dim = h * 2
+    first_quad = wt_img[:, :, :inner_dim, inner_dim:outer_dim]
+    third_quad = wt_img[:, :, inner_dim:outer_dim, :inner_dim]
+    fourth_quad = wt_img[:, :, inner_dim:outer_dim, inner_dim:outer_dim]
+
+    return torch.cat((first_quad, third_quad, fourth_quad), dim=1).to(device)
+
 # Collates high frequency patches back to image format with first patch = 0
 # Assumes number of wt = 1
 def hf_collate_to_img(wt_channels, device='cpu'):
