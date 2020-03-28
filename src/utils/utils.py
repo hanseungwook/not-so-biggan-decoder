@@ -30,14 +30,8 @@ def zero_mask(mask, num_iwt, cur_iwt):
 
     inner_patch_h0 = h // (np.power(2, num_iwt-cur_iwt+1))
     inner_patch_w0 = w // (np.power(2, num_iwt-cur_iwt+1))
-    outer_patch_h0 = inner_patch_h0 * 2
-    outer_patch_w0 = inner_patch_w0 * 2
 
     mask[:, :, :inner_patch_h0, :inner_patch_w0].fill_(0)
-
-    # Masking outer patches, only if we are not already at the edges of the image
-    if outer_patch_h0 < h and outer_patch_w0 < w:
-        mask[:, outer_patch_h0:, outer_patch_w0:].fill_(0)
     
     return mask
 
