@@ -49,7 +49,7 @@ def iwt_haar(vres, inv_filters, levels=1):
     vres = vres.reshape(-1, 1, h, w)
     res = vres.contiguous().view(-1, h//2, 2, w//2).transpose(1, 2).contiguous().view(-1, 4, h//2, w//2).clone()
     if levels > 1:
-        res[:,:1] = iwt(res[:,:1], inv_filters, levels=levels-1)
+        res[:,:1] = iwt_haar(res[:,:1], inv_filters, levels=levels-1)
     res = torch.nn.functional.conv_transpose2d(res, Variable(inv_filters[:,None]),stride=2)
 
     return res.reshape(bs, -1, h, w)
@@ -78,7 +78,7 @@ def wt_haar(vimg, filters, levels=1):
     padded = torch.nn.functional.pad(vimg,(0,0,0,0))
     res = torch.nn.functional.conv2d(padded, Variable(filters[:,None]),stride=2)
     if levels>1:
-        res[:,:1] = wt(res[:,:1], filters, levels-1)
+        res[:,:1] = wt_haar(res[:,:1], filters, levels-1)
         res[:,:1,32:,:] = res[:,:1,32:,:]*1.
         res[:,:1,:,32:] = res[:,:1,:,32:]*1.
         res[:,1:] = res[:,1:]*1.
