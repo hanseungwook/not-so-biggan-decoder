@@ -62,6 +62,7 @@ def train_wtvae(epoch, model, optimizer, train_loader, train_losses, args, write
             
     writer.flush()
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
+    
 
 def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, writer):
     # toggle model to train mode

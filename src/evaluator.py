@@ -1,8 +1,43 @@
 import torch
 from torchvision.utils import save_image
-from utils.utils import zero_mask, save_plot, hf_collate_to_img, hf_collate_to_channels, hf_collate_to_channels_wt2
+import numpy as np
+from vae_models import wt
+from utils.utils import zero_mask, zero_pad, save_plot, hf_collate_to_img, hf_collate_to_channels, hf_collate_to_channels_wt2
 
-def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir, writer):
+def eval_wtvae(epoch, model, sample_loader, args, img_output_dir, model_dir):
+    with torch.no_grad():
+        model.eval()
+        
+        for data in sample_loader:
+            if model.cuda:
+                data = data.to(model.device)
+
+            # Run encoder: get z and sampled z
+            z_sample1 = torch.randn(data.shape[0], args.z_dim).to(model.device)
+            x = data.clone().detach().to(model.device)
+            z, mu_wt, logvar_wt = model.encode(data)
+
+            # Run decoder: get y and sampled y
+            y = model.decode(z)
+            y_sample = model.decode(z_sample1)
+
+            # Create padded versions
+            target_dim = np.power(2, args.num_wt) * y.shape[2]
+            y_padded = zero_pad(y, target_dim=target_dim, device=model.device)
+            y_sample_padded = zero_pad(y_sample, target_dim=target_dim, device=model.device)
+
+            x_wt = wt(x, model.filters, levels=args.num_wt)
+            x_wt = x_wt[:, :, :y.shape[2], :y.shape[3]]
+            
+            save_image(y_padded.cpu(), img_output_dir + '/recon_y_padded{}.png'.format(epoch))
+            save_image(y.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
+            save_image(y_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
+            save_image(x_wt.cpu(), img_output_dir + '/target{}.png'.format(epoch))
+
+    torch.save(model.state_dict(), model_dir + '/wtvae_epoch{}.pth'.format(epoch))
+
+
+def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir):
     with torch.no_grad():
         model.eval()
         
@@ -22,7 +57,7 @@ def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, mo
 
     torch.save(model.state_dict(), model_dir + '/aemask_epoch{}.pth'.format(epoch))
 
-def eval_ae_mask_channels(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir, writer):
+def eval_ae_mask_channels(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir):
     with torch.no_grad():
         model.eval()
         
