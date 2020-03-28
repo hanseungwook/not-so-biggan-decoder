@@ -35,7 +35,7 @@ if __name__ == "__main__":
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
     sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
     
-    if torch.cuda.is_available() and device >= 0:
+    if torch.cuda.is_available() and args.device >= 0:
         device = 'cuda:{}'.format(args.device)
     else: 
         device = 'cpu'
