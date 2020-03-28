@@ -69,17 +69,25 @@ def train_wtvae_pair(epoch, model, optimizer, train_loader, train_losses, args, 
     # toggle model to train mode
     model.train()
     train_loss = 0
+    anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup * len(train_loader))
+    global decoder_outputs
+
+    # Register hook onto decoder so that we can compute additional loss on reconstruction of original image (in adddition to patch loss)
+    model.decoder.register_forward_hook(get_decoder_output)
 
     for batch_idx, data in enumerate(train_loader):
-        if model.cuda:
-            data0 = data[0].to(model.device)
-            data1 = data[1].to(model.device)
+        data0 = data[0].to(model.device)
+        data1 = data[1].to(model.device)
 
         optimizer.zero_grad()
         
         wt_data, mu, logvar = model(data0)
-        loss, loss_bce, loss_kld = model.loss_function(data1, wt_data, mu, logvar, kl_weight=args.kl_weight)
+        decoder_output = decoder_outputs[-1]
+        loss, loss_bce, loss_kld = model.loss_function(data1, data0, wt_data, decoder_output, mu, logvar, kl_weight=args.kl_weight)
         loss.backward()
+        
+        # Clearing saved outputs
+        decoder_outputs.clear()
 
         # Calculating and printing gradient norm
         total_norm = calc_grad_norm_2(model)
@@ -246,7 +254,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         
         # Get Y
         Y = wt_model(data1)
-        Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=wt_model.device)
+        # Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=wt_model.device)
         
         # Zeroing out all other patches, if given zero arg
         if args.zero:
@@ -256,11 +264,11 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
 
         # Get WT space of x and x hat, but preprocess them to normalize the range to (0, 1)
         x_wt = wt_model(data0)
-        x_wt = preprocess_low_freq(x_wt)
-        assert ((x_wt[:, :, 128:, 128:] >= 0).all() and (x_wt[:, :, 128:, 128:] <= 1).all())
+        # x_wt = preprocess_low_freq(x_wt)
+        # assert ((x_wt[:, :, 128:, 128:] >= 0).all() and (x_wt[:, :, 128:, 128:] <= 1).all())
         x_wt_hat = wt_model(x_hat)
-        x_wt_hat = preprocess_low_freq(x_wt_hat)
-        assert ((x_wt_hat[:, :, 128:, 128:] >= 0).all() and (x_wt_hat[:, :, 128:, 128:] <= 1).all())
+        # x_wt_hat = preprocess_low_freq(x_wt_hat)
+        # assert ((x_wt_hat[:, :, 128:, 128:] >= 0).all() and (x_wt_hat[:, :, 128:, 128:] <= 1).all())
         
         img_loss = (epoch >= args.img_loss_epoch)
         loss, loss_bce, loss_kld = iwt_model.loss_function(data0, x_hat, x_wt, x_wt_hat, mu, var, img_loss)
@@ -321,7 +329,7 @@ def train_iwtvae_test(epoch, wt_model, iwt_model, optimizer, train_loader, train
         
         # Get Y
         Y = wt_model(data)
-        Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=wt_model.device)
+        # Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=wt_model.device)
         
         # Zeroing out all other patches, if given zero arg
         if args.zero:

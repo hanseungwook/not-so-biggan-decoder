@@ -7,9 +7,9 @@ from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from vae_models import WTVAE_64, IWTVAE_512_Mask, WT, wt, IWT, iwt
 from wt_datasets import CelebaDataset
-from trainer import train_iwtvae_test
+from trainer import train_iwtvae
 from arguments import args_parse
-from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters, create_filters, postprocess_low_freq
+from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters, create_filters
 import matplotlib.pyplot as plt
 import logging
 import pywt
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         raise Exception('Could not make model & img output directories')
     
     for epoch in range(1, args.epochs + 1):
-        train_iwtvae_test(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer)
+        train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer)
         
         with torch.no_grad():
             iwt_model.eval()
@@ -88,7 +88,7 @@ if __name__ == "__main__":
                 data = data.to(devices[0])
                 
                 Y = wt_model(data)
-                Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=devices[0])
+                # Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=devices[0])
                 save_image(Y.cpu(), img_output_dir + '/sample_y_before_zero{}.png'.format(epoch))
 
                 if args.zero:
@@ -103,8 +103,8 @@ if __name__ == "__main__":
                 x_wt_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
                 x_wt_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
 
-                x_wt_hat = postprocess_low_freq(x_wt_hat)
-                x_wt_sample = postprocess_low_freq(x_wt_hat)
+                # x_wt_hat = postprocess_low_freq(x_wt_hat)
+                # x_wt_sample = postprocess_low_freq(x_wt_hat)
                 x_hat = iwt_fn(x_wt_hat)
                 x_sample = iwt_fn(x_wt_sample)
 
