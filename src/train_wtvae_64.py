@@ -67,7 +67,7 @@ if __name__ == "__main__":
         raise Exception('Could not make model / img / log output directories')
 
     # Setting up tensorboard writer
-    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs'))
+    writer = SummaryWriter(log_dir=os.path.join(args.root_dir, 'runs/{}'.format(log_dir)))
 
     # Setting current kl weight to start weight
     args.kl_weight = args.kl_start
