@@ -30,7 +30,10 @@ def zero_mask(mask, num_iwt, cur_iwt):
     inner_patch_h0 = h // (np.power(2, num_iwt-cur_iwt+1))
     inner_patch_w0 = h // (np.power(2, num_iwt-cur_iwt+1))
 
-    mask[:, :, :inner_patch_h0, :inner_patch_w0].fill_(0)
+    if len(mask.shape) == 3:
+        mask[:, :inner_patch_h0, :inner_patch_w0].fill_(0)
+    elif len(mask.shape) ==4:
+        mask[:, :, :inner_patch_h0, :inner_patch_w0].fill_(0)
     
     return mask
 
