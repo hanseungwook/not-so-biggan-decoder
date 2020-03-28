@@ -5,9 +5,9 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from vae_models import WTVAE_64_1
-from wt_datasets import CelebaDataset
-from trainer import train_wtvae
-from evaluator import eval_wtvae
+from wt_datasets import CelebaDatasetPair
+from trainer import train_wtvae_pair
+from evaluator import eval_wtvae_pair
 from arguments import args_parse
 from utils.utils import set_seed, save_plot, zero_pad, create_filters
 import logging
@@ -28,9 +28,10 @@ if __name__ == "__main__":
     set_seed(args.seed)
 
     # Create training and sample dataset (to test out model and save images for)
-    dataset_dir = os.path.join(args.root_dir, 'data/celeba256')
-    dataset_files = sample(os.listdir(dataset_dir), 10000)
-    train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
+    dataset_dir_64 = os.path.join(args.root_dir, 'data/celeba_org/celeba64')
+    dataset_dir_256 = os.path.join(args.root_dir, 'data/celeba256')
+    dataset_files = sample(os.listdir(dataset_dir_64), 10000)
+    train_dataset = CelebaDatasetPair(dataset_dir_64, dataset_dir_256, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
     sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
@@ -72,8 +73,8 @@ if __name__ == "__main__":
     args.kl_weight = args.kl_start
 
     for epoch in range(1, args.epochs + 1):
-        train_wtvae(epoch, wt_model, optimizer, train_loader, train_losses, args, writer)
-        eval_wtvae(epoch, wt_model, sample_loader, args, img_output_dir, model_dir)
+        train_wtvae_pair(epoch, wt_model, optimizer, train_loader, train_losses, args, writer)
+        eval_wtvae_pair(epoch, wt_model, sample_loader, args, img_output_dir, model_dir)
     
     # Save train losses and plot
     np.save(model_dir+'/train_losses.npy', train_losses)

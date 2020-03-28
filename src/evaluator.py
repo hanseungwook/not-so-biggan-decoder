@@ -4,18 +4,18 @@ import numpy as np
 from vae_models import wt
 from utils.utils import zero_mask, zero_pad, save_plot, hf_collate_to_img, hf_collate_to_channels, hf_collate_to_channels_wt2
 
-def eval_wtvae(epoch, model, sample_loader, args, img_output_dir, model_dir):
+def eval_wtvae_pair(epoch, model, sample_loader, args, img_output_dir, model_dir):
     with torch.no_grad():
         model.eval()
         
         for data in sample_loader:
             if model.cuda:
-                data = data.to(model.device)
-
+                data0 = data[0].to(model.device)
+                data1 = data[1].to(model.device)
+                
             # Run encoder: get z and sampled z
-            z_sample1 = torch.randn(data.shape[0], args.z_dim).to(model.device)
-            x = data.clone().detach().to(model.device)
-            z, mu_wt, logvar_wt = model.encode(data)
+            z_sample1 = torch.randn(data1.shape[0], args.z_dim).to(model.device)
+            z, mu_wt, logvar_wt = model.encode(data0)
 
             # Run decoder: get y and sampled y
             y = model.decode(z)
@@ -26,7 +26,7 @@ def eval_wtvae(epoch, model, sample_loader, args, img_output_dir, model_dir):
             y_padded = zero_pad(y, target_dim=target_dim, device=model.device)
             y_sample_padded = zero_pad(y_sample, target_dim=target_dim, device=model.device)
 
-            x_wt = wt(x, model.filters, levels=args.num_wt)
+            x_wt = wt(data1, model.filters, levels=args.num_wt)
             x_wt = x_wt[:, :, :y.shape[2], :y.shape[3]]
             
             save_image(y_padded.cpu(), img_output_dir + '/recon_y_padded{}.png'.format(epoch))

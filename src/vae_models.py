@@ -357,7 +357,7 @@ class WTVAE_64_1(nn.Module):
             nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True),      #[b, 128, 8, 8]
             nn.BatchNorm2d(128),
             self.relu,
-            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True),       #[b, 64, 16, ]
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True),       #[b, 64, 16, 16]
             nn.BatchNorm2d(64),
             self.relu,
             nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, bias=True),        #[b, 32, 32, 32]

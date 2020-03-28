@@ -44,11 +44,6 @@ class CelebaDatasetPair(Dataset):
         img1 = img1 / 255
         img1 = torch.from_numpy(img1.transpose(2,0,1)).float()
         
-        # Returning both original image and WT image if self.WT
-        # if self.WT:
-        #     img_wt = wt(img_wt.unsqueeze(1)).squeeze()
-
-        #     return img, img_wt
         img2 = Image.open(os.path.join(self.root_dir2, self.img_list[idx]))
         img2 = np.array(img2)
         img2 = img2 / 255
