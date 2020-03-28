@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # Create output and log directories
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/wtvae64_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/wtvae64_{}/'.format(args.config))
-    log_dir = os.path.join(args.root_dir, 'runs/{}'.format(args.config))    
+    log_dir = os.path.join(args.root_dir, 'runs/wtvae64_{}'.format(args.config))    
     
     try:
         os.mkdir(img_output_dir)
