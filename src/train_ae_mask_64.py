@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
-from vae_models import WT, wt, IWT, iwt, AE_Mask_64
+from vae_models import WT, wt, wt_haar, IWT, iwt, iwt_haar, AE_Mask_64
 from wt_datasets import CelebaDataset
 from trainer import train_ae_mask
 from evaluator import eval_ae_mask
@@ -49,8 +49,8 @@ if __name__ == "__main__":
     else:
         device = 'cpu'
     print('Device: {}'.format(device))
-    filters = create_filters(device=device)
-    wt_model = WT(wt=wt, num_wt=args.num_wt)
+    filters = create_filters(device=device, wt_fn='haar')
+    wt_model = WT(wt=wt_haar, num_wt=args.num_wt)
     wt_model.set_filters(filters)
     wt_model = wt_model.to(device)
     wt_model.set_device(device)
