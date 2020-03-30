@@ -2514,7 +2514,7 @@ class IWTVAE_512_Mask(nn.Module):
             assert (h[:, :128, :128] == 0).all()
         
         assert((y[:, :, 128:, :] == 0).all())
-        assert((y[:, :, :128, :128] == 0).all())
+        assert((y[:, :, :128, 128:] == 0).all())
         h = y + h.unsqueeze(1)
         # h = postprocess_low_freq(h)
         # h = self.iwt(h)
