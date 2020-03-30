@@ -5,6 +5,7 @@ import numpy as np
 from vae_models import IWT, iwt
 from utils.utils import zero_patches, zero_mask, calc_grad_norm_2, preprocess_low_freq, create_inv_filters, hf_collate_to_channels, hf_collate_to_channels_wt2, hf_collate_to_img, preprocess_mask
 import logging
+import IPython
 
 log_idx = 0
 decoder_outputs = []
@@ -257,10 +258,11 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         # Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=wt_model.device)
         
         # Zeroing out all other patches, if given zero arg
+        Y_full = Y.clone()
         if args.zero:
             Y = zero_patches(Y, num_wt=args.num_iwt)
 
-        x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.device))
+        x_hat, mu, var = iwt_model(data0, Y_full.to(iwt_model.device), Y.to(iwt_model.device))
 
         # Get WT space of x and x hat, but preprocess them to normalize the range to (0, 1)
         x_wt = wt_model(data0)
