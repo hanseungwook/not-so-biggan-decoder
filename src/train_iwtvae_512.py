@@ -90,14 +90,14 @@ if __name__ == "__main__":
                 Y = wt_model(data)
                 # Y[:, :, :128, :128] += torch.randn(Y[:, :, :128, :128].shape, device=devices[0])
                 save_image(Y.cpu(), img_output_dir + '/sample_y_before_zero{}.png'.format(epoch))
-
+                Y_full = Y.clone()
                 if args.zero:
                     Y = zero_patches(Y, num_wt=args.num_iwt)
                 Y = Y.to(devices[0])
 
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
-                mu, var, m1_idx, m2_idx = iwt_model.encode(data, Y)
+                mu, var, m1_idx, m2_idx = iwt_model.encode(data, Y_full - Y)
                 # x_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
                 # x_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
                 x_wt_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
@@ -111,7 +111,7 @@ if __name__ == "__main__":
                 # x_hat_wt = wt_model(x_hat)
                 x_hat_wt = x_wt_hat
                 unmasked_x = x_hat_wt[:, :, :128, :128]
-                masked_x = x_hat_wt[:, :, 128:, 128:]
+                masked_x = x_hat_wt[:, :, 128:, :]
                 writer.add_histogram('Unmasked_values', unmasked_x.reshape(-1).cpu(), epoch)
                 writer.add_histogram('Masked_values', masked_x.reshape(-1).cpu(), epoch)
                 writer.flush()
