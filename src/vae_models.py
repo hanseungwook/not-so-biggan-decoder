@@ -2466,8 +2466,8 @@ class IWTVAE_512_Mask(nn.Module):
         self.iwt = None
     
       
-    def encode(self, x, y):
-        h = self.leakyrelu(self.instance_norm_e1(self.e1(x-self.iwt(y))))           #[b, 64, 256, 256]
+    def encode(self, x):
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))                       #[b, 64, 256, 256]
         h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))                       #[b, 128, 128, 128]
         h, m1_idx = self.m1(h)                                                      #[b, 128, 64, 64]
         h = self.leakyrelu(h)                                                       
@@ -2521,8 +2521,8 @@ class IWTVAE_512_Mask(nn.Module):
         
         return h
         
-    def forward(self, x, y):
-        mu, var, m1_idx, m2_idx = self.encode(x, y)
+    def forward(self, x, y_full, y):
+        mu, var, m1_idx, m2_idx = self.encode(y_full - y)
         if self.training:
             z = self.reparameterize(mu, var)
         else:
