@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
                 z_sample = torch.randn(data.shape[0],args.z_dim).to(devices[0])
     
-                mu, var, m1_idx, m2_idx = iwt_model.encode(data, Y_full - Y)
+                mu, var, m1_idx, m2_idx = iwt_model.encode(Y_full - Y)
                 # x_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
                 # x_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
                 x_wt_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
