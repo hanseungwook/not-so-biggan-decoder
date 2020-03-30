@@ -9,9 +9,8 @@ def eval_wtvae_pair(epoch, model, sample_loader, args, img_output_dir, model_dir
         model.eval()
         
         for data in sample_loader:
-            if model.cuda:
-                data0 = data[0].to(model.device)
-                data1 = data[1].to(model.device)
+            data0 = data[0].to(model.device)
+            data1 = data[1].to(model.device)
                 
             # Run encoder: get z and sampled z
             z_sample1 = torch.randn(data1.shape[0], args.z_dim).to(model.device)
