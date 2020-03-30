@@ -116,6 +116,7 @@ if __name__ == "__main__":
                 writer.add_histogram('Masked_values', masked_x.reshape(-1).cpu(), epoch)
                 writer.flush()
                 
+                save_image((Y_full-Y).cpu(), img_output_dir + '/sample_encoder_input{}.png'.format(epoch))
                 save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
                 save_image(x_hat_wt.cpu(), img_output_dir + '/sample_recon_wt{}.png'.format(epoch))
                 save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
