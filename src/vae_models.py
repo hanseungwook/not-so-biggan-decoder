@@ -2807,7 +2807,7 @@ class IWTVAE_512_Mask_2(nn.Module):
             z = self.reparameterize(mu, var)
         else:
             z = mu
-        mask = self.decode(y)
+        mask = self.decode(z)
         
         return mask, mu, var
         
