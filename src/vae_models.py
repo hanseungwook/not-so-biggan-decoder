@@ -2673,8 +2673,7 @@ class IWTVAE_512_Mask_1(nn.Module):
             BCE = F.binary_cross_entropy(x_hat.reshape(-1), x.reshape(-1))
 
         # WT-space loss on patch level other than 1st patch
-        BCE_wt = F.l1_loss(x_wt_hat[:, :, 128:, :].reshape(-1), x_wt[:, :, 128:, :].reshape(-1), reduction='sum') + F.l1_loss(x_wt_hat[:, :, :128, 128:].reshape(-1), x_wt[:, :, :128, 128:].reshape(-1), reduction='sum')
-        BCE_wt /= x_wt_hat.numel()
+        BCE_wt = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
@@ -2768,8 +2767,8 @@ class IWTVAE_512_Mask_2(nn.Module):
         self.iwt = None
     
       
-    def encode(self, x):
-        h = self.leakyrelu(self.instance_norm_e1(self.e1(x)))                       #[b, 64, 256, 256]
+    def encode(self, y):
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(y)))                       #[b, 64, 256, 256]
         h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))                       #[b, 128, 128, 128]
         h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))                       #[b, 256, 64, 64]
         h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))                       #[b, 512, 32, 32]
@@ -2790,7 +2789,7 @@ class IWTVAE_512_Mask_2(nn.Module):
 
         return eps.mul(std).add_(mu) 
     
-    def decode(self, y, z):
+    def decode(self, z):
         h = self.leakyrelu(self.fc_dec(z))                                              #[b, 1024*8*8]
         h = self.leakyrelu(self.instance_norm_d1(self.d1(h.reshape(-1, 2048, 8, 8))))   #[b, 1024, 16, 16]
         h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                           #[b, 512, 32, 32]
@@ -2802,13 +2801,13 @@ class IWTVAE_512_Mask_2(nn.Module):
         # Returns mask
         return h
         
-    def forward(self, x, y_full, y):
-        mu, var = self.encode(y_full - y)
+    def forward(self, y):
+        mu, var = self.encode(y)
         if self.training:
             z = self.reparameterize(mu, var)
         else:
             z = mu
-        mask = self.decode(y, z)
+        mask = self.decode(y)
         
         return mask, mu, var
         

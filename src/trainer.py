@@ -314,6 +314,77 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, tr
 
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
+def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer):
+    # toggle model to train mode
+    iwt_model.train()
+    train_loss = 0
+    
+    for batch_idx, data in enumerate(train_loader):
+        
+        data0 = data.to(iwt_model.device)
+        data1 = data.to(wt_model.device)
+
+        optimizer.zero_grad()
+        
+        # Get Y
+        Y = wt_model(data1)
+        
+        # Zeroing out all other patches, if given zero arg
+        Y = zero_mask(Y, args.num_iwt, 1)
+
+        # IWT all the leftover high frequencies
+        Y = iwt_fn(Y)
+
+        # Run model to get mask (zero out first patch of mask) and x_wt_hat
+        mask, mu, var = iwt_model(Y)
+
+        # Y only has first patch + mask
+        # x_wt_hat = Y + mask
+        # x_hat = iwt_fn(x_wt_hat)
+
+        # # Get x_wt, assuming deterministic WT model/function, and fill 0's in first patch
+        # x_wt = wt_model(data0)
+        # x_wt = zero_mask(x_wt, args.num_iwt, 1)
+        
+        # # Calculate loss
+        # img_loss = (epoch >= args.img_loss_epoch)
+        loss, loss_bce, loss_kld = iwt_model.loss_function(Y, mask)
+        loss.backward()
+
+        # Calculating and printing gradient norm
+        total_norm = calc_grad_norm_2(iwt_model)
+
+        # Calculating and printing gradient norm
+        global log_idx
+        writer.add_scalar('Loss/total', loss, log_idx)
+        writer.add_scalar('Loss/bce', loss_bce, log_idx)
+        writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
+        writer.add_scalar('KL_weight', args.kl_weight, log_idx)
+        log_idx += 1 
+
+        # Gradient clipping
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=args.grad_clip, norm_type=2)
+            total_norm = calc_grad_norm_2(iwt_model)
+            writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
+        
+        train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
+        train_loss += loss
+
+        optimizer.step()
+
+        # Logging
+        if batch_idx % args.log_interval == 0:
+            logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
+                                                                           len(train_loader.dataset),
+                                                                           100. * batch_idx / len(train_loader),
+                                                                           loss / len(data)))
+            
+            n = min(data.size(0), 8)  
+
+    logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
+
 
 def train_iwtvae_test(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer):
     # toggle model to train mode
