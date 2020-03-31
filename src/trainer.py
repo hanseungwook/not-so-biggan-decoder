@@ -271,8 +271,9 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, tr
         x_wt_hat = Y + mask
         x_hat = iwt_fn(x_wt_hat)
 
-        # Get x_wt, assuming deterministic WT model/function
+        # Get x_wt, assuming deterministic WT model/function, and fill 0's in first patch
         x_wt = wt_model(data0)
+        x_wt = zero_mask(x_wt, args.num_iwt, 1)
         
         # Calculate loss
         img_loss = (epoch >= args.img_loss_epoch)
