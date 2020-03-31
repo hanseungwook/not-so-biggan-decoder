@@ -265,6 +265,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, tr
         mask, mu, var = iwt_model(data0, Y_full.to(iwt_model.device), Y.to(iwt_model.device))
         with torch.no_grad():
             mask = zero_mask(mask, args.num_iwt, 1)
+            assert (mask[:, :, :128, :128] == 0).all()
 
         # Y only has first patch + mask
         x_wt_hat = Y + mask
@@ -297,6 +298,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, tr
             writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
         
         train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
+        train_loss += loss
 
         optimizer.step()
 
