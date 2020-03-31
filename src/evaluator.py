@@ -60,8 +60,10 @@ def eval_iwtvae(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args, img_out
             # Decoder -- two versions, real z and asmple z
             mask = iwt_model.decode(Y, mu, m1_idx, m2_idx)
             mask = zero_mask(mask, args.num_iwt, 1)
+            assert (mask[:, :, :128, :128] == 0).all()
             mask_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
-            mask = zero_mask(mask_sample, args.num_iwt, 1)
+            mask_sample = zero_mask(mask_sample, args.num_iwt, 1)
+            assert (mask_sample[:, :, :128, :128] == 0).all()
 
             # Construct x_wt_hat and x_wt_hat_sample and apply IWT to get reconstructed and sampled images
             x_wt_hat = Y + mask
