@@ -65,8 +65,6 @@ if __name__ == "__main__":
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae512_{}/'.format(args.config))
     log_dir = os.path.join(args.root_dir, 'runs/iwtvae512_{}'.format(args.config))
 
-    writer = SummaryWriter(log_dir=log_dir)
-
     try:
         os.mkdir(img_output_dir)
         os.mkdir(model_dir)
@@ -74,6 +72,9 @@ if __name__ == "__main__":
     except:
         LOGGER.error('Could not make log / model / img output directories')
         raise Exception('Could not make log / model / img output directories')
+
+    # Set up tensorboard logger
+    writer = SummaryWriter(log_dir=log_dir)
     
     for epoch in range(1, args.epochs + 1):
         train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer)
