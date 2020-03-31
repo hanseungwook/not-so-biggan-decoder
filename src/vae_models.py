@@ -2515,11 +2515,8 @@ class IWTVAE_512_Mask(nn.Module):
         
         assert((y[:, :, 128:, :] == 0).all())
         assert((y[:, :, :128, 128:] == 0).all())
-        h = y + h.unsqueeze(1)
-        # h = postprocess_low_freq(h)
-        # h = self.iwt(h)
         
-        return h
+        return h.unsqueeze(1)
         
     def forward(self, x, y):
         mu, var, m1_idx, m2_idx = self.encode(x - self.iwt(y))
