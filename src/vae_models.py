@@ -2512,7 +2512,7 @@ class IWTVAE_512_Mask(nn.Module):
         
         return mask, mu, var
         
-    def loss_function(self, x, x_hat, x_wt, x_wt_hat, mu, var, img_loss=False) -> Variable:
+    def loss_function(self, x, x_hat, x_wt, x_wt_hat, mu, var, img_loss=False, kl_weight=1.0) -> Variable:
         
         # Loss btw reconstructed img and original img
         BCE = 0
@@ -2522,10 +2522,9 @@ class IWTVAE_512_Mask(nn.Module):
         # WT-space loss on patch level other than 1st patch
         BCE_wt = F.l1_loss(x_wt_hat[:, :, 128:, :].reshape(-1), x_wt[:, :, 128:, :].reshape(-1), reduction='sum') + F.l1_loss(x_wt_hat[:, :, :128, 128:].reshape(-1), x_wt[:, :, :128, 128:].reshape(-1), reduction='sum')
         BCE_wt /= x_wt_hat.numel()
-        # BCE_wt = F.binary_cross_entropy(x_wt_hat[:, :, 128:, 128:].reshape(-1), x_wt[:, :, 128:, 128:].reshape(-1))
         
         logvar = torch.log(var)
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
         KLD /= x.shape[0] * 3 * 512 * 512
 
         return BCE + BCE_wt + KLD, BCE + BCE_wt, KLD
