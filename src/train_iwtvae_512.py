@@ -76,7 +76,12 @@ if __name__ == "__main__":
     # Set up tensorboard logger
     writer = SummaryWriter(log_dir=log_dir)
     
+    # Annealing of KL weight over each epoch
+    args.kl_weight = args.kl_start
+    anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup)
+
     for epoch in range(1, args.epochs + 1):
+        args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
         train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer)
         eval_iwtvae(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer)
     
