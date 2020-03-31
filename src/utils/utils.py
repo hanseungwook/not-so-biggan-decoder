@@ -32,10 +32,10 @@ def zero_mask(mask, num_iwt, cur_iwt):
     inner_patch_w0 = h // (np.power(2, num_iwt-cur_iwt+1))
 
     if len(mask.shape) == 3:
-        padded[:, inner_patch_h0:, :] = mask[:, :inner_patch_h0, :]
+        padded[:, inner_patch_h0:, :] = mask[:, inner_patch_h0:, :]
         padded[:, :inner_patch_h0, inner_patch_w0:] = mask[:, :inner_patch_h0, inner_patch_w0:]
     elif len(mask.shape) == 4:
-        padded[:, :, inner_patch_h0:, :] = mask[:, :, :inner_patch_h0, :]
+        padded[:, :, inner_patch_h0:, :] = mask[:, :, inner_patch_h0:, :]
         padded[:, :, :inner_patch_h0, inner_patch_w0:] = mask[:, :, :inner_patch_h0, inner_patch_w0:]
     
     return mask
