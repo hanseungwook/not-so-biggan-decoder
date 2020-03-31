@@ -6,7 +6,7 @@ import pywt
 import IPython
 # Zeroing out all other patches than the first for WT image: 4D: B * C * H * W
 def zero_patches(img, num_wt):
-    padded = torch.zeros(img.shape)
+    padded = torch.zeros(img.shape, device=img.device)
     patch_dim = img.shape[2] // np.power(2, num_wt)
     padded[:, :, :patch_dim, :patch_dim] = img[:, :, :patch_dim, :patch_dim]
     
@@ -25,15 +25,18 @@ def zero_pad(img, target_dim, device='cpu'):
 
 # Zeroing out the first patch's portion of the mask
 def zero_mask(mask, num_iwt, cur_iwt):
+    padded = torch.zeros(mask.shape, device=mask.device)
     h = mask.shape[2]
 
     inner_patch_h0 = h // (np.power(2, num_iwt-cur_iwt+1))
     inner_patch_w0 = h // (np.power(2, num_iwt-cur_iwt+1))
 
     if len(mask.shape) == 3:
-        mask[:, :inner_patch_h0, :inner_patch_w0].fill_(0)
-    elif len(mask.shape) ==4:
-        mask[:, :, :inner_patch_h0, :inner_patch_w0].fill_(0)
+        padded[:, inner_patch_h0:, :] = mask[:, :inner_patch_h0, :]
+        padded[:, :inner_patch_h0, inner_patch_w0:] = mask[:, :inner_patch_h0, inner_patch_w0:]
+    elif len(mask.shape) == 4:
+        padded[:, :, inner_patch_h0:, :] = mask[:, :inner_patch_h0, :]
+        padded[:, :, :inner_patch_h0, inner_patch_w0:] = mask[:, :inner_patch_h0, inner_patch_w0:]
     
     return mask
 

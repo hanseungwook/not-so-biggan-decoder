@@ -260,7 +260,6 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, tr
         Y_full = Y.clone()
         if args.zero:
             Y = zero_patches(Y, num_wt=args.num_iwt)
-            Y = Y.to(iwt_model.device)
 
         # Run model to get mask (zero out first patch of mask) and x_wt_hat
         mask, mu, var = iwt_model(data0, Y_full.to(iwt_model.device), Y.to(iwt_model.device))

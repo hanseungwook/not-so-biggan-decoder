@@ -50,7 +50,6 @@ def eval_iwtvae(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args, img_out
             # Zero-ing out first patch
             if args.zero:
                 Y = zero_patches(Y, num_wt=args.num_iwt)
-                Y = Y.to(iwt_model.device)
 
             # Get sample
             z_sample = torch.randn(data.shape[0], args.z_dim).to(iwt_model.device)
