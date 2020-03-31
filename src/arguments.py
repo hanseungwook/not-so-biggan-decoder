@@ -70,8 +70,6 @@ def args_parse():
                         help='Z dimension for WTVAE model')
     parser.add_argument('--z_dim_iwt', type=int, default=100,
                         help='Z dimension for IWTVAE model')
-    
-
 
     args = parser.parse_args()
 
