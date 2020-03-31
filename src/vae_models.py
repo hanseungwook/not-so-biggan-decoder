@@ -2521,8 +2521,8 @@ class IWTVAE_512_Mask(nn.Module):
         
         return h
         
-    def forward(self, x, y_full, y):
-        mu, var, m1_idx, m2_idx = self.encode(y_full - y)
+    def forward(self, x, y):
+        mu, var, m1_idx, m2_idx = self.encode(x - self.iwt(y))
         if self.training:
             z = self.reparameterize(mu, var)
         else:

@@ -262,7 +262,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_loss
         if args.zero:
             Y = zero_patches(Y, num_wt=args.num_iwt)
 
-        x_hat, mu, var = iwt_model(data0, Y_full.to(iwt_model.device), Y.to(iwt_model.device))
+        x_hat, mu, var = iwt_model(data0, Y.to(iwt_model.device))
 
         # Get WT space of x and x hat, but preprocess them to normalize the range to (0, 1)
         x_wt = wt_model(data0)

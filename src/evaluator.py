@@ -56,7 +56,7 @@ def eval_iwtvae(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args, img_out
             z_sample = torch.randn(data.shape[0],args.z_dim).to(iwt_model.device)
 
             # Encoder
-            mu, var, m1_idx, m2_idx = iwt_model.encode(Y_full - Y)
+            mu, var, m1_idx, m2_idx = iwt_model.encode(data - iwt_model.iwt(Y))
 
             # Decoder -- two versions, real z and asmple z
             x_wt_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
