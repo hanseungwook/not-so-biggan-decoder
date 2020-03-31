@@ -2559,29 +2559,29 @@ class IWTVAE_512_Mask_1(nn.Module):
         # Z Encoder - Decoder                                                                [b, 3, 512, 512]
         self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 256, 256]
         weights_init(self.e1)
-        self.instance_norm_e1 = nn.InstanceNorm2d(num_features=64, affine=False)
+        self.instance_norm_e1 = nn.BatchNorm2d(num_features=64)
 
         self.e2 = nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 128, 128, 128]
         weights_init(self.e2)
-        self.instance_norm_e2 = nn.InstanceNorm2d(num_features=128, affine=False)
+        self.instance_norm_e2 = nn.BatchNorm2d(num_features=128)
 
         self.e3 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 64, 64]
         weights_init(self.e3)
-        self.instance_norm_e3 = nn.InstanceNorm2d(num_features=256, affine=False)
+        self.instance_norm_e3 = nn.BatchNorm2d(num_features=256)
 
         self.e4 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 32, 32]
         weights_init(self.e4)
-        self.instance_norm_e4 = nn.InstanceNorm2d(num_features=512, affine=False)
+        self.instance_norm_e4 = nn.BatchNorm2d(num_features=512)
 
         self.e5 = nn.Conv2d(512, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 16, 16]
         weights_init(self.e5)
-        self.instance_norm_e5 = nn.InstanceNorm2d(num_features=1024, affine=False)
+        self.instance_norm_e5 = nn.BatchNorm2d(num_features=1024)
 
-        self.e6 = nn.Conv2d(1024, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 1024, 8, 8]
+        self.e6 = nn.Conv2d(1024, 2048, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 2048, 8, 8]
         weights_init(self.e6)
-        self.instance_norm_e6 = nn.InstanceNorm2d(num_features=1024, affine=False)
+        self.instance_norm_e6 = nn.BatchNorm2d(num_features=2048)
         
-        self.fc_enc = nn.Linear(1024 * 8 * 8, 1024)
+        self.fc_enc = nn.Linear(2048 * 8 * 8, 1024)
         weights_init(self.fc_enc)
         
         self.fc_mean = nn.Linear(1024, z_dim)
@@ -2590,32 +2590,32 @@ class IWTVAE_512_Mask_1(nn.Module):
         self.fc_var = nn.Linear(1024, z_dim)
         weights_init(self.fc_var)
         
-        self.fc_dec = nn.Linear(z_dim, 1024 * 8 * 8)
+        self.fc_dec = nn.Linear(z_dim, 2048 * 8 * 8)
         weights_init(self.fc_dec)
 
-        self.d1 = nn.ConvTranspose2d(1024, 1024, 4, stride=2, padding=1, bias=True) #[b, 1024, 16, 16]
+        self.d1 = nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True) #[b, 1024, 16, 16]
         weights_init(self.d1)
-        self.instance_norm_d1 = nn.InstanceNorm2d(num_features=1024, affine=False)
+        self.instance_norm_d1 = nn.BatchNorm2d(num_features=1024)
 
         self.d2 = nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True) #[b, 512, 32, 32]
         weights_init(self.d2)
-        self.instance_norm_d2 = nn.InstanceNorm2d(num_features=512, affine=False)
+        self.instance_norm_d2 = nn.BatchNorm2d(num_features=512)
 
         self.d3 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True) #[b, 256, 64, 64]
         weights_init(self.d3)
-        self.instance_norm_d3 = nn.InstanceNorm2d(num_features=256, affine=False)
+        self.instance_norm_d3 = nn.BatchNorm2d(num_features=256)
 
         self.d4 = nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True) #[b, 128, 128, 128]
         weights_init(self.d4)
-        self.instance_norm_d4 = nn.InstanceNorm2d(num_features=128, affine=False)
+        self.instance_norm_d4 = nn.BatchNorm2d(num_features=128)
 
         self.d5 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True) #[b, 32, 256, 256]
         weights_init(self.d5)
-        self.instance_norm_d5 = nn.InstanceNorm2d(num_features=32, affine=False)
+        self.instance_norm_d5 = nn.BatchNorm2d(num_features=64)
 
         self.d6 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True) #[b, 3, 512, 512]
         weights_init(self.d6)
-        self.instance_norm_d6 = nn.InstanceNorm2d(num_features=3, affine=False)
+        self.instance_norm_d6 = nn.BatchNorm2d(num_features=3)
         
         self.iwt = None
     
@@ -2628,9 +2628,9 @@ class IWTVAE_512_Mask_1(nn.Module):
         h = self.leakyrelu(self.instance_norm_e5(self.e5(h)))                       #[b, 1024, 16, 16]
         h = self.leakyrelu(self.instance_norm_e6(self.e6(h)))                       #[b, 1024, 8, 8]
 
-        h = self.leakyrelu(self.fc_enc(h.reshape(-1,1024*8*8)))                      #[b, z_dim]
+        h = self.leakyrelu(self.fc_enc(h.reshape(-1,2048*8*8)))                     #[b, z_dim]
 
-        return self.fc_mean(h), F.softplus(self.fc_var(h)), m1_idx, m2_idx          #[b, z_dim]
+        return self.fc_mean(h), F.softplus(self.fc_var(h))                          #[b, z_dim]
     
     def reparameterize(self, mu, var):
         std = torch.sqrt(var)
@@ -2642,9 +2642,9 @@ class IWTVAE_512_Mask_1(nn.Module):
 
         return eps.mul(std).add_(mu) 
     
-    def decode(self, y, z, m1_idx, m2_idx):
+    def decode(self, y, z):
         h = self.leakyrelu(self.fc_dec(z))                                              #[b, 1024*8*8]
-        h = self.leakyrelu(self.instance_norm_d1(self.d1(h.reshape(-1, 1024, 8, 8))))   #[b, 1024, 16, 16]
+        h = self.leakyrelu(self.instance_norm_d1(self.d1(h.reshape(-1, 2048, 8, 8))))   #[b, 1024, 16, 16]
         h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                           #[b, 512, 32, 32]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                           #[b, 256, 64, 64]
         h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                           #[b, 128, 128, 128]
@@ -2655,12 +2655,12 @@ class IWTVAE_512_Mask_1(nn.Module):
         return h
         
     def forward(self, x, y_full, y):
-        mu, var, m1_idx, m2_idx = self.encode(y_full - y)
+        mu, var = self.encode(y_full - y)
         if self.training:
             z = self.reparameterize(mu, var)
         else:
             z = mu
-        mask = self.decode(y, z, m1_idx, m2_idx)
+        mask = self.decode(y, z)
         
         return mask, mu, var
         
