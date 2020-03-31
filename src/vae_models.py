@@ -2498,14 +2498,9 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
         h = self.sigmoid(self.instance_norm_d4(self.d4(h)))                     #[b, 1, 256, 512]
-
-        # Zero out first patch (low frequency)
-        with torch.no_grad():
-            h = zero_mask(h.squeeze(1), self.num_iwt, 1)
-            assert (h[:, :128, :128] == 0).all()
         
         # Returns mask
-        return h.unsqueeze(1)
+        return h
         
     def forward(self, x, y_full, y):
         mu, var, m1_idx, m2_idx = self.encode(y_full - y)
