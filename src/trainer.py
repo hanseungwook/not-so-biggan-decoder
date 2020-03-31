@@ -264,7 +264,7 @@ def train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, tr
 
         # Run model to get mask and x_wt_hat
         mask, mu, var = iwt_model(data0, Y_full.to(iwt_model.device), Y.to(iwt_model.device))
-        x_wt_hat = Y + mask
+        x_wt_hat = Y + mask.clone()
         x_hat = iwt_fn(x_wt_hat)
 
         # Get x_wt, assuming deterministic WT model/function
