@@ -26,15 +26,6 @@ if __name__ == "__main__":
 
     args = args_parse()
 
-    # Setting up tensorboard writer
-    log_dir = os.path.join(args.root_dir, 'runs/{}'.format(args.config))
-    try:
-        os.mkdir(log_dir)
-    except:
-        raise Exception('Cannot create log directory')
-
-    writer = SummaryWriter(log_dir=log_dir)
-
     # Set seed
     set_seed(args.seed)
 
@@ -72,13 +63,17 @@ if __name__ == "__main__":
 
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtvae512_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae512_{}/'.format(args.config))
+    log_dir = os.path.join(args.root_dir, 'runs/iwtvae512_{}'.format(args.config))
+
+    writer = SummaryWriter(log_dir=log_dir)
 
     try:
         os.mkdir(img_output_dir)
         os.mkdir(model_dir)
+        os.mkdir(log_dir)
     except:
-        LOGGER.error('Could not make model & img output directories')
-        raise Exception('Could not make model & img output directories')
+        LOGGER.error('Could not make log / model / img output directories')
+        raise Exception('Could not make log / model / img output directories')
     
     for epoch in range(1, args.epochs + 1):
         train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer)
@@ -88,7 +83,3 @@ if __name__ == "__main__":
     np.save(model_dir+'/train_losses.npy', train_losses)
     
     LOGGER.info('IWT Model parameters: {}'.format(sum(x.numel() for x in iwt_model.parameters())))
-
-    
-    
-    
