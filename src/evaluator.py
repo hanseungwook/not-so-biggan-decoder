@@ -47,7 +47,7 @@ def eval_iwtvae(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args, img_out
             save_image(Y.cpu(), img_output_dir + '/sample_y_before_zero{}.png'.format(epoch))
             Y_full = Y.clone()
 
-            # Zero-ing out first patch
+            # Zero-ing out rest of the patches
             if args.zero:
                 Y = zero_patches(Y, num_wt=args.num_iwt)
 

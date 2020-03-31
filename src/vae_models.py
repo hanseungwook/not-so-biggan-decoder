@@ -2419,6 +2419,7 @@ class IWTVAE_512_Mask(nn.Module):
         weights_init(self.e2)
         self.instance_norm_e2 = nn.InstanceNorm2d(num_features=128, affine=False)
 
+        ### Maxpool??? Test this out
         self.m1 = nn.MaxPool2d(kernel_size=4, stride=2, padding=1, return_indices=True) #[b, 128, 64, 64]
 
         self.e3 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 32, 32]
@@ -2455,11 +2456,12 @@ class IWTVAE_512_Mask(nn.Module):
     
         self.u2 = nn.MaxUnpool2d(kernel_size=4, stride=2, padding=1) #[b, 128, 128, 128]
 
-        self.d3 = nn.ConvTranspose2d(128, 32, 4, stride=2, padding=1, bias=True) #[b, 32, 256, 256]
+        self.d3 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True) #[b, 32, 256, 256]
         weights_init(self.d3)
         self.instance_norm_d3 = nn.InstanceNorm2d(num_features=32, affine=False)
 
-        self.d4 = nn.ConvTranspose2d(32, 1, 4, stride=2, padding=1, bias=True) #[b, 1, 512, 512]
+        # Maybe try 3 channel mask, instead of 1
+        self.d4 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True) #[b, 3, 512, 512]
         weights_init(self.d4)
         self.instance_norm_d4 = nn.InstanceNorm2d(num_features=3, affine=False)
         
@@ -2496,8 +2498,9 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.instance_norm_d1(self.d1(h)))                   #[b, 256, 32, 32]
         h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                   #[b, 128, 64, 64]
         h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
-        h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
-        h = self.sigmoid(self.instance_norm_d4(self.d4(h)))                     #[b, 1, 256, 512]
+        h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 256]
+        # Make linear? or normalize and then use sigmoid
+        h = self.instance_norm_d4(self.d4(h))                                   #[b, 3, 512, 512]
         
         # Returns mask
         return h
@@ -2516,6 +2519,7 @@ class IWTVAE_512_Mask(nn.Module):
         
         # Loss btw reconstructed img and original img
         BCE = 0
+        # BCE instead of mse
         if img_loss:
             BCE = F.mse_loss(x_hat.reshape(-1), x.reshape(-1))
 
