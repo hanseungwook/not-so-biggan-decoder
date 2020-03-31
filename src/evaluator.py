@@ -2,7 +2,7 @@ import torch
 from torchvision.utils import save_image
 import numpy as np
 from vae_models import wt
-from utils.utils import zero_mask, zero_pad, save_plot, hf_collate_to_img, hf_collate_to_channels, hf_collate_to_channels_wt2
+from utils.utils import zero_mask, zero_patches, zero_pad, save_plot, hf_collate_to_img, hf_collate_to_channels, hf_collate_to_channels_wt2
 
 def eval_wtvae_pair(epoch, model, sample_loader, args, img_output_dir, model_dir):
     with torch.no_grad():
@@ -35,6 +35,46 @@ def eval_wtvae_pair(epoch, model, sample_loader, args, img_output_dir, model_dir
 
     torch.save(model.state_dict(), model_dir + '/wtvae_epoch{}.pth'.format(epoch))
 
+def eval_iwtvae(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer):
+    with torch.no_grad():
+        iwt_model.eval()
+        
+        for data in sample_loader:
+            data = data.to(wt_model.device)
+            
+            # Applying WT to X to get Y
+            Y = wt_model(data)
+            save_image(Y.cpu(), img_output_dir + '/sample_y_before_zero{}.png'.format(epoch))
+            Y_full = Y.clone()
+
+            # Zero-ing out first patch
+            if args.zero:
+                Y = zero_patches(Y, num_wt=args.num_iwt)
+
+            Y = Y.to(iwt_model.device)
+
+            z_sample = torch.randn(data.shape[0],args.z_dim).to(iwt_model.device)
+
+            # Encoder
+            mu, var, m1_idx, m2_idx = iwt_model.encode(Y_full - Y)
+
+            # Decoder -- two versions, real z and asmple z
+            x_wt_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
+            x_wt_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
+
+            # Apply IWT to reconstructed and sampled outputs
+            x_hat = iwt_fn(x_wt_hat)
+            x_sample = iwt_fn(x_wt_sample)
+            
+            # Save images
+            save_image((Y_full-Y).cpu(), img_output_dir + '/sample_encoder_input{}.png'.format(epoch))
+            save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
+            save_image(x_wt_hat.cpu(), img_output_dir + '/sample_recon_wt{}.png'.format(epoch))
+            save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
+            save_image(Y.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
+            save_image(data.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
+
+    torch.save(iwt_model.state_dict(), model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
 
 def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir):
     with torch.no_grad():
