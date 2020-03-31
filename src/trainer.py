@@ -348,7 +348,7 @@ def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_lo
         
         # # Calculate loss
         # img_loss = (epoch >= args.img_loss_epoch)
-        loss, loss_bce, loss_kld = iwt_model.loss_function(Y, mask)
+        loss, loss_bce, loss_kld = iwt_model.loss_function(Y, mask, mu, var)
         loss.backward()
 
         # Calculating and printing gradient norm

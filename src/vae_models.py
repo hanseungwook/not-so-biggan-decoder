@@ -2692,7 +2692,7 @@ class IWTVAE_512_Mask_1(nn.Module):
 
 class IWTVAE_512_Mask_2(nn.Module):
     def __init__(self, image_channels=3, z_dim=500, num_iwt=2):
-        super(IWTVAE_512_Mask_1, self).__init__()
+        super(IWTVAE_512_Mask_2, self).__init__()
         # Resolution of images (512 x 512)
         self.res = 512
         self.device = None
@@ -2811,22 +2811,22 @@ class IWTVAE_512_Mask_2(nn.Module):
         
         return mask, mu, var
         
-    def loss_function(self, x, x_hat, x_wt, x_wt_hat, mu, var, img_loss=False, kl_weight=1.0) -> Variable:
+    def loss_function(self, mask, mask_recon, mu, var) -> Variable:
         
         # Loss btw reconstructed img and original img
         BCE = 0
         # BCE instead of mse
-        if img_loss:
-            BCE = F.binary_cross_entropy(x_hat.reshape(-1), x.reshape(-1))
+        # if img_loss:
+        #     BCE = F.binary_cross_entropy(x_hat.reshape(-1), x.reshape(-1))
 
         # WT-space loss on patch level (x_wt already has first patch all 0's)
-        BCE_wt = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
+        BCE_wt = F.l1_loss(mask_recon.reshape(-1), mask.reshape(-1))
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
         KLD /= x.shape[0] * 3 * 512 * 512
 
-        return BCE + BCE_wt + KLD, BCE + BCE_wt, KLD
+        return BCE_wt + KLD, BCE_wt, KLD
 
     def set_device(self, device):
         self.device = device
