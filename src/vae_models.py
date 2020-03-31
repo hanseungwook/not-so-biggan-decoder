@@ -2498,28 +2498,14 @@ class IWTVAE_512_Mask(nn.Module):
         h = self.leakyrelu(self.u2(h, indices=m1_idx))                          #[b, 128, 128, 128]
         h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                   #[b, 32, 256, 512]
         h = self.sigmoid(self.instance_norm_d4(self.d4(h)))                     #[b, 1, 256, 512]
-        h = h.clone()
 
-        # Dynamic masks (covering all irrelevant patches at each IWT)
-        # for i in range(self.num_iwt):
-        #     with torch.no_grad():
-        #         mask = mask_og.clone().detach()
-        #         mask = zero_mask(mask.squeeze(1), self.num_iwt, i+1)
-        #     h = y - mask.unsqueeze(1)
-        #     h = self.iwt(h)
-
-        # Static mask (covering the first patch)
+        # Zero out first patch (low frequency)
         with torch.no_grad():
             h = zero_mask(h.squeeze(1), self.num_iwt, 1)
             assert (h[:, :128, :128] == 0).all()
         
-        assert((y[:, :, 128:, :] == 0).all())
-        assert((y[:, :, :128, 128:] == 0).all())
-        h = y + h.unsqueeze(1)
-        # h = postprocess_low_freq(h)
-        # h = self.iwt(h)
-        
-        return h
+        # Returns mask
+        return h.unsqueeze(1)
         
     def forward(self, x, y_full, y):
         mu, var, m1_idx, m2_idx = self.encode(y_full - y)
@@ -2527,9 +2513,9 @@ class IWTVAE_512_Mask(nn.Module):
             z = self.reparameterize(mu, var)
         else:
             z = mu
-        x_hat = self.decode(y, z, m1_idx, m2_idx)
+        mask = self.decode(y, z, m1_idx, m2_idx)
         
-        return x_hat, mu, var
+        return mask, mu, var
         
     def loss_function(self, x, x_hat, x_wt, x_wt_hat, mu, var, img_loss=False) -> Variable:
         

@@ -81,7 +81,7 @@ if __name__ == "__main__":
         raise Exception('Could not make model & img output directories')
     
     for epoch in range(1, args.epochs + 1):
-        train_iwtvae(epoch, wt_model, iwt_model, optimizer, train_loader, train_losses, args, writer)
+        train_iwtvae(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer)
         eval_iwtvae(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer)
     
     # Save train losses and plot

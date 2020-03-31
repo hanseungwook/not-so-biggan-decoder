@@ -53,26 +53,31 @@ def eval_iwtvae(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args, img_out
 
             Y = Y.to(iwt_model.device)
 
-            z_sample = torch.randn(data.shape[0],args.z_dim).to(iwt_model.device)
+            # Get sample
+            z_sample = torch.randn(data.shape[0], args.z_dim).to(iwt_model.device)
 
             # Encoder
             mu, var, m1_idx, m2_idx = iwt_model.encode(Y_full - Y)
 
             # Decoder -- two versions, real z and asmple z
-            x_wt_hat = iwt_model.decode(Y, mu, m1_idx, m2_idx)
-            x_wt_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
+            mask = iwt_model.decode(Y, mu, m1_idx, m2_idx)
+            mask_sample = iwt_model.decode(Y, z_sample, m1_idx, m2_idx)
 
-            # Apply IWT to reconstructed and sampled outputs
+            # Construct x_wt_hat and x_wt_hat_sample and apply IWT to get reconstructed and sampled images
+            x_wt_hat = Y + mask
+            x_wt_hat_sample = Y + mask_sample
+
             x_hat = iwt_fn(x_wt_hat)
-            x_sample = iwt_fn(x_wt_sample)
+            x_sample = iwt_fn(x_wt_hat_sample)
             
             # Save images
-            save_image((Y_full-Y).cpu(), img_output_dir + '/sample_encoder_input{}.png'.format(epoch))
-            save_image(x_hat.cpu(), img_output_dir + '/sample_recon{}.png'.format(epoch))
-            save_image(x_wt_hat.cpu(), img_output_dir + '/sample_recon_wt{}.png'.format(epoch))
-            save_image(x_sample.cpu(), img_output_dir + '/sample_z{}.png'.format(epoch))
-            save_image(Y.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
-            save_image(data.cpu(), img_output_dir + '/sample{}.png'.format(epoch))
+            save_image(x_hat.cpu(), img_output_dir + '/recon_x{}.png'.format(epoch))
+            save_image(x_sample.cpu(), img_output_dir + '/sample_x{}.png'.format(epoch))
+            save_image(x_wt_hat.cpu(), img_output_dir + '/recon_x_wt{}.png'.format(epoch))
+            save_image(x_wt_hat_sample.cpu(), img_output_dir + '/sample_x_wt{}.png'.format(epoch))
+            save_image((Y_full-Y).cpu(), img_output_dir + '/encoder_input{}.png'.format(epoch))
+            save_image(Y.cpu(), img_output_dir + '/y{}.png'.format(epoch))
+            save_image(data.cpu(), img_output_dir + '/target{}.png'.format(epoch))
 
     torch.save(iwt_model.state_dict(), model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
 
