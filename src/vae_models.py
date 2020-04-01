@@ -2875,12 +2875,7 @@ class IWTVAE_512_Mask_2(nn.Module):
         )
 
         # Initializing weights of encoder                                      
-        weights_init(self.e1)
-        weights_init(self.e2)
-        weights_init(self.e3)
-        weights_init(self.e4)
-        weights_init(self.e5)
-        weights_init(self.e6)
+        weights_init(self.encoder)
         
         self.fc_enc = nn.Linear(2048 * 8 * 8, 1024)
         weights_init(self.fc_enc)
@@ -2915,12 +2910,7 @@ class IWTVAE_512_Mask_2(nn.Module):
         )
         
         # Initializing weights of decoder
-        weights_init(self.d1)
-        weights_init(self.d2)
-        weights_init(self.d3)
-        weights_init(self.d4)
-        weights_init(self.d5)
-        weights_init(self.d6)
+        weights_init(self.decoder)
         
         self.iwt = None
     
