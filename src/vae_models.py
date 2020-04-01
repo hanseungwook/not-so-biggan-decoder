@@ -2238,6 +2238,154 @@ class IWTVAE_64_Mask(nn.Module):
         if 'cuda' in self.devices[0] and 'cuda' in self.devices[1]:
             self.cuda = True
 
+# Reconstructing IWT'ed mask
+class IWTVAE_128(nn.Module):
+    def __init__(self, image_channels=3, z_dim=500, num_iwt=2):
+        super(IWTVAE_512_Mask_2, self).__init__()
+        # Resolution of images (512 x 512)
+        self.res = 512
+        self.device = None
+        self.cuda = False
+        
+        self.z_dim = z_dim
+        self.num_iwt = num_iwt
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.sigmoid = nn.Sigmoid()
+
+        # Z Encoder - Decoder                                                                [b, 3, 128, 128]
+        self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 64, 64]
+        weights_init(self.e1)
+        self.instance_norm_e1 = nn.BatchNorm2d(num_features=64)
+
+        self.e2 = nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 128, 32, 32]
+        weights_init(self.e2)
+        self.instance_norm_e2 = nn.BatchNorm2d(num_features=128)
+
+        self.e3 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 16, 16]
+        weights_init(self.e3)
+        self.instance_norm_e3 = nn.BatchNorm2d(num_features=256)
+
+        self.e4 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 8, 8]
+        weights_init(self.e4)
+        self.instance_norm_e4 = nn.BatchNorm2d(num_features=512)
+
+        self.e5 = nn.Conv2d(512, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 1024, 4, 4]
+        weights_init(self.e5)
+        self.instance_norm_e5 = nn.BatchNorm2d(num_features=1024)
+
+        self.e6 = nn.Conv2d(1024, 2048, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 2048, 2, 2]
+        weights_init(self.e6)
+        self.instance_norm_e6 = nn.BatchNorm2d(num_features=2048)
+        
+        self.fc_enc = nn.Linear(2048 * 2 * 2, 1024)
+        weights_init(self.fc_enc)
+        
+        self.fc_mean = nn.Linear(1024, z_dim)
+        weights_init(self.fc_mean)
+        
+        self.fc_var = nn.Linear(1024, z_dim)
+        weights_init(self.fc_var)
+        
+        self.fc_dec = nn.Linear(z_dim, 2048 * 2 * 2)
+        weights_init(self.fc_dec)
+
+        self.d1 = nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True) #[b, 1024, 4, 4]
+        weights_init(self.d1)
+        self.instance_norm_d1 = nn.BatchNorm2d(num_features=1024)
+
+        self.d2 = nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True) #[b, 512, 8, 8]
+        weights_init(self.d2)
+        self.instance_norm_d2 = nn.BatchNorm2d(num_features=512)
+
+        self.d3 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True) #[b, 256, 16, 16]
+        weights_init(self.d3)
+        self.instance_norm_d3 = nn.BatchNorm2d(num_features=256)
+
+        self.d4 = nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True) #[b, 128, 32, 32]
+        weights_init(self.d4)
+        self.instance_norm_d4 = nn.BatchNorm2d(num_features=128)
+
+        self.d5 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True) #[b, 32, 64, 64]
+        weights_init(self.d5)
+        self.instance_norm_d5 = nn.BatchNorm2d(num_features=64)
+
+        self.d6 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True) #[b, 3, 128, 128]
+        weights_init(self.d6)
+        self.instance_norm_d6 = nn.BatchNorm2d(num_features=3)
+        
+        self.iwt = None
+    
+      
+    def encode(self, y):
+        h = self.leakyrelu(self.instance_norm_e1(self.e1(y)))                       #[b, 64, 64, 64]
+        h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))                       #[b, 128, 32, 32]
+        h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))                       #[b, 256, 16, 16]
+        h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))                       #[b, 512, 8, 8]
+        h = self.leakyrelu(self.instance_norm_e5(self.e5(h)))                       #[b, 1024, 4, 4]
+        h = self.leakyrelu(self.instance_norm_e6(self.e6(h)))                       #[b, 2048, 2, 2]
+
+        h = self.leakyrelu(self.fc_enc(h.reshape(-1,2048*8*8)))                     #[b, z_dim]
+
+        return self.fc_mean(h), F.softplus(self.fc_var(h))                          #[b, z_dim]
+    
+    def reparameterize(self, mu, var):
+        std = torch.sqrt(var)
+        if self.cuda:
+            eps = torch.FloatTensor(std.size()).normal_().to(self.device)
+        else:
+            eps = torch.FloatTensor(std.size()).normal_()
+        eps = Variable(eps)
+
+        return eps.mul(std).add_(mu) 
+    
+    def decode(self, z):
+        h = self.leakyrelu(self.fc_dec(z))                                              #[b, 2048*2*2]
+        h = self.leakyrelu(self.instance_norm_d1(self.d1(h.reshape(-1, 2048, 8, 8))))   #[b, 1024, 4, 4]
+        h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                           #[b, 512, 8, 8]
+        h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                           #[b, 256, 16, 16]
+        h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                           #[b, 128, 32, 32]
+        h = self.leakyrelu(self.instance_norm_d5(self.d5(h)))                           #[b, 64, 64, 64]
+        h = self.instance_norm_d6(self.d6(h))                                           #[b, 3, 128, 128]
+        
+        # Returns mask
+        return h
+        
+    def forward(self, y):
+        mu, var = self.encode(y)
+        if self.training:
+            z = self.reparameterize(mu, var)
+        else:
+            z = mu
+        mask = self.decode(z)
+        
+        return mask, mu, var
+        
+    def loss_function(self, mask, mask_recon, mu, var) -> Variable:
+        
+        # Loss btw reconstructed img and original img
+        BCE = 0
+        # BCE instead of mse
+        # if img_loss:
+        #     BCE = F.binary_cross_entropy(x_hat.reshape(-1), x.reshape(-1))
+
+        # WT-space loss on patch level (x_wt already has first patch all 0's)
+        BCE_wt = F.l1_loss(mask_recon.reshape(-1), mask.reshape(-1))
+        
+        logvar = torch.log(var)
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        KLD /= mask.shape[0] * 3 * 128 * 128
+
+        return BCE_wt + KLD, BCE_wt, KLD
+
+    def set_device(self, device):
+        self.device = device
+        if 'cuda' in self.device:
+            self.cuda = True
+    
+    def set_filters(self, filters):
+        self.iwt = IWT(iwt=iwt, num_iwt=self.num_iwt)
+        self.iwt.set_filters(filters)
+
 class IWTVAE_128_Mask_LearnIWT(nn.Module):
     def __init__(self, image_channels=3, z_dim=500, num_iwt=2):
         super(IWTVAE_128_Mask_LearnIWT, self).__init__()
@@ -2690,6 +2838,7 @@ class IWTVAE_512_Mask_1(nn.Module):
         self.iwt = IWT(iwt=iwt, num_iwt=self.num_iwt)
         self.iwt.set_filters(filters)
 
+# Reconstructing IWT'ed mask
 class IWTVAE_512_Mask_2(nn.Module):
     def __init__(self, image_channels=3, z_dim=500, num_iwt=2):
         super(IWTVAE_512_Mask_2, self).__init__()
@@ -2779,15 +2928,15 @@ class IWTVAE_512_Mask_2(nn.Module):
 
         return self.fc_mean(h), F.softplus(self.fc_var(h))                          #[b, z_dim]
     
-    def reparameterize(self, mu, var):
-        std = torch.sqrt(var)
-        if self.cuda:
-            eps = torch.FloatTensor(std.size()).normal_().to(self.device)
-        else:
-            eps = torch.FloatTensor(std.size()).normal_()
-        eps = Variable(eps)
+    # def reparameterize(self, mu, var):
+    #     std = torch.sqrt(var)
+    #     if self.cuda:
+    #         eps = torch.FloatTensor(std.size()).normal_().to(self.device)
+    #     else:
+    #         eps = torch.FloatTensor(std.size()).normal_()
+    #     eps = Variable(eps)
 
-        return eps.mul(std).add_(mu) 
+    #     return eps.mul(std).add_(mu) 
     
     def decode(self, z):
         h = self.leakyrelu(self.fc_dec(z))                                              #[b, 1024*8*8]
@@ -2803,18 +2952,18 @@ class IWTVAE_512_Mask_2(nn.Module):
         
     def forward(self, y):
         mu, var = self.encode(y)
-        if self.training:
-            z = self.reparameterize(mu, var)
-        else:
-            z = mu
-        mask = self.decode(z)
+        # if self.training:
+        #     z = self.reparameterize(mu, var)
+        # else:
+        #     z = mu
+        mask = self.decode(mu)
         
         return mask, mu, var
         
     def loss_function(self, mask, mask_recon, mu, var) -> Variable:
         
         # Loss btw reconstructed img and original img
-        BCE = 0
+        # BCE = 0
         # BCE instead of mse
         # if img_loss:
         #     BCE = F.binary_cross_entropy(x_hat.reshape(-1), x.reshape(-1))
@@ -2822,11 +2971,11 @@ class IWTVAE_512_Mask_2(nn.Module):
         # WT-space loss on patch level (x_wt already has first patch all 0's)
         BCE_wt = F.l1_loss(mask_recon.reshape(-1), mask.reshape(-1))
         
-        logvar = torch.log(var)
-        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        KLD /= mask.shape[0] * 3 * 512 * 512
+        # logvar = torch.log(var)
+        # KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        # KLD /= mask.shape[0] * 3 * 512 * 512
 
-        return BCE_wt + KLD, BCE_wt, KLD
+        return BCE_wt
 
     def set_device(self, device):
         self.device = device
