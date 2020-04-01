@@ -329,7 +329,7 @@ def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_lo
         # Get Y
         Y = wt_model(data1)
         
-        # Zeroing out all other patches, if given zero arg
+        # Zeroing out first patch, if given zero arg
         Y = zero_mask(Y, args.num_iwt, 1)
 
         # IWT all the leftover high frequencies
@@ -338,17 +338,7 @@ def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_lo
         # Run model to get mask (zero out first patch of mask) and x_wt_hat
         mask, mu, var = iwt_model(Y)
 
-        # Y only has first patch + mask
-        # x_wt_hat = Y + mask
-        # x_hat = iwt_fn(x_wt_hat)
-
-        # # Get x_wt, assuming deterministic WT model/function, and fill 0's in first patch
-        # x_wt = wt_model(data0)
-        # x_wt = zero_mask(x_wt, args.num_iwt, 1)
-        
-        # # Calculate loss
-        # img_loss = (epoch >= args.img_loss_epoch)
-        loss = iwt_model.loss_function(Y, mask, mu, var)
+        loss, loss_bce, loss_kld = iwt_model.loss_function(Y, mask, mu, var)
         loss.backward()
 
         # Calculating and printing gradient norm
@@ -357,10 +347,9 @@ def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_lo
         # Calculating and printing gradient norm
         global log_idx
         writer.add_scalar('Loss/total', loss, log_idx)
-        # writer.add_scalar('Loss/bce', loss_bce, log_idx)
-        # writer.add_scalar('Loss/kld', loss_kld, log_idx)
-        # writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
-        # writer.add_scalar('KL_weight', args.kl_weight, log_idx)
+        writer.add_scalar('Loss/bce', loss_bce, log_idx)
+        writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
         log_idx += 1 
 
         # Gradient clipping
@@ -369,7 +358,7 @@ def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_lo
             total_norm = calc_grad_norm_2(iwt_model)
             writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
         
-        # train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
+        train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
         train_loss += loss
 
         optimizer.step()

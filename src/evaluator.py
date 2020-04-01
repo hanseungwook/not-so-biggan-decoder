@@ -157,7 +157,6 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, iwt_fn, sample_loader, args,
 
             # Decoder -- two versions, real z and asmple z
             mask = iwt_model.decode(mu)
-            
             mask_sample = iwt_model.decode(z_sample)
             
             # Save images
