@@ -2969,7 +2969,7 @@ class IWTVAE_512_Mask_2(nn.Module):
         #     BCE = F.binary_cross_entropy(x_hat.reshape(-1), x.reshape(-1))
 
         # WT-space loss on patch level (x_wt already has first patch all 0's)
-        BCE_wt = F.l1_loss(mask_recon.reshape(-1), mask.reshape(-1))
+        BCE_wt = F.mse_loss(mask_recon.reshape(-1), mask.reshape(-1), reduction='sum')
         
         # logvar = torch.log(var)
         # KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
