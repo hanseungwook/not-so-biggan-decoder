@@ -2855,22 +2855,22 @@ class IWTVAE_512_Mask_2(nn.Module):
         # Z Encoder
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 256, 256]
-            nn.InstanceNorm2d(64),
+            # nn.InstanceNorm2d(64),
             self.leakyrelu,
             nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 128, 128]
-            nn.InstanceNorm2d(128),
+            # nn.InstanceNorm2d(128),
             self.leakyrelu,
             nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 256, 64, 64]
-            nn.InstanceNorm2d(256),
+            # nn.InstanceNorm2d(256),
             self.leakyrelu,
             nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 512, 32, 32]
-            nn.InstanceNorm2d(512),
+            # nn.InstanceNorm2d(512),
             self.leakyrelu,
             nn.Conv2d(512, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 512, 16, 16]
-            nn.InstanceNorm2d(1024),
+            # nn.InstanceNorm2d(1024),
             self.leakyrelu,
             nn.Conv2d(1024, 2048, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 2048, 8, 8]
-            nn.InstanceNorm2d(2048),
+            # nn.InstanceNorm2d(2048),
             self.leakyrelu
         )
 
@@ -2892,19 +2892,19 @@ class IWTVAE_512_Mask_2(nn.Module):
         # Z Decoder
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True), #[b, 1024, 16, 16]
-            nn.InstanceNorm2d(1024),
+            # nn.InstanceNorm2d(1024),
             self.leakyrelu,
             nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True), #[b, 512, 32, 32]
-            nn.InstanceNorm2d(512),
+            # nn.InstanceNorm2d(512),
             self.leakyrelu,
             nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True), #[b, 256, 64, 64]
-            nn.InstanceNorm2d(256),
+            # nn.InstanceNorm2d(256),
             self.leakyrelu,
             nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True), #[b, 128, 128, 128]
-            nn.InstanceNorm2d(128),
+            # nn.InstanceNorm2d(128),
             self.leakyrelu,
             nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True), #[b, 32, 256, 256]
-            nn.InstanceNorm2d(64),
+            # nn.InstanceNorm2d(64),
             self.leakyrelu,
             nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True), #[b, 3, 512, 512]
         )
