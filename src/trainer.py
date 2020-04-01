@@ -357,10 +357,10 @@ def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_lo
         # Calculating and printing gradient norm
         global log_idx
         writer.add_scalar('Loss/total', loss, log_idx)
-        writer.add_scalar('Loss/bce', loss_bce, log_idx)
-        writer.add_scalar('Loss/kld', loss_kld, log_idx)
-        writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
-        writer.add_scalar('KL_weight', args.kl_weight, log_idx)
+        # writer.add_scalar('Loss/bce', loss_bce, log_idx)
+        # writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        # writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
+        # writer.add_scalar('KL_weight', args.kl_weight, log_idx)
         log_idx += 1 
 
         # Gradient clipping
