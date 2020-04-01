@@ -369,7 +369,7 @@ def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_lo
             total_norm = calc_grad_norm_2(iwt_model)
             writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
         
-        train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
+        # train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
         train_loss += loss
 
         optimizer.step()
