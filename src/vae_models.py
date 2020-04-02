@@ -2254,7 +2254,7 @@ class IWTVAE_128_3Masks(nn.Module):
 
         # Z Encoder
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 64, 64]
+            nn.Conv2d(9, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 64, 64]
             # nn.InstanceNorm2d(64),
             self.leakyrelu,
             nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 32, 32]

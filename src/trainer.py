@@ -390,9 +390,10 @@ def train_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loa
         mask1 = Y[:, :, :128, 128:256]
         mask2 = Y[:, :, 128:256, :128]
         mask3 = Y[:, :, 128:256, 128:256]
+        masks = torch.cat((mask1, mask2, mask3), dim=1)
 
         # Run model to get mask (zero out first patch of mask) and x_wt_hat
-        mask1_hat, mask2_hat, mask3_hat, mu, var = iwt_model(Y)
+        mask1_hat, mask2_hat, mask3_hat, mu, var = iwt_model(masks)
 
         loss, loss_bce, loss_kld = iwt_model.loss_function(mask1, mask1_hat, mask2, mask2_hat, mask3, mask3_hat, mu, var)
         loss.backward()

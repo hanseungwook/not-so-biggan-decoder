@@ -97,9 +97,13 @@ def eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
             
             # Applying WT to X to get Y
             Y = wt_model(data)
+            mask1 = Y[:, :, :128, 128:256]
+            mask2 = Y[:, :, 128:256, :128]
+            mask3 = Y[:, :, 128:256, 128:256]
+            masks = torch.cat((mask1, mask2, mask3), dim=1)
 
             # Encoder
-            mu, var = iwt_model.encode(Y)
+            mu, var = iwt_model.encode(masks)
 
             # Decoder -- two versions, real z and asmple z
             mask1_hat, mask2_hat, mask3_hat = iwt_model.decode(mu)
