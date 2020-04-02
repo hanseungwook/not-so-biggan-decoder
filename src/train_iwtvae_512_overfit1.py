@@ -39,6 +39,7 @@ if __name__ == "__main__":
     
     if args.device >= 0:
         device = 'cuda:{}'.format(device)
+        print('Device {}'.format(device))
     else: 
         device = 'cpu'
 
