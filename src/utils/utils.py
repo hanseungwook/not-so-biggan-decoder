@@ -46,7 +46,7 @@ def collate_masks_to_img(mask1, mask2, mask3):
     h = mask1.shape[2]
     w = mask1.shape[3]
     
-    padded = torch.zeros((bs, c, h*2, w*2))
+    padded = torch.zeros((bs, c, h*2, w*2), device=mask1.device)
     padded[:, :, :h, w:] = mask1
     padded[:, :, h:, :w] = mask2
     padded[:, :, h:, w:] = mask3
