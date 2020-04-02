@@ -80,7 +80,7 @@ dependencies:
   - numpy=1.18.1=py37h4f9e942_0
   - numpy-base=1.18.1=py37hde5b4d6_1
   - olefile=0.46=py_0
-  - openssl=1.1.1d=h516909a_0
+  - openssl=1.1.1e=h516909a_0
   - pandoc=2.9.2=0
   - pandocfilters=1.4.2=py_1
   - parso=0.6.2=py_0
@@ -117,6 +117,7 @@ dependencies:
   - tk=8.6.10=hed695b0_0
   - torchvision=0.5.0=py37_cu101
   - tornado=6.0.3=py37h7b6447c_3
+  - tqdm=4.43.0=py_0
   - traitlets=4.3.3=py37_0
   - wcwidth=0.1.8=py_0
   - webencodings=0.5.1=py_1
