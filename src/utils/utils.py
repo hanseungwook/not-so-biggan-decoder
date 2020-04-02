@@ -40,16 +40,17 @@ def zero_mask(mask, num_iwt, cur_iwt):
     
     return padded
 
-def collate_masks_to_img(mask1, mask2, mask3):
+def collate_masks_to_img(low, mask1, mask2, mask3):
     bs = mask1.shape[0]
     c = mask1.shape[1]
     h = mask1.shape[2]
     w = mask1.shape[3]
     
-    padded = torch.zeros((bs, c, h*2, w*2), device=mask1.device)
-    padded[:, :, :h, w:] = mask1
-    padded[:, :, h:, :w] = mask2
-    padded[:, :, h:, w:] = mask3
+    padded = torch.zeros((bs, c, h*4, w*4), device=mask1.device)
+    padded[:, :, :h, :w] = low
+    padded[:, :, :h, w:2*w] = mask1
+    padded[:, :, h:2*h, :w] = mask2
+    padded[:, :, h:2*h, w:2*w] = mask3
 
     return padded
 

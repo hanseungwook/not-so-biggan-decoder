@@ -97,6 +97,7 @@ def eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
             
             # Applying WT to X to get Y
             Y = wt_model(data)
+            low = Y[:, :, :128, :128]
             mask1 = Y[:, :, :128, 128:256]
             mask2 = Y[:, :, 128:256, :128]
             mask3 = Y[:, :, 128:256, 128:256]
@@ -110,14 +111,19 @@ def eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
             mask1_sample_hat, mask2_sample_hat, mask3_sample_hat = iwt_model.sample(data.shape[0])
             
             # Collate 3 masks into 1 image
-            masks_target = collate_masks_to_img(mask1, mask2, mask3)
-            masks_hat = collate_masks_to_img(mask1_hat, mask2_hat, mask3_hat)
-            masks_sample_hat = collate_masks_to_img(mask1_sample_hat, mask2_sample_hat, mask3_sample_hat)
+            masks_target = Y
+            masks_hat = collate_masks_to_img(low, mask1_hat, mask2_hat, mask3_hat)
+            masks_sample_hat = collate_masks_to_img(low, mask1_sample_hat, mask2_sample_hat, mask3_sample_hat)
+
+            img_hat = iwt_fn(masks_hat)
+            img_sample_hat = iwt_fn(masks_sample_hat)
 
             # Save images
             save_image(masks_target.cpu(), img_output_dir + '/y{}.png'.format(epoch))
             save_image(masks_hat.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
             save_image(masks_sample_hat.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
+            save_image(img_hat.cpu(), img_output_dir + '/recon_img{}.png'.format(epoch))
+            save_image(img_sample_hat.cpu(), img_output_dir + '/sample_img{}.png'.format(epoch))
             save_image(data.cpu(), img_output_dir + '/img{}.png'.format(epoch))
 
     torch.save({
