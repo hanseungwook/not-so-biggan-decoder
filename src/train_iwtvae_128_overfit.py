@@ -71,13 +71,14 @@ if __name__ == "__main__":
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae128_3masks_overfit_{}/'.format(args.config))
     log_dir = os.path.join(args.root_dir, 'runs/iwtvae128_3masks_overfit_{}'.format(args.config))
 
-    try:
-        os.mkdir(img_output_dir)
-        os.mkdir(model_dir)
-        os.mkdir(log_dir)
-    except:
-        LOGGER.error('Could not make log / model / img output directories')
-        raise Exception('Could not make log / model / img output directories')
+    if not args.checkpoint:
+        try:
+            os.mkdir(img_output_dir)
+            os.mkdir(model_dir)
+            os.mkdir(log_dir)
+        except:
+            LOGGER.error('Could not make log / model / img output directories')
+            raise Exception('Could not make log / model / img output directories')
 
     # Set up tensorboard logger
     writer = SummaryWriter(log_dir=log_dir)
