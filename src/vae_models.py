@@ -2238,12 +2238,12 @@ class IWTVAE_64_Mask(nn.Module):
         if 'cuda' in self.devices[0] and 'cuda' in self.devices[1]:
             self.cuda = True
 
-# Reconstructing IWT'ed mask
-class IWTVAE_128(nn.Module):
+# Reconstructing 3 masks separately (each 128 x 128)
+class IWTVAE_128_3Masks(nn.Module):
     def __init__(self, image_channels=3, z_dim=500, num_iwt=2):
-        super(IWTVAE_512_Mask_2, self).__init__()
-        # Resolution of images (512 x 512)
-        self.res = 512
+        super(IWTVAE_128_Mask, self).__init__()
+        # Resolution of images (128 x 128)
+        self.res = 128
         self.device = None
         self.cuda = False
         
@@ -2252,30 +2252,30 @@ class IWTVAE_128(nn.Module):
         self.leakyrelu = nn.LeakyReLU(0.2)
         self.sigmoid = nn.Sigmoid()
 
-        # Z Encoder - Decoder                                                                [b, 3, 128, 128]
-        self.e1 = nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 64, 64, 64]
-        weights_init(self.e1)
-        self.instance_norm_e1 = nn.BatchNorm2d(num_features=64)
+        # Z Encoder
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 64, 64]
+            nn.InstanceNorm2d(64),
+            self.leakyrelu,
+            nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 32, 32]
+            nn.InstanceNorm2d(128),
+            self.leakyrelu,
+            nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 256, 16, 16]
+            nn.InstanceNorm2d(256),
+            self.leakyrelu,
+            nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 512, 8, 8]
+            nn.InstanceNorm2d(512),
+            self.leakyrelu,
+            nn.Conv2d(512, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 1024, 4, 4]
+            nn.InstanceNorm2d(1024),
+            self.leakyrelu,
+            nn.Conv2d(1024, 2048, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 2048, 2, 2]
+            nn.InstanceNorm2d(2048),
+            self.leakyrelu
+        )
 
-        self.e2 = nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 128, 32, 32]
-        weights_init(self.e2)
-        self.instance_norm_e2 = nn.BatchNorm2d(num_features=128)
-
-        self.e3 = nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 256, 16, 16]
-        weights_init(self.e3)
-        self.instance_norm_e3 = nn.BatchNorm2d(num_features=256)
-
-        self.e4 = nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 512, 8, 8]
-        weights_init(self.e4)
-        self.instance_norm_e4 = nn.BatchNorm2d(num_features=512)
-
-        self.e5 = nn.Conv2d(512, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 1024, 4, 4]
-        weights_init(self.e5)
-        self.instance_norm_e5 = nn.BatchNorm2d(num_features=1024)
-
-        self.e6 = nn.Conv2d(1024, 2048, 4, stride=2, padding=1, bias=True, padding_mode='zeros') #[b, 2048, 2, 2]
-        weights_init(self.e6)
-        self.instance_norm_e6 = nn.BatchNorm2d(num_features=2048)
+        # Initializing weights of encoder                                      
+        weights_init(self.encoder)
         
         self.fc_enc = nn.Linear(2048 * 2 * 2, 1024)
         weights_init(self.fc_enc)
@@ -2286,45 +2286,84 @@ class IWTVAE_128(nn.Module):
         self.fc_var = nn.Linear(1024, z_dim)
         weights_init(self.fc_var)
         
-        self.fc_dec = nn.Linear(z_dim, 2048 * 2 * 2)
-        weights_init(self.fc_dec)
+        self.fc_dec1 = nn.Linear(z_dim, 2048 * 2 * 2)
+        weights_init(self.fc_dec1)
 
-        self.d1 = nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True) #[b, 1024, 4, 4]
-        weights_init(self.d1)
-        self.instance_norm_d1 = nn.BatchNorm2d(num_features=1024)
+        self.fc_dec2 = nn.Linear(z_dim, 2048 * 2 * 2)
+        weights_init(self.fc_dec2)
 
-        self.d2 = nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True) #[b, 512, 8, 8]
-        weights_init(self.d2)
-        self.instance_norm_d2 = nn.BatchNorm2d(num_features=512)
+        self.fc_dec2 = nn.Linear(z_dim, 2048 * 2 * 2)
+        weights_init(self.fc_dec3)
 
-        self.d3 = nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True) #[b, 256, 16, 16]
-        weights_init(self.d3)
-        self.instance_norm_d3 = nn.BatchNorm2d(num_features=256)
 
-        self.d4 = nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True) #[b, 128, 32, 32]
-        weights_init(self.d4)
-        self.instance_norm_d4 = nn.BatchNorm2d(num_features=128)
+        # Z Decoder
+        self.decoder1 = nn.Sequential(
+            nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True), #[b, 1024, 4, 4]
+            nn.InstanceNorm2d(1024),
+            self.leakyrelu,
+            nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True), #[b, 512, 8, 8]
+            nn.InstanceNorm2d(512),
+            self.leakyrelu,
+            nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True), #[b, 256, 16, 16]
+            nn.InstanceNorm2d(256),
+            self.leakyrelu,
+            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True), #[b, 128, 32, 32]
+            nn.InstanceNorm2d(128),
+            self.leakyrelu,
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True), #[b, 32, 64, 64]
+            nn.InstanceNorm2d(64),
+            self.leakyrelu,
+            nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True), #[b, 3, 128, 128]
+        )
+        
+        self.decoder2 = nn.Sequential(
+            nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True), #[b, 1024, 4, 4]
+            nn.InstanceNorm2d(1024),
+            self.leakyrelu,
+            nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True), #[b, 512, 8, 8]
+            nn.InstanceNorm2d(512),
+            self.leakyrelu,
+            nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True), #[b, 256, 16, 16]
+            nn.InstanceNorm2d(256),
+            self.leakyrelu,
+            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True), #[b, 128, 32, 32]
+            nn.InstanceNorm2d(128),
+            self.leakyrelu,
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True), #[b, 32, 64, 64]
+            nn.InstanceNorm2d(64),
+            self.leakyrelu,
+            nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True), #[b, 3, 128, 128]
+        )
 
-        self.d5 = nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True) #[b, 32, 64, 64]
-        weights_init(self.d5)
-        self.instance_norm_d5 = nn.BatchNorm2d(num_features=64)
+        self.decoder3 = nn.Sequential(
+            nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True), #[b, 1024, 4, 4]
+            nn.InstanceNorm2d(1024),
+            self.leakyrelu,
+            nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True), #[b, 512, 8, 8]
+            nn.InstanceNorm2d(512),
+            self.leakyrelu,
+            nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True), #[b, 256, 16, 16]
+            nn.InstanceNorm2d(256),
+            self.leakyrelu,
+            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True), #[b, 128, 32, 32]
+            nn.InstanceNorm2d(128),
+            self.leakyrelu,
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True), #[b, 32, 64, 64]
+            nn.InstanceNorm2d(64),
+            self.leakyrelu,
+            nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True), #[b, 3, 128, 128]
+        )
 
-        self.d6 = nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True) #[b, 3, 128, 128]
-        weights_init(self.d6)
-        self.instance_norm_d6 = nn.BatchNorm2d(num_features=3)
+        # Initializing weights of decoder
+        weights_init(self.decoder1)
+        weights_init(self.decoder2)
+        weights_init(self.decoder3)
         
         self.iwt = None
-    
       
     def encode(self, y):
-        h = self.leakyrelu(self.instance_norm_e1(self.e1(y)))                       #[b, 64, 64, 64]
-        h = self.leakyrelu(self.instance_norm_e2(self.e2(h)))                       #[b, 128, 32, 32]
-        h = self.leakyrelu(self.instance_norm_e3(self.e3(h)))                       #[b, 256, 16, 16]
-        h = self.leakyrelu(self.instance_norm_e4(self.e4(h)))                       #[b, 512, 8, 8]
-        h = self.leakyrelu(self.instance_norm_e5(self.e5(h)))                       #[b, 1024, 4, 4]
-        h = self.leakyrelu(self.instance_norm_e6(self.e6(h)))                       #[b, 2048, 2, 2]
-
-        h = self.leakyrelu(self.fc_enc(h.reshape(-1,2048*8*8)))                     #[b, z_dim]
+        h = self.encoder(y)                                                         #[b, 2048, 2, 2]
+        h = self.fc_enc(h.reshape(-1,2048*2*2))                                     #[b, z_dim]
 
         return self.fc_mean(h), F.softplus(self.fc_var(h))                          #[b, z_dim]
     
@@ -2339,16 +2378,23 @@ class IWTVAE_128(nn.Module):
         return eps.mul(std).add_(mu) 
     
     def decode(self, z):
-        h = self.leakyrelu(self.fc_dec(z))                                              #[b, 2048*2*2]
-        h = self.leakyrelu(self.instance_norm_d1(self.d1(h.reshape(-1, 2048, 8, 8))))   #[b, 1024, 4, 4]
-        h = self.leakyrelu(self.instance_norm_d2(self.d2(h)))                           #[b, 512, 8, 8]
-        h = self.leakyrelu(self.instance_norm_d3(self.d3(h)))                           #[b, 256, 16, 16]
-        h = self.leakyrelu(self.instance_norm_d4(self.d4(h)))                           #[b, 128, 32, 32]
-        h = self.leakyrelu(self.instance_norm_d5(self.d5(h)))                           #[b, 64, 64, 64]
-        h = self.instance_norm_d6(self.d6(h))                                           #[b, 3, 128, 128]
-        
+        z1 = self.leakyrelu(self.fc_dec1(z))                       #[b, 2048*2*2]
+        z1 = self.decoder(z1.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
+
+        z2 = self.leakyrelu(self.fc_dec2(z))                       #[b, 2048*2*2]
+        z2 = self.decoder(z2.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
+
+        z3 = self.leakyrelu(self.fc_dec3(z))                       #[b, 2048*2*2]
+        z3 = self.decoder(z3.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
+
         # Returns mask
-        return h
+        return z1, z2, z3
+
+    def sample(self, batch_size):
+        z_sample = torch.randn(batch_size, self.z_dim, device=self.device)
+        sample1, sample2, sample3 = self.decode(z_sample)
+        
+        return sample1, sample2, sample3
         
     def forward(self, y):
         mu, var = self.encode(y)
@@ -2356,24 +2402,19 @@ class IWTVAE_128(nn.Module):
             z = self.reparameterize(mu, var)
         else:
             z = mu
-        mask = self.decode(z)
+        mask1, mask2, mask  = self.decode(z)
         
-        return mask, mu, var
+        return mask1, mask2, mask3, mu, var
         
-    def loss_function(self, mask, mask_recon, mu, var) -> Variable:
-        
-        # Loss btw reconstructed img and original img
-        BCE = 0
-        # BCE instead of mse
-        # if img_loss:
-        #     BCE = F.binary_cross_entropy(x_hat.reshape(-1), x.reshape(-1))
+    def loss_function(self, mask1, mask1_hat, mask2, mask2_hat, mask3, mask3_hat, mu, var) -> Variable:
 
         # WT-space loss on patch level (x_wt already has first patch all 0's)
-        BCE_wt = F.l1_loss(mask_recon.reshape(-1), mask.reshape(-1))
+        BCE_wt = F.mse_loss(mask1_hat.reshape(-1), mask1.reshape(-1)) + F.mse_loss(mask2_hat.reshape(-1), mask2.reshape(-1)) + F.mse_loss(mask3_hat.reshape(-1), mask3.reshape(-1))
+        BCE_wt *= (mask1.shape[1] * mask1.shape[2] * mask1.shape[3])
         
         logvar = torch.log(var)
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        KLD /= mask.shape[0] * 3 * 128 * 128
+        KLD /= mask1.shape[0]
 
         return BCE_wt + KLD, BCE_wt, KLD
 
