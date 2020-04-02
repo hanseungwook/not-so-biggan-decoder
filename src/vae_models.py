@@ -2379,13 +2379,13 @@ class IWTVAE_128_3Masks(nn.Module):
     
     def decode(self, z):
         z1 = self.leakyrelu(self.fc_dec1(z))                       #[b, 2048*2*2]
-        z1 = self.decoder(z1.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
+        z1 = self.decoder1(z1.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
 
         z2 = self.leakyrelu(self.fc_dec2(z))                       #[b, 2048*2*2]
-        z2 = self.decoder(z2.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
+        z2 = self.decoder2(z2.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
 
         z3 = self.leakyrelu(self.fc_dec3(z))                       #[b, 2048*2*2]
-        z3 = self.decoder(z3.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
+        z3 = self.decoder3(z3.reshape(-1, 2048, 2, 2))              #[b, 3, 128, 128]
 
         # Returns mask
         return z1, z2, z3
@@ -2412,7 +2412,7 @@ class IWTVAE_128_3Masks(nn.Module):
         BCE_wt = F.mse_loss(mask1_hat.reshape(-1), mask1.reshape(-1))
         BCE_wt += F.mse_loss(mask2_hat.reshape(-1), mask2.reshape(-1))
         BCE_wt += F.mse_loss(mask3_hat.reshape(-1), mask3.reshape(-1))
-        
+
         BCE_wt *= (mask1.shape[1] * mask1.shape[2] * mask1.shape[3])
         
         logvar = torch.log(var)
