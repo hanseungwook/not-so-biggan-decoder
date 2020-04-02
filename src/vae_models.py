@@ -2292,7 +2292,7 @@ class IWTVAE_128_3Masks(nn.Module):
         self.fc_dec2 = nn.Linear(z_dim, 2048 * 2 * 2)
         weights_init(self.fc_dec2)
 
-        self.fc_dec2 = nn.Linear(z_dim, 2048 * 2 * 2)
+        self.fc_dec3 = nn.Linear(z_dim, 2048 * 2 * 2)
         weights_init(self.fc_dec3)
 
 
