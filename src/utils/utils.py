@@ -40,6 +40,19 @@ def zero_mask(mask, num_iwt, cur_iwt):
     
     return padded
 
+def collate_masks_to_img(mask1, mask2, mask3):
+    bs = mask1.shape[0]
+    c = mask1.shape[2]
+    h = mask1.shape[2]
+    w = mask1.shape[3]
+    
+    padded = torch.zeros((bs, c, h*2, w*2))
+    padded[:, :, :h, w:] = mask1
+    padded[:, :, h:, :w] = mask2
+    padded[:, :, h:, w:] = mask3
+
+    return padded
+
 def set_seed(seed, cudnn=True):
     """
     Seed everything we can!

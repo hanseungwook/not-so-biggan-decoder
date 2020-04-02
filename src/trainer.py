@@ -394,7 +394,7 @@ def train_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loa
         # Run model to get mask (zero out first patch of mask) and x_wt_hat
         mask1_hat, mask2_hat, mask3_hat, mu, var = iwt_model(Y)
 
-        loss, loss_bce, loss_kld = iwt_model.loss_function(Y, mask, mu, var)
+        loss, loss_bce, loss_kld = iwt_model.loss_function(mask1, mask1_hat, mask2, mask2_hat, mask3, mask3_hat, mu, var)
         loss.backward()
 
         # Calculating and printing gradient norm

@@ -2408,8 +2408,11 @@ class IWTVAE_128_3Masks(nn.Module):
         
     def loss_function(self, mask1, mask1_hat, mask2, mask2_hat, mask3, mask3_hat, mu, var) -> Variable:
 
-        # WT-space loss on patch level (x_wt already has first patch all 0's)
-        BCE_wt = F.mse_loss(mask1_hat.reshape(-1), mask1.reshape(-1)) + F.mse_loss(mask2_hat.reshape(-1), mask2.reshape(-1)) + F.mse_loss(mask3_hat.reshape(-1), mask3.reshape(-1))
+        # Computing loss on each of the masks
+        BCE_wt = F.mse_loss(mask1_hat.reshape(-1), mask1.reshape(-1))
+        BCE_wt += F.mse_loss(mask2_hat.reshape(-1), mask2.reshape(-1))
+        BCE_wt += F.mse_loss(mask3_hat.reshape(-1), mask3.reshape(-1))
+        
         BCE_wt *= (mask1.shape[1] * mask1.shape[2] * mask1.shape[3])
         
         logvar = torch.log(var)

@@ -2,7 +2,7 @@ import torch
 from torchvision.utils import save_image
 import numpy as np
 from vae_models import wt
-from utils.utils import zero_mask, zero_patches, zero_pad, save_plot, hf_collate_to_img, hf_collate_to_channels, hf_collate_to_channels_wt2
+from utils.utils import zero_mask, zero_patches, zero_pad, save_plot, hf_collate_to_img, hf_collate_to_channels, hf_collate_to_channels_wt2, collate_masks_to_img
 
 def eval_wtvae_pair(epoch, model, sample_loader, args, img_output_dir, model_dir):
     with torch.no_grad():
@@ -97,24 +97,22 @@ def eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
             
             # Applying WT to X to get Y
             Y = wt_model(data)
-        
-            # Zeroing out all other patches, if given zero arg
-            Y = zero_mask(Y, args.num_iwt, 1)
-
-            # IWT all the leftover high frequencies
-            Y = iwt_fn(Y)
 
             # Encoder
             mu, var = iwt_model.encode(Y)
 
             # Decoder -- two versions, real z and asmple z
-            mask = iwt_model.decode(mu)
-            mask_sample = iwt_model.sample (data.shape[0])
+            mask1_hat, mask2_hat, mask3_hat = iwt_model.decode(mu)
+            mask1_sample_hat, mask2_sample_hat, mask3_sample_hat = iwt_model.sample(data.shape[0])
             
+            # Collate 3 masks into 1 image
+            masks = collate_masks_to_img(mask1_hat, mask2_hat, mask3_hat)
+            masks_sample = collate_masks_to_img(mask1_sample_hat, mask2_sample_hat, mask3_sample_hat)
+
             # Save images
             save_image(Y.cpu(), img_output_dir + '/y{}.png'.format(epoch))
-            save_image(mask.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
-            save_image(mask_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
+            save_image(masks.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
+            save_image(masks_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
             save_image(data.cpu(), img_output_dir + '/target{}.png'.format(epoch))
 
     torch.save({
