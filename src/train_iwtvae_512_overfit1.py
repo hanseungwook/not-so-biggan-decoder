@@ -38,7 +38,7 @@ if __name__ == "__main__":
     sample_loader = DataLoader(sample_dataset, batch_size=4, shuffle=False) 
     
     if args.device >= 0:
-        device = 'cuda:{}'.format(device)
+        device = 'cuda:{}'.format(args.device)
         print('Device {}'.format(device))
     else: 
         device = 'cpu'
