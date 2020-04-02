@@ -60,6 +60,10 @@ if __name__ == "__main__":
     
     train_losses = []
     optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
+    if args.checkpoint:
+        checkpoint = torch.load(args.checkpoint, map_location=device)
+        iwt_model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtvae128_3masks_overfit_in_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae128_3masks_overfit_in_{}/'.format(args.config))

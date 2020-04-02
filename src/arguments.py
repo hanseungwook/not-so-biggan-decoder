@@ -29,6 +29,8 @@ def args_parse():
                         help='GPU device # (-1 if CPU)')
     parser.add_argument('--loss', type=str, default='l1',
                         help='Type of loss/criterino to use for loss function')
+    parser.add_argument('--checkpoint', type=str, default='',
+                        help='Path to checkpoint (saved model & optimizer state) to load and continue training from')
     
     # Arguments for controlling KL weight anneal
     parser.add_argument('--kl_start', type=float, default=1.0,
