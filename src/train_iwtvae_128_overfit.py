@@ -37,8 +37,8 @@ if __name__ == "__main__":
     sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 4))
     sample_loader = DataLoader(sample_dataset, batch_size=4, shuffle=False) 
     
-    if args.device:
-        device = 'cuda:{}'.format(device)
+    if args.device >= 0:
+        device = 'cuda:{}'.format(args.device)
     else: 
         device = 'cpu'
 
