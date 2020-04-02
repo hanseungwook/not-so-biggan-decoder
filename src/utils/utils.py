@@ -42,7 +42,7 @@ def zero_mask(mask, num_iwt, cur_iwt):
 
 def collate_masks_to_img(mask1, mask2, mask3):
     bs = mask1.shape[0]
-    c = mask1.shape[2]
+    c = mask1.shape[1]
     h = mask1.shape[2]
     w = mask1.shape[3]
     
