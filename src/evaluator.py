@@ -104,15 +104,12 @@ def eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
             # IWT all the leftover high frequencies
             Y = iwt_fn(Y)
 
-            # Get sample
-            z_sample = torch.randn(data.shape[0], args.z_dim).to(iwt_model.device)
-
             # Encoder
             mu, var = iwt_model.encode(Y)
 
             # Decoder -- two versions, real z and asmple z
             mask = iwt_model.decode(mu)
-            mask_sample = iwt_model.decode(z_sample)
+            mask_sample = iwt_model.sample (data.shape[0])
             
             # Save images
             save_image(Y.cpu(), img_output_dir + '/y{}.png'.format(epoch))
