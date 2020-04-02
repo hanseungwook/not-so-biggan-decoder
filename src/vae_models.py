@@ -2241,7 +2241,7 @@ class IWTVAE_64_Mask(nn.Module):
 # Reconstructing 3 masks separately (each 128 x 128)
 class IWTVAE_128_3Masks(nn.Module):
     def __init__(self, image_channels=3, z_dim=500, num_iwt=2):
-        super(IWTVAE_128_Mask, self).__init__()
+        super(IWTVAE_128_3Masks, self).__init__()
         # Resolution of images (128 x 128)
         self.res = 128
         self.device = None
