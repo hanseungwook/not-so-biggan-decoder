@@ -2594,7 +2594,7 @@ class IWTVAE_128_3Masks_1(nn.Module):
         #     z = self.reparameterize(mu, var)
         # else:
         #     z = mu
-        mask1, mask2, mask3  = self.decode(z)
+        mask1, mask2, mask3  = self.decode(mu)
         
         return mask1, mask2, mask3, mu, var
         
