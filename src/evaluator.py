@@ -110,14 +110,15 @@ def eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
             mask1_sample_hat, mask2_sample_hat, mask3_sample_hat = iwt_model.sample(data.shape[0])
             
             # Collate 3 masks into 1 image
-            masks = collate_masks_to_img(mask1_hat, mask2_hat, mask3_hat)
-            masks_sample = collate_masks_to_img(mask1_sample_hat, mask2_sample_hat, mask3_sample_hat)
+            masks_target = collate_masks_to_img(mask1, mask2, mask3)
+            masks_hat = collate_masks_to_img(mask1_hat, mask2_hat, mask3_hat)
+            masks_sample_hat = collate_masks_to_img(mask1_sample_hat, mask2_sample_hat, mask3_sample_hat)
 
             # Save images
-            save_image(Y.cpu(), img_output_dir + '/y{}.png'.format(epoch))
-            save_image(masks.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
-            save_image(masks_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
-            save_image(data.cpu(), img_output_dir + '/target{}.png'.format(epoch))
+            save_image(masks_target.cpu(), img_output_dir + '/y{}.png'.format(epoch))
+            save_image(masks_hat.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
+            save_image(masks_sample_hat.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
+            save_image(data.cpu(), img_output_dir + '/img{}.png'.format(epoch))
 
     torch.save({
                 'epoch': epoch,
