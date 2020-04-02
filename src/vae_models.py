@@ -2610,7 +2610,7 @@ class IWTVAE_128_3Masks_1(nn.Module):
         # logvar = torch.log(var)
         # KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         # KLD /= mask1.shape[0]
-        KLD = 0
+        KLD = torch.tensor(0)
 
         return BCE_wt + KLD, BCE_wt, KLD
 
