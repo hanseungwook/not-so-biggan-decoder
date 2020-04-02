@@ -31,7 +31,10 @@ def args_parse():
                         help='Type of loss/criterino to use for loss function')
     parser.add_argument('--checkpoint', type=str, default='',
                         help='Path to checkpoint (saved model & optimizer state) to load and continue training from')
-    
+    parser.add_argument('--checkpoint_epoch', type=int, default=1,
+                        help='Checkpoint epoch to continue training from')
+
+
     # Arguments for controlling KL weight anneal
     parser.add_argument('--kl_start', type=float, default=1.0,
                         help='Starting KL weight')

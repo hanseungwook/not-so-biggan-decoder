@@ -65,6 +65,7 @@ if __name__ == "__main__":
         checkpoint = torch.load(args.checkpoint, map_location=device)
         iwt_model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        start_epoch = args.checkpoint_epoch
 
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtvae128_3masks_overfit_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae128_3masks_overfit_{}/'.format(args.config))
@@ -85,7 +86,7 @@ if __name__ == "__main__":
     args.kl_weight = args.kl_start
     anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup)
 
-    for epoch in range(1, args.epochs + 1):
+    for epoch in range(start_epoch, args.epochs + 1):
         args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
         train_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, train_losses, args, writer)
         eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer)
