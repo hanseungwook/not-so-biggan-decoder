@@ -2447,22 +2447,22 @@ class IWTVAE_128_3Masks_1(nn.Module):
         # Z Encoder
         self.encoder = nn.Sequential(
             nn.Conv2d(9, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 64, 64]
-            # nn.InstanceNorm2d(64),
+            nn.InstanceNorm2d(64),
             self.leakyrelu,
             nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 32, 32]
-            # nn.InstanceNorm2d(128),
+            nn.InstanceNorm2d(128),
             self.leakyrelu,
             nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 256, 16, 16]
-            # nn.InstanceNorm2d(256),
+            nn.InstanceNorm2d(256),
             self.leakyrelu,
             nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 512, 8, 8]
-            # nn.InstanceNorm2d(512),
+            nn.InstanceNorm2d(512),
             self.leakyrelu,
             nn.Conv2d(512, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 1024, 4, 4]
-            # nn.InstanceNorm2d(1024),
+            nn.InstanceNorm2d(1024),
             self.leakyrelu,
             nn.Conv2d(1024, 2048, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 2048, 2, 2]
-            # nn.InstanceNorm2d(2048),
+            nn.InstanceNorm2d(2048),
             self.leakyrelu
         )
 
@@ -2491,57 +2491,57 @@ class IWTVAE_128_3Masks_1(nn.Module):
         # Z Decoder
         self.decoder1 = nn.Sequential(
             nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True), #[b, 1024, 4, 4]
-            # nn.InstanceNorm2d(1024),
+            nn.InstanceNorm2d(1024),
             self.leakyrelu,
             nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True), #[b, 512, 8, 8]
-            # nn.InstanceNorm2d(512),
+            nn.InstanceNorm2d(512),
             self.leakyrelu,
             nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True), #[b, 256, 16, 16]
-            # nn.InstanceNorm2d(256),
+            nn.InstanceNorm2d(256),
             self.leakyrelu,
             nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True), #[b, 128, 32, 32]
-            # nn.InstanceNorm2d(128),
+            nn.InstanceNorm2d(128),
             self.leakyrelu,
             nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True), #[b, 32, 64, 64]
-            # nn.InstanceNorm2d(64),
+            nn.InstanceNorm2d(64),
             self.leakyrelu,
             nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True), #[b, 3, 128, 128]
         )
         
         self.decoder2 = nn.Sequential(
             nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True), #[b, 1024, 4, 4]
-            # nn.InstanceNorm2d(1024),
+            nn.InstanceNorm2d(1024),
             self.leakyrelu,
             nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True), #[b, 512, 8, 8]
-            # nn.InstanceNorm2d(512),
+            nn.InstanceNorm2d(512),
             self.leakyrelu,
             nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True), #[b, 256, 16, 16]
-            # nn.InstanceNorm2d(256),
+            nn.InstanceNorm2d(256),
             self.leakyrelu,
             nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True), #[b, 128, 32, 32]
-            # nn.InstanceNorm2d(128),
+            nn.InstanceNorm2d(128),
             self.leakyrelu,
             nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True), #[b, 32, 64, 64]
-            # nn.InstanceNorm2d(64),
+            nn.InstanceNorm2d(64),
             self.leakyrelu,
             nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True), #[b, 3, 128, 128]
         )
 
         self.decoder3 = nn.Sequential(
             nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True), #[b, 1024, 4, 4]
-            # nn.InstanceNorm2d(1024),
+            nn.InstanceNorm2d(1024),
             self.leakyrelu,
             nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True), #[b, 512, 8, 8]
-            # nn.InstanceNorm2d(512),
+            nn.InstanceNorm2d(512),
             self.leakyrelu,
             nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True), #[b, 256, 16, 16]
-            # nn.InstanceNorm2d(256),
+            nn.InstanceNorm2d(256),
             self.leakyrelu,
             nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True), #[b, 128, 32, 32]
-            # nn.InstanceNorm2d(128),
+            nn.InstanceNorm2d(128),
             self.leakyrelu,
             nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True), #[b, 32, 64, 64]
-            # nn.InstanceNorm2d(64),
+            nn.InstanceNorm2d(64),
             self.leakyrelu,
             nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True), #[b, 3, 128, 128]
         )
@@ -2559,15 +2559,15 @@ class IWTVAE_128_3Masks_1(nn.Module):
 
         return self.fc_mean(h), F.softplus(self.fc_var(h))                          #[b, z_dim]
     
-    # def reparameterize(self, mu, var):
-    #     std = torch.sqrt(var)
-    #     if self.cuda:
-    #         eps = torch.FloatTensor(std.size()).normal_().to(self.device)
-    #     else:
-    #         eps = torch.FloatTensor(std.size()).normal_()
-    #     eps = Variable(eps)
+    def reparameterize(self, mu, var):
+        std = torch.sqrt(var)
+        if self.cuda:
+            eps = torch.FloatTensor(std.size()).normal_().to(self.device)
+        else:
+            eps = torch.FloatTensor(std.size()).normal_()
+        eps = Variable(eps)
 
-    #     return eps.mul(std).add_(mu) 
+        return eps.mul(std).add_(mu) 
     
     def decode(self, z):
         z1 = self.leakyrelu(self.fc_dec1(z))                       #[b, 2048*2*2]
@@ -2590,11 +2590,11 @@ class IWTVAE_128_3Masks_1(nn.Module):
         
     def forward(self, y):
         mu, var = self.encode(y)
-        # if self.training:
-        #     z = self.reparameterize(mu, var)
-        # else:
-        #     z = mu
-        mask1, mask2, mask3  = self.decode(mu)
+        if self.training:
+            z = self.reparameterize(mu, var)
+        else:
+            z = mu
+        mask1, mask2, mask3  = self.decode(z)
         
         return mask1, mask2, mask3, mu, var
         
@@ -2607,10 +2607,9 @@ class IWTVAE_128_3Masks_1(nn.Module):
 
         BCE_wt *= (mask1.shape[1] * mask1.shape[2] * mask1.shape[3])
         
-        # logvar = torch.log(var)
-        # KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        # KLD /= mask1.shape[0]
-        KLD = torch.tensor(0)
+        logvar = torch.log(var)
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+        KLD /= mask1.shape[0]
 
         return BCE_wt + KLD, BCE_wt, KLD
 
