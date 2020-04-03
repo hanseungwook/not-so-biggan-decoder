@@ -165,7 +165,7 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_lo
 
             mask_wt[:, :, :128, :128] += Y_full[:, :, :128, :128]
             mask_sample_wt[:, :, :128, :128] += Y_full[:, :, :128, :128]
-            padded = torch.zeros(Y.shape)
+            padded = torch.zeros(Y.shape, device=Y_full.device)
             padded[:, :, :128, :128] = Y_full[:, :, :128, :128]
 
             img_low = iwt_fn(padded)
