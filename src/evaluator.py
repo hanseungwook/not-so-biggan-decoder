@@ -173,7 +173,7 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_lo
             img_sample_recon = iwt_fn(mask_sample_wt)
             
             # Save images
-            save_image(Y_full.cpu(), img_output_dir + '/y{}.png'.format(epoch))
+            save_image(Y.cpu(), img_output_dir + '/y{}.png'.format(epoch))
             save_image(mask.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
             save_image(mask_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
             save_image(img_low.cpu(), img_output_dir + '/low_img{}.png'.format(epoch))
