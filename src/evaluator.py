@@ -142,8 +142,9 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_lo
             
             # Applying WT to X to get Y
             Y = wt_model(data)
+            Y_full = Y.clone()
         
-            # Zeroing out all other patches, if given zero arg
+            # Zeroing out first patch
             Y = zero_mask(Y, args.num_iwt, 1)
 
             # IWT all the leftover high frequencies
@@ -158,11 +159,21 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_lo
             # Decoder -- two versions, real z and asmple z
             mask = iwt_model.decode(mu)
             mask_sample = iwt_model.decode(z_sample)
+
+            mask_wt = wt_model(mask)
+            mask_sample_wt = wt_model(mask_sample)
+
+            mask_wt[:, :, :128, :128] += Y_full[:, :, :128, :128]
+            mask_sample_wt[:, :, :128, :128] += Y_full[:, :, :128, :128]
+            img_recon = iwt_fn(mask_wt)
+            img_sample_recon = iwt_fn(mask_sample_wt)
             
             # Save images
-            save_image(Y.cpu(), img_output_dir + '/y{}.png'.format(epoch))
+            save_image(Y_full.cpu(), img_output_dir + '/y{}.png'.format(epoch))
             save_image(mask.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
             save_image(mask_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
+            save_image(img_recon.cpu(), img_output_dir + '/recon_img{}.png'.format(epoch))
+            save_image(img_sample_recon.cpu(), img_output_dir + '/recon_sample_img{}.png'.format(epoch))
             save_image(data.cpu(), img_output_dir + '/target{}.png'.format(epoch))
 
     torch.save({
