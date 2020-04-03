@@ -49,8 +49,10 @@ if __name__ == "__main__":
 
     wt_model = WTVAE_128_1(z_dim=args.z_dim_wt, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
+    wt_model = wt_model.to(device)
     iwt_model = IWTVAE_512_Mask_2(z_dim=args.z_dim_iwt, num_iwt=args.num_iwt)
     iwt_model.set_filters(inv_filters)
+    iwt_model = iwt_model.to(device)
 
     wt_fn = WT(wt=wt, num_wt=args.num_iwt)
     wt_fn.set_filters(filters)
