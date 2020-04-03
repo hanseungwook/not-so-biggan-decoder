@@ -80,9 +80,9 @@ if __name__ == "__main__":
         iwt_model.eval()
         
         for data in sample_loader:
-            data128 = data[0]
-            data512 = data[1]
-            z, mu_wt, logvar_wt = wt_model.encode(data128.to(device))
+            data128 = data[0].to(device)
+            data512 = data[1].to(device)
+            z, mu_wt, logvar_wt = wt_model.encode(data128)
 
             # Creating z sample for WT model by adding Gaussian noise ~ N(0,1)
             z_sample1 = torch.randn(z.shape).to(device)
