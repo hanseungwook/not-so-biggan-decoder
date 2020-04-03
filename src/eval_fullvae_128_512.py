@@ -28,7 +28,6 @@ if __name__ == "__main__":
     # Set seed
     set_seed(args.seed)
 
-
     # Create training and sample dataset (to test out model and save images for)
     dataset_dir_128 = os.path.join(args.root_dir, 'data/celeba128')
     dataset_dir_512 = os.path.join(args.root_dir, 'data/celebaHQ512')
@@ -42,6 +41,7 @@ if __name__ == "__main__":
         device = 'cuda:{}'.format(args.device)
     else: 
         device = 'cpu'
+    print('Device: {}'.device)
 
     # Setting up WT & IWT filters
     filters = create_filters(device=device)
