@@ -41,7 +41,7 @@ if __name__ == "__main__":
         device = 'cuda:{}'.format(args.device)
     else: 
         device = 'cpu'
-    print('Device: {}'.device)
+    print('Device: {}'.format(device))
 
     # Setting up WT & IWT filters
     filters = create_filters(device=device)
