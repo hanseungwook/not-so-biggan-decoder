@@ -165,6 +165,10 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_lo
 
             mask_wt[:, :, :128, :128] += Y_full[:, :, :128, :128]
             mask_sample_wt[:, :, :128, :128] += Y_full[:, :, :128, :128]
+            padded = torch.zeros(Y.shape)
+            padded[:, :, :128, :128] = Y_full[:, :, :128, :128]
+
+            img_low = iwt_fn(padded)
             img_recon = iwt_fn(mask_wt)
             img_sample_recon = iwt_fn(mask_sample_wt)
             
@@ -172,6 +176,7 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_lo
             save_image(Y_full.cpu(), img_output_dir + '/y{}.png'.format(epoch))
             save_image(mask.cpu(), img_output_dir + '/recon_y{}.png'.format(epoch))
             save_image(mask_sample.cpu(), img_output_dir + '/sample_y{}.png'.format(epoch))
+            save_image(img_low.cpu(), img_output_dir + '/low_img{}.png'.format(epoch))
             save_image(img_recon.cpu(), img_output_dir + '/recon_img{}.png'.format(epoch))
             save_image(img_sample_recon.cpu(), img_output_dir + '/recon_sample_img{}.png'.format(epoch))
             save_image(data.cpu(), img_output_dir + '/target{}.png'.format(epoch))

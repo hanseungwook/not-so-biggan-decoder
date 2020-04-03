@@ -67,17 +67,17 @@ if __name__ == "__main__":
         iwt_model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtvae512_overfit_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae512_overfit_{}/'.format(args.config))
-    log_dir = os.path.join(args.root_dir, 'runs/iwtvae512_overfit_{}'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtvae512_overfit_eval_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae512_overfit_eval_{}/'.format(args.config))
+    log_dir = os.path.join(args.root_dir, 'runs/iwtvae512_overfit_eval_{}'.format(args.config))
 
-    # try:
-    #     os.mkdir(img_output_dir)
-    #     os.mkdir(model_dir)
-    #     os.mkdir(log_dir)
-    # except:
-    #     LOGGER.error('Could not make log / model / img output directories')
-    #     raise Exception('Could not make log / model / img output directories')
+    try:
+        os.mkdir(img_output_dir)
+        os.mkdir(model_dir)
+        os.mkdir(log_dir)
+    except:
+        LOGGER.error('Could not make log / model / img output directories')
+        raise Exception('Could not make log / model / img output directories')
 
     epoch = 364
     eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, None)
