@@ -99,7 +99,7 @@ if __name__ == "__main__":
             data512_wt = wt_fn(data512)
             # Zero out first patch and apply IWT
             data512_mask = zero_mask(data512_wt, args.num_iwt, 1)
-            data512_mask = iwt_fn(data512_wt)
+            data512_mask = iwt_fn(data512_mask)
 
             mask, mu, var = iwt_model(data512_mask)
 
