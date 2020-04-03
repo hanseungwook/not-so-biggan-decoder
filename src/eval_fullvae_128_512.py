@@ -119,6 +119,7 @@ if __name__ == "__main__":
             save_image(y_sample1.cpu(), img_output_dir + '/sample1_y.png')
             save_image(y_sample2.cpu(), img_output_dir + '/sample2_y.png')
             save_image(data512_mask.cpu(), img_output_dir + '/mask.png')
+            save_image(mask.cpu(), img_output_dir + '/recon_mask.png')
             save_image(img_low.cpu(), img_output_dir + '/low_img.png')
             save_image(img_low_sample1.cpu(), img_output_dir + '/low_img_sample1.png')
             save_image(img_low_sample2.cpu(), img_output_dir + '/low_img_sample2.png')
