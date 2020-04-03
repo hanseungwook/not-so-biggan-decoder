@@ -5,10 +5,10 @@ from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
-from vae_models import WT, wt, IWT, iwt, IWTVAE_512_Mask_3
+from vae_models import WT, wt, IWT, iwt, IWTAE_512_Mask_2
 from wt_datasets import CelebaDataset
-from trainer import train_iwtvae_iwtmask
-from evaluator import eval_iwtvae_iwtmask
+from trainer import train_iwtae_iwtmask
+from evaluator import eval_iwtae_iwtmask
 from arguments import args_parse
 from utils.utils import zero_patches, set_seed, save_plot, create_inv_filters, create_filters
 import matplotlib.pyplot as plt
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     dataset_files = sample(os.listdir(dataset_dir), 10000)
     train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
-    sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 1))
+    sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 4))
     sample_loader = DataLoader(sample_dataset, batch_size=4, shuffle=False) 
     
     if args.device >= 0:
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     wt_model = wt_model.to(device)
     wt_model.set_device(device)
 
-    iwt_model = IWTVAE_512_Mask_3(z_dim=args.z_dim, num_iwt=args.num_iwt)
+    iwt_model = IWTAE_512_Mask_2(z_dim=args.z_dim, num_iwt=args.num_iwt)
     iwt_model.set_filters(inv_filters)
     iwt_model.set_device(device)
     iwt_model = iwt_model.to(device)
@@ -62,9 +62,9 @@ if __name__ == "__main__":
     train_losses = []
     optimizer = optim.Adam(iwt_model.parameters(), lr=args.lr)
 
-    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtvae512_overfit_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtvae512_overfit_{}/'.format(args.config))
-    log_dir = os.path.join(args.root_dir, 'runs/iwtvae512_overfit_{}'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/iwtae512_overfit_{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/iwtae512_overfit_{}/'.format(args.config))
+    log_dir = os.path.join(args.root_dir, 'runs/iwtae512_overfit_{}'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
@@ -83,8 +83,8 @@ if __name__ == "__main__":
 
     for epoch in range(1, args.epochs + 1):
         args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
-        train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer)
-        eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer)
+        train_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer)
+        eval_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer, not args.nosave)
     
     # Save train losses and plot
     np.save(model_dir+'/train_losses.npy', train_losses)

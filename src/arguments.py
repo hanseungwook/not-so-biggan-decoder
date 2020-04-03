@@ -33,6 +33,8 @@ def args_parse():
                         help='Path to checkpoint (saved model & optimizer state) to load and continue training from')
     parser.add_argument('--checkpoint_epoch', type=int, default=1,
                         help='Checkpoint epoch to continue training from')
+    parser.add_argument('--nosave', action='store_false', default=True,
+                        help='Whether to not save models')
 
 
     # Arguments for controlling KL weight anneal

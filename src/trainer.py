@@ -374,6 +374,69 @@ def train_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_lo
 
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
+# Taking in low frequency IWT'ed image to produce mask in autoencoder
+def train_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer):
+    # toggle model to train mode
+    iwt_model.train()
+    train_loss = 0
+    
+    for batch_idx, data in enumerate(train_loader):
+        
+        data = data.to(wt_model.device)
+
+        optimizer.zero_grad()
+        
+        # Get Y
+        Y = wt_model(data)
+        
+        # Zeroing out first patch, if given zero arg
+        Y_mask = zero_mask(Y, args.num_iwt, 1)
+        # IWT all the leftover high frequencies
+        Y_mask = iwt_fn(Y_mask)
+
+        # Getting IWT of only first patch
+        Y_low = zero_patches(Y, args.num_iwt)
+        Y_low = iwt_fn(Y_low)
+
+        # Run model to get mask (zero out first patch of mask) and x_wt_hat
+        mask, mu, var = iwt_model(Y_low)
+
+        loss, loss_bce, loss_kld = iwt_model.loss_function(Y_mask, mask, mu, var)
+        loss.backward()
+
+        # Calculating and printing gradient norm
+        total_norm = calc_grad_norm_2(iwt_model)
+
+        # Calculating and printing gradient norm
+        global log_idx
+        writer.add_scalar('Loss/total', loss, log_idx)
+        writer.add_scalar('Loss/bce', loss_bce, log_idx)
+        writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
+        log_idx += 1 
+
+        # Gradient clipping
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(iwt_model.parameters(), max_norm=args.grad_clip, norm_type=2)
+            total_norm = calc_grad_norm_2(iwt_model)
+            writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
+        
+        train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
+        train_loss += loss
+
+        optimizer.step()
+
+        # Logging
+        if batch_idx % args.log_interval == 0:
+            logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(data),
+                                                                           len(train_loader.dataset),
+                                                                           100. * batch_idx / len(train_loader),
+                                                                           loss / len(data)))
+            
+            n = min(data.size(0), 8)  
+
+    logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
+
 def train_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer):
     # toggle model to train mode
     iwt_model.train()
