@@ -5,11 +5,11 @@ from torch.utils.data import DataLoader, Subset
 from torch.utils.tensorboard import SummaryWriter
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import WTVAE_128_1, IWTVAE_512_Mask, FullVAE_512
+from vae_models import WTVAE_128_1, IWTVAE_512_Mask_2, FullVAE_512, wt, WT, iwt, IWT
 from wt_datasets import CelebaDatasetPair
 from trainer import train_fullvae
 from arguments import args_parse
-from utils.utils import set_seed, save_plot, zero_pad, create_filters, create_inv_filters
+from utils.utils import set_seed, save_plot, zero_pad, create_filters, create_inv_filters, zero_mask
 import matplotlib.pyplot as plt
 import logging
 import pywt
@@ -35,32 +35,36 @@ if __name__ == "__main__":
     dataset_files = sample(os.listdir(dataset_dir_512), 10000)
     train_dataset = CelebaDatasetPair(dataset_dir_128, dataset_dir_512, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
-    sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 8))
-    sample_loader = DataLoader(sample_dataset, batch_size=8, shuffle=False) 
+    sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 32))
+    sample_loader = DataLoader(sample_dataset, batch_size=32, shuffle=False) 
     
-    if torch.cuda.is_available() and torch.cuda.device_count() >= 2:
-        devices = ['cuda:0', 'cuda:1']
+    if args.device >= 0:
+        device = 'cuda:{}'.format(args.device)
     else: 
-        devices = ['cpu', 'cpu']
+        device = 'cpu'
 
     # Setting up WT & IWT filters
-    filters = create_filters(device=devices[0])
-    inv_filters = create_inv_filters(device=devices[1])
+    filters = create_filters(device=device)
+    inv_filters = create_inv_filters(device=device)
 
     wt_model = WTVAE_128_1(z_dim=args.z_dim_wt, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
-    iwt_model = IWTVAE_512_Mask(z_dim=args.z_dim_iwt, num_iwt=args.num_iwt)
+    iwt_model = IWTVAE_512_Mask_2(z_dim=args.z_dim_iwt, num_iwt=args.num_iwt)
     iwt_model.set_filters(inv_filters)
-    
+
+    wt_fn = WT(wt=wt, num_wt=args.num_iwt)
+    wt_fn.set_filters(filters)
+    iwt_fn = IWT(iwt=iwt, num_iwt=args.num_iwt)
+    iwt_fn.set_filters(inv_filters)
+
     # Given saved model, load and freeze model
     if args.iwt_model and args.wt_model:
-        iwt_model.load_state_dict(torch.load(args.iwt_model))
-        wt_model.load_state_dict(torch.load(args.wt_model))
-            
-    full_model = FullVAE_512(wt_model=wt_model, iwt_model=iwt_model, devices=devices)
+        iwt_checkpoint = torch.load(args.iwt_model, map_location=device)
+        iwt_model.load_state_dict(iwt_checkpoint['model_state_dict'])
+        wt_model.load_state_dict(torch.load(args.wt_model, map_location=device))
 
-    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/fullvae128512_{}'.format(args.config))
-    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/fullvae128512_{}/'.format(args.config))
+    img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/fullvae128512_eval{}'.format(args.config))
+    model_dir = os.path.join(args.root_dir, 'wtvae_results/models/fullvae128512_eval{}/'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
@@ -70,49 +74,59 @@ if __name__ == "__main__":
         raise Exception('Could not make model & img output directories')
             
     with torch.no_grad():
-        full_model.eval()
-        full_model.wt_model.eval()
-        full_model.iwt_model.eval()
+        wt_model.eval()
+        iwt_model.eval()
         
         for data in sample_loader:
             data128 = data[0]
             data512 = data[1]
-            z, mu_wt, logvar_wt = full_model.wt_model.encode(data128.to(devices[0]))
+            z, mu_wt, logvar_wt = wt_model.encode(data128.to(device))
 
             # Creating z sample for WT model by adding Gaussian noise ~ N(0,1)
-            z_sample1 = torch.randn(z.shape).to(devices[0])
-            z_sample3 = z + torch.randn(z.shape).to(devices[0])
+            z_sample1 = torch.randn(z.shape).to(device)
+            z_sample2 = z + torch.randn(z.shape).to(device)
 
-            y = full_model.wt_model.decode(z)
-            y_sample = full_model.wt_model.decode(z_sample1)
-            y_sample_gaussian = full_model.wt_model.decode(z_sample3)
+            y = wt_model.decode(z)
+            y_sample1 = wt_model.decode(z_sample1)
+            y_sample2 = wt_model.decode(z_sample2)
 
-            y_padded = zero_pad(y, target_dim=512, device=devices[1])
-            y_sample_padded = zero_pad(y_sample, target_dim=512, device=devices[1])
-            y_sample_padded_gaussian = zero_pad(y_sample_gaussian, target_dim=512, device=devices[1])
+            y_padded = zero_pad(y, target_dim=512, device=device)
+            y_sample_padded1 = zero_pad(y_sample1, target_dim=512, device=device)
+            y_sample_padded2 = zero_pad(y_sample2, target_dim=512, device=device)
             
-            mu, var, m1_idx, m2_idx = full_model.iwt_model.encode(data512.to(devices[1]), y_padded)
-            z_sample2 = torch.randn(mu.shape).to(devices[1])
+            data512_wt = wt_fn(data512)
+            # Zero out first patch and apply IWT
+            data512_mask = zero_mask(data512_wt, args.num_iwt, 1)
+            data512_mask = iwt_fn(data512_wt)
 
-            x_hat = iwt_model.decode(y_padded, mu, m1_idx, m2_idx)
-            x_sample = iwt_model.decode(y_padded, z_sample2, m1_idx, m2_idx)
-            
-            x_sample_y_sample = iwt_model.decode(y_sample_padded, z_sample2, m1_idx, m2_idx)
-            x_sample_y_sample_gaussian = iwt_model.decode(y_sample_padded_gaussian, z_sample2, m1_idx, m2_idx)
-            x_y_sample_gaussian = iwt_model.decode(y_sample_padded_gaussian, mu, m1_idx, m2_idx)
+            mask, mu, var = iwt_model(data512_mask)
 
-            save_image(x_hat.cpu(), img_output_dir + '/sample_recon_x.png')
-            save_image(x_sample.cpu(), img_output_dir + '/sample_z.png')
-            save_image(x_sample_y_sample.cpu(), img_output_dir + '/sample_z_both.png')
-            save_image(x_sample_y_sample_gaussian.cpu(), img_output_dir + '/sample_z_both_gaussian.png')
-            save_image(x_y_sample_gaussian.cpu(), img_output_dir + '/sample_z_wt_gaussian.png')
-            save_image(y.cpu(), img_output_dir + '/sample_recon_y.png')
-            save_image(y_sample.cpu(), img_output_dir + '/sample_y.png')
-            save_image(data128.cpu(), img_output_dir + '/sample128.png')
-            save_image(data512.cpu(), img_output_dir + '/sample512.png')
+            mask_wt = wt_fn(mask)
+
+            img_low = iwt_fn(y_padded)
+            img_low_sample1 = iwt_fn(y_sample_padded1)
+            img_low_sample2 = iwt_fn(y_sample_padded2)
+
+            img_recon = iwt_fn(y_padded + mask_wt)
+            img_sample1_recon = iwt_fn(y_sample_padded1 + mask_wt)
+            img_sample2_recon = iwt_fn(y_sample_padded2 + mask_wt)
+
+
+            # Save images
+            save_image(y.cpu(), img_output_dir + '/recon_y.png')
+            save_image(y_sample1.cpu(), img_output_dir + '/sample1_y.png')
+            save_image(y_sample2.cpu(), img_output_dir + '/sample2_y.png')
+            save_image(data512_mask.cpu(), img_output_dir + '/mask.png')
+            save_image(img_low.cpu(), img_output_dir + '/low_img.png')
+            save_image(img_low_sample1.cpu(), img_output_dir + '/low_img_sample1.png')
+            save_image(img_low_sample2.cpu(), img_output_dir + '/low_img_sample2.png')
+            save_image(img_recon.cpu(), img_output_dir + '/recon_img.png')
+            save_image(img_sample1_recon.cpu(), img_output_dir + '/sample1_img.png')
+            save_image(img_sample2_recon.cpu(), img_output_dir + '/sample2_img.png')
+            save_image(data512.cpu(), img_output_dir + '/img.png')
             
     
-    LOGGER.info('Full Model parameters: {}'.format(sum(x.numel() for x in full_model.wt_model.parameters()) + sum(x.numel() for x in full_model.iwt_model.parameters())))
+    LOGGER.info('Full Model parameters: {}'.format(sum(x.numel() for x in wt_model.parameters()) + sum(x.numel() for x in iwt_model.parameters())))
 
     
     
