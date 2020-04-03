@@ -34,8 +34,8 @@ if __name__ == "__main__":
     dataset_files = sample(os.listdir(dataset_dir), 10000)
     train_dataset = CelebaDataset(dataset_dir, dataset_files, WT=False)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=10, shuffle=True)
-    sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 1))
-    sample_loader = DataLoader(sample_dataset, batch_size=4, shuffle=False) 
+    sample_dataset = Subset(train_dataset, sample(range(len(train_dataset)), 32))
+    sample_loader = DataLoader(sample_dataset, batch_size=32, shuffle=False) 
     
     if args.device >= 0:
         device = 'cuda:{}'.format(args.device)
