@@ -3344,7 +3344,7 @@ class IWTAE_512_Mask_2(nn.Module):
         logvar = torch.log(var)
         # KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         # KLD /= mask.shape[0]
-        KLD = 0
+        KLD = torch.tensor(0)
 
         return BCE_wt + KLD, BCE_wt, KLD
 
