@@ -128,14 +128,14 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
     # toggle model to train mode
     model.train()
     train_loss = 0
-    anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup * len(train_loader))
-    global decoder_outputs
+    # anneal_rate = (1.0 - args.kl_start) / (args.kl_warmup * len(train_loader))
+    # global decoder_outputs
 
-    # Register hook onto decoder so that we can compute additional loss on reconstruction of original image (in adddition to patch loss)
-    model.decoder.register_forward_hook(get_decoder_output)
+    # # Register hook onto decoder so that we can compute additional loss on reconstruction of original image (in adddition to patch loss)
+    # model.decoder.register_forward_hook(get_decoder_output)
 
     for batch_idx, data in enumerate(train_loader):
-        args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
+        # args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
         data128 = data[0]
         data512 = data[1]
         if model.cuda:
@@ -150,7 +150,7 @@ def train_wtvae_128(epoch, model, optimizer, train_loader, train_losses, args, w
         loss.backward()
         
         # Clearing saved outputs
-        decoder_outputs.clear()
+        # decoder_outputs.clear()
 
         # Calculating and printing gradient norm
         total_norm = calc_grad_norm_2(model)
@@ -644,6 +644,53 @@ def train_fullvae(epoch, full_model, optimizer, train_loader, train_losses, args
                                                                            loss / len(data)))
             
             n = min(data.size(0), 8)  
+
+    logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
+
+def train_full_wtvae128_iwtae512(epoch, full_model, optimizer, train_loader, train_losses, args, writer):
+    # toggle model to train mode, IWT model in eval b/c frozen
+    full_model.train()
+    full_model.wt_model.train()
+    full_model.iwt_model.eval()
+    train_loss = 0
+    
+    for batch_idx, data in enumerate(train_loader):
+        optimizer.zero_grad()
+        
+        X_128, X_512 = data
+
+        Y_low_hat, mask_hat, X_hat, mu, logvar = full_model(X_128)
+
+        loss, loss_bce, loss_kld = full_model.loss_function(X_512, Y_low_hat, X_hat, mu, logvar, args.kl_weight)
+        loss.backward()
+        
+        train_losses.append([loss.cpu().item(), loss_bce.cpu().item(), loss_kld.cpu().item()])
+        train_loss += loss
+        
+        # Calculating and printing gradient norm
+        total_norm = calc_grad_norm_2(full_model)
+        
+        global log_idx
+        writer.add_scalar('Loss/total', loss, log_idx)
+        writer.add_scalar('Loss/bce', loss_bce, log_idx)
+        writer.add_scalar('Loss/kld', loss_kld, log_idx)
+        writer.add_scalar('Gradient_norm/before', total_norm, log_idx)
+        log_idx += 1 
+
+        # Gradient clipping
+        if args.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(full_model.parameters(), max_norm=10000, norm_type=2)
+            total_norm = calc_grad_norm_2(full_model)
+            writer.add_scalar('Gradient_norm/clipped', total_norm, log_idx)
+
+        optimizer.step()
+        if batch_idx % args.log_interval == 0:
+            logging.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, batch_idx * len(X_128),
+                                                                           len(train_loader.dataset),
+                                                                           100. * batch_idx / len(train_loader),
+                                                                           loss / len(X_128)))
+            
+            n = min(X_128.size(0), 8)  
 
     logging.info('====> Epoch: {} Average loss: {:.4f}'.format(epoch, train_loss / len(train_loader.dataset)))
 
