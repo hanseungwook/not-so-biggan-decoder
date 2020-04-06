@@ -230,6 +230,39 @@ def eval_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
                     'optimizer_state_dict': optimizer.state_dict()
                 }, model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
 
+def eval_full_wtvae128_iwtae512(epoch, full_model, optimizer, sample_loader, args, img_output_dir, model_dir, writer, save=True):
+    # toggle model to train mode, IWT model in eval b/c frozen
+    full_model.eval()
+    full_model.wt_model.eval()
+    full_model.iwt_model.eval()
+    
+    for batch_idx, data in enumerate(sample_loader):
+        optimizer.zero_grad()
+        
+        X_128, X_512 = data
+
+        Y_low_hat, mask_hat, X_hat, mu, logvar = full_model(X_128)
+        Y_low_sample_hat, mask_sample_hat, X_sample_hat = full_model.sample(X_128.shape[0])
+
+        # Save images
+        save_image(Y_low_hat.cpu(), img_output_dir + '/y_wt_recon{}.png'.format(epoch))
+        save_image(mask_hat.cpu(), img_output_dir + '/mask_recon{}.png'.format(epoch))
+        save_image(X_hat.cpu(), img_output_dir + '/X_recon{}.png'.format(epoch))
+
+        save_image(Y_low_sample_hat.cpu(), img_output_dir + '/y_wt_sample{}.png'.format(epoch))
+        save_image(mask_sample_hat.cpu(), img_output_dir + '/mask_sample{}.png'.format(epoch))
+        save_image(X_sample_hat.cpu(), img_output_dir + '/X_sample{}.png'.format(epoch))
+
+        save_image(X_512.cpu(), img_output_dir + '/X{}.png'.format(epoch))
+
+    if save:
+        torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': iwt_model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict()
+                }, model_dir + '/fullvae_epoch{}.pth'.format(epoch))
+        
+
 def eval_ae_mask(epoch, wt_model, model, sample_loader, args, img_output_dir, model_dir):
     with torch.no_grad():
         model.eval()

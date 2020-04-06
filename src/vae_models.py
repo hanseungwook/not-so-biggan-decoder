@@ -671,27 +671,30 @@ class WTVAE_128_1(nn.Module):
         z = self.wt(z)                                                              #[b, 3, 128, 128], when num_wt=2
         
         return z
+    
+    def sample(self, batch_size):
+        sample = torch.randn(batch_size, self.z_dim)
+        z_sample = self.decode(sample)
+
+        return z_sample
 
     def forward(self, x):
         z, mu, logvar = self.encode(x)
         z = self.decode(z)
         return z, mu, logvar
 
-    def loss_function(self, x_512, x_128, x_wt_hat, decoder_output, mu, logvar, kl_weight=1.0) -> Variable:
+    def loss_function(self, x_512, x_wt_hat, mu, logvar, kl_weight=1.0) -> Variable:
         
-        x_wt = wt(x_512.reshape(x_512.shape[0] * x_512.shape[1], 1, x_512.shape[2], x_512.shape[3]), self.filters, levels=2)
-        x_wt = x_wt.reshape(x_512.shape)
+        x_wt = wt(x_512, self.filters, levels=2)
         x_wt = x_wt[:, :, :128, :128]
-
-        BCE_img = F.l1_loss(decoder_output.reshape(-1), x_128.reshape(-1))
         
         # Loss btw original WT 1st patch & reconstructed 1st patch
-        BCE = F.l1_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
+        BCE = F.mse_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
 
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
         KLD /= x_512.shape[0] * 128 * 128
 
-        return BCE + BCE_img + KLD, BCE + BCE_img, KLD
+        return BCE + KLD, BCE, KLD
 
     def set_filters(self, filters):
         self.filters = filters
@@ -3492,6 +3495,61 @@ class IWTVAE_512_Mask_3(nn.Module):
         self.iwt = IWT(iwt=iwt, num_iwt=self.num_iwt)
         self.iwt.set_filters(filters)
 
+class Full_WTVAE128_IWTAE512(nn.Module):
+    def __init__(self, wt_model, iwt_model, devices):
+        super(Full_WTVAE128_IWTAE512, self).__init__()
+        self.devices = devices
+
+        self.wt_model = wt_model
+        self.iwt_model = iwt_model
+
+    def encode_wt(self, X_128):
+        z, mu, logvar = self.wt_model.encode(X_128)
+
+        return z, mu, logvar
+
+    def decode_wt(self, z):
+        z = self.wt_model.decode(z)
+
+        return z
+    
+    def forward_iwt(self, Y_low):
+        Y_low_padded = zero_pad(Y_low, target_dim=512, device=self.iwt_model.device)
+        Y_low_iwt = self.iwt_model.iwt(Y_low_padded)
+
+        mask = self.iwt_model(Y_low_iwt)
+        mask_wt = self.wt_model.wt(mask)
+
+        # Add the reconstructed first patch with mask and apply IWT to get image
+        X_wt = Y_low_padded + mask_wt
+        X = self.iwt_model.iwt(X_wt)
+        
+        return mask, X
+    
+    def sample(self, batch_size):
+        Y_low_sample = self.wt_model.sample(batch_size)
+        mask_sample, X_sample = self.forward_iwt(Y_low_sample)
+
+        return Y_low_sample, mask_sample, X_sample
+
+    def forward(self, X_128):
+        # Create first patch (low frequency), pad with zeros to dim 512 x 512, and run through IWT
+        Y_low, mu, logvar = self.wt_model(X_128)
+        mask, X = self.forward_iwt(Y_low)
+
+        return Y_low, mask, X, mu, logvar
+
+    def loss_function(self, X_512, Y_low_hat, X_hat, mu, logvar, kl_weight=1.0) -> Variable:
+        loss_wt, loss_wt_bce, loss_wt_kld = self.wt_model.loss_function(X_512.to(self.wt_model.device), Y_low_hat, mu, logvar, kl_weight)
+        loss_img = F.binary_cross_entropy(X_hat, X_512.to(self.iwt_model.device))
+
+        total_loss = loss_wt + loss_img.to(self.wt_model.device)
+        total_loss_bce = loss_wt_bce + loss_img.to(self.wt_model.device)
+        total_loss_kld = loss_wt_kld
+
+        return total_loss, total_loss_bce, total_loss_kld
+
+
 class FullVAE_512(nn.Module):
     def __init__(self, wt_model, iwt_model, devices):
         super(FullVAE_512, self).__init__()
@@ -3539,5 +3597,3 @@ class FullVAE_512(nn.Module):
 
         # Summing each elements (KLD+BCE, BCE, KLD)
         return wt_loss[0].to(self.devices[1]) + iwt_loss[0], wt_loss[1].to(self.devices[1]) + iwt_loss[1], wt_loss[2].to(self.devices[1]) + iwt_loss[2]
-
-
