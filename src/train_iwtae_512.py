@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     for epoch in range(1, args.epochs + 1):
         args.kl_weight = min(1.0, args.kl_weight + anneal_rate)
-        train_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, train_losses, args, writer)
+        train_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, train_loader, train_losses, args, writer)
         eval_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer, not args.nosave)
     
     # Save train losses and plot
