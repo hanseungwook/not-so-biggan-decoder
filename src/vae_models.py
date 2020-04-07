@@ -674,7 +674,7 @@ class WTVAE_128_1(nn.Module):
         return z
     
     def sample(self, batch_size):
-        sample = torch.randn(batch_size, self.z_dim)
+        sample = torch.randn(batch_size, self.z_dim, device=self.device)
         z_sample = self.decode(sample)
 
         return z_sample
@@ -3529,7 +3529,7 @@ class Full_WTVAE128_IWTAE512(nn.Module):
     
     def sample(self, batch_size):
         Y_low_sample = self.wt_model.sample(batch_size)
-        mask_sample, X_sample = self.forward_iwt(Y_low_sample)
+        mask_sample, X_sample = self.forward_iwt(Y_low_sample.to(self.iwt_model.device))
 
         return Y_low_sample, mask_sample, X_sample
 
