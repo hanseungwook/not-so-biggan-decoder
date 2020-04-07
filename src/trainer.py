@@ -657,7 +657,8 @@ def train_full_wtvae128_iwtae512(epoch, full_model, optimizer, train_loader, tra
     for batch_idx, data in enumerate(train_loader):
         optimizer.zero_grad()
         
-        X_128, X_512 = data
+        X_128 = data[0]
+        X_512 = data[1]
 
         Y_low_hat, mask_hat, X_hat, mu, logvar = full_model(X_128)
 
