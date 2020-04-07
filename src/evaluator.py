@@ -244,7 +244,8 @@ def eval_full_wtvae128_iwtae512(epoch, full_model, optimizer, sample_loader, arg
         Y_low_hat, mask_hat, X_hat, mu, logvar = full_model(X_128)
         Y_low_sample_hat, mask_sample_hat, X_sample_hat = full_model.sample(X_128.shape[0])
         Y_low = full_model.wt_model.wt(X_128.to(full_model.wt_model.device))[:, :, :128, :128]
-        X_low = full_model.iwt_model.iwt(Y_low.to(full_model.iwt_model.device))
+        Y_low_padded = zero_pad(Y_low, 512, device=Y_low.device)
+        X_low = full_model.iwt_model.iwt(Y_low_padded.to(full_model.iwt_model.device))
         X_wt = full_model.wt_model.wt(X_512.to(full_model.wt_model.device))
 
         # Save images
