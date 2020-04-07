@@ -637,12 +637,12 @@ class WTVAE_128_1(nn.Module):
         # Initializing weights for decoder conv layers
         weights_init(self.decoder)
 
-        self.wt = nn.Sequential()
+        self.wt_layer = nn.Sequential()
         for i in range(self.num_wt):
-            self.wt.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=3, stride=1, padding=1)) # N * 3 * 128 * 128, when num_wt=2
-            self.wt.add_module('wt{}_in'.format(i), nn.BatchNorm2d(image_channels))
+            self.wt_layer.add_module('wt{}_conv2d'.format(i), nn.Conv2d(image_channels, image_channels, kernel_size=3, stride=1, padding=1)) # N * 3 * 128 * 128, when num_wt=2
+            self.wt_layer.add_module('wt{}_in'.format(i), nn.BatchNorm2d(image_channels))
         
-        weights_init(self.wt)
+        weights_init(self.wt_layer)
 
     def reparameterize(self, mu, logvar):
         if self.training:
@@ -668,8 +668,8 @@ class WTVAE_128_1(nn.Module):
 
     def decode(self, z):
         z = self.fc_dec(z)                                                          #[b, h_dim (256*8*8)]
-        z = self.decoder(z.reshape(-1, 256, 8, 8))                                #[b, 3, 512, 512]
-        z = self.wt(z)                                                              #[b, 3, 128, 128], when num_wt=2
+        z = self.decoder(z.reshape(-1, 256, 8, 8))                                  #[b, 3, 512, 512]
+        z = self.wt_layer(z)                                                        #[b, 3, 128, 128], when num_wt=2
         
         return z
     
@@ -686,7 +686,7 @@ class WTVAE_128_1(nn.Module):
 
     def loss_function(self, x_512, x_wt_hat, mu, logvar, kl_weight=1.0) -> Variable:
         
-        x_wt = wt(x_512, self.filters, levels=2)
+        x_wt = self.wt(x_512)
         x_wt = x_wt[:, :, :128, :128]
         
         # Loss btw original WT 1st patch & reconstructed 1st patch
@@ -698,7 +698,8 @@ class WTVAE_128_1(nn.Module):
         return BCE + KLD, BCE, KLD
 
     def set_filters(self, filters):
-        self.filters = filters
+        self.wt = WT(wt=wt, num_wt=self.num_wt)
+        self.wt.set_filters(filters)
     
     def set_device(self, device):
         if device != 'cpu':
