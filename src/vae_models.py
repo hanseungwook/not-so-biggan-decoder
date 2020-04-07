@@ -3541,7 +3541,7 @@ class Full_WTVAE128_IWTAE512(nn.Module):
 
     def loss_function(self, X_512, Y_low_hat, X_hat, mu, logvar, kl_weight=1.0) -> Variable:
         loss_wt, loss_wt_bce, loss_wt_kld = self.wt_model.loss_function(X_512.to(self.wt_model.device), Y_low_hat, mu, logvar, kl_weight)
-        loss_img = F.binary_cross_entropy(X_hat, X_512.to(self.iwt_model.device))
+        loss_img = F.mse_loss(X_hat, X_512.to(self.iwt_model.device))
 
         total_loss = loss_wt + loss_img.to(self.wt_model.device)
         total_loss_bce = loss_wt_bce + loss_img.to(self.wt_model.device)
