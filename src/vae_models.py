@@ -3534,8 +3534,8 @@ class Full_WTVAE128_IWTAE512(nn.Module):
 
     def forward(self, X_128):
         # Create first patch (low frequency), pad with zeros to dim 512 x 512, and run through IWT
-        Y_low, mu, logvar = self.wt_model(X_128)
-        mask, X = self.forward_iwt(Y_low)
+        Y_low, mu, logvar = self.wt_model(X_128.to(self.wt_model.device))
+        mask, X = self.forward_iwt(Y_low.to(self.iwt_model.device))
 
         return Y_low, mask, X, mu, logvar
 

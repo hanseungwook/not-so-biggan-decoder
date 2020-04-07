@@ -54,8 +54,10 @@ if __name__ == "__main__":
 
     wt_model = WTVAE_128_1(z_dim=args.z_dim, num_wt=args.num_iwt)
     wt_model.set_filters(filters)
+    wt_model = wt_model.to(wt_model.device)
     iwt_model = IWTAE_512_Mask_2(z_dim=args.z_dim, num_iwt=args.num_iwt)
     iwt_model.set_filters(inv_filters)
+    iwt_model = iwt_model.to(iwt_model.device)
     
     # If given saved IWT model, load and freeze model
     if args.iwt_model:
