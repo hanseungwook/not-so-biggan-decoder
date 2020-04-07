@@ -590,6 +590,7 @@ class WTVAE_128_1(nn.Module):
         self.leakyrelu = nn.LeakyReLU(0.2)
         self.relu = nn.ReLU()
         self.sigmoid = nn.Sigmoid()
+        self.z_dim = z_dim
 
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 32, 64, 64]
