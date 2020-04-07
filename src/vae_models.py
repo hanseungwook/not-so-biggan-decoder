@@ -3518,10 +3518,10 @@ class Full_WTVAE128_IWTAE512(nn.Module):
         Y_low_iwt = self.iwt_model.iwt(Y_low_padded)
 
         mask, _, _ = self.iwt_model(Y_low_iwt)
-        mask_wt = self.wt_model.wt(mask)
+        mask_wt = self.wt_model.wt(mask.to(wt_model.device))
 
         # Add the reconstructed first patch with mask and apply IWT to get image
-        X_wt = Y_low_padded + mask_wt
+        X_wt = Y_low_padded + mask_wt.to(iwt_model.device)
         X = self.iwt_model.iwt(X_wt)
         
         return mask, X
