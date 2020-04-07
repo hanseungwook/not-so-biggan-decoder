@@ -243,6 +243,9 @@ def eval_full_wtvae128_iwtae512(epoch, full_model, optimizer, sample_loader, arg
 
         Y_low_hat, mask_hat, X_hat, mu, logvar = full_model(X_128)
         Y_low_sample_hat, mask_sample_hat, X_sample_hat = full_model.sample(X_128.shape[0])
+        Y_low = full_model.wt_model.wt(X_128.to(full_model.wt_model.device))[:, :, :128, :128]
+        X_low = full_model.iwt_model.iwt(Y_low.to(full_model.iwt_model.device))
+        X_wt = full_model.wt_model.wt(X_512.to(full_model.wt_model.device))
 
         # Save images
         save_image(Y_low_hat.cpu(), img_output_dir + '/y_wt_recon{}.png'.format(epoch))
@@ -253,7 +256,10 @@ def eval_full_wtvae128_iwtae512(epoch, full_model, optimizer, sample_loader, arg
         save_image(mask_sample_hat.cpu(), img_output_dir + '/mask_sample{}.png'.format(epoch))
         save_image(X_sample_hat.cpu(), img_output_dir + '/X_sample{}.png'.format(epoch))
 
+        save_image(Y_low.cpu(), img_output_dir + 'y_wt{}.png'.format(epoch))
         save_image(X_512.cpu(), img_output_dir + '/X{}.png'.format(epoch))
+        save_image(X_low.cpu(), img_output_dir + '/X_low{}.png'.format(epoch))
+        save_image(X_wt.cpu(), img_output_dir + '/X_wt{}.png'.format(epoch))
 
     if save:
         torch.save({
