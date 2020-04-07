@@ -79,13 +79,18 @@ if __name__ == "__main__":
 
     img_output_dir = os.path.join(args.root_dir, 'wtvae_results/image_samples/fullvae512_{}'.format(args.config))
     model_dir = os.path.join(args.root_dir, 'wtvae_results/models/fullvae512_{}/'.format(args.config))
+    log_dir = os.path.join(args.root_dir, 'runs/fullvae512_{}'.format(args.config))
 
     try:
         os.mkdir(img_output_dir)
         os.mkdir(model_dir)
+        os.mkdir(log_dir)
     except:
-        LOGGER.error('Could not make model & img output directories')
-        raise Exception('Could not make model & img output directories')
+        LOGGER.error('Could not make log / model / img output directories')
+        raise Exception('Could not make log / model / img output directories')
+
+    # Set up tensorboard logger
+    writer = SummaryWriter(log_dir=log_dir)
     
     for epoch in range(1, args.epochs + 1):
         train_full_wtvae128_iwtae512(epoch, full_model, optimizer, train_loader, train_losses, args, writer)
