@@ -212,7 +212,7 @@ def eval_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
 
             # Add first patch to WT'ed mask
             mask_wt = wt_model(mask)
-            inner_dim = data.shape[2] / np.power(2, args.num_iwt)
+            inner_dim = int(data.shape[2] / np.power(2, args.num_iwt))
             mask_wt[:, :, :inner_dim, :inner_dim] += Y[:, :, :inner_dim, :inner_dim]
 
             img_recon = iwt_fn(mask_wt)
