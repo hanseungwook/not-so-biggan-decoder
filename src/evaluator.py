@@ -132,8 +132,8 @@ def eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
                 'optimizer_state_dict': optimizer.state_dict()
                }, model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
 
-
-def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer):
+# Evaluation method for AE that takes in IWT of first patch to produce mask (32 -> 128 using 512 images)
+def eval_iwtvae_iwtmask_128(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer):
     with torch.no_grad():
         iwt_model.eval()
         
@@ -142,6 +142,7 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_lo
             
             # Applying WT to X to get Y
             Y = wt_model(data)
+            Y = Y[:, :, :128, :128]
             Y_full = Y.clone()
         
             # Zeroing out first patch
@@ -186,6 +187,51 @@ def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_lo
                 'model_state_dict': iwt_model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict()
                }, model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
+
+# Evaluation method for AE that takes in IWT of first patch to produce mask (32 => 128)
+def eval_iwtae_iwtmask128(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer, save=True):
+    with torch.no_grad():
+        iwt_model.eval()
+        
+        for data in sample_loader:
+            data = data.to(wt_model.device)
+            
+            # Applying WT to X to get Y
+            Y = wt_model(data)
+            Y = Y[:, :, :128, :128]
+
+            # Zeroing out first patch, if given zero arg
+            Y_mask = zero_mask(Y, args.num_iwt, 1)
+            # IWT all the leftover high frequencies
+            Y_mask = iwt_fn(Y_mask)
+
+            # Getting IWT of only first patch
+            Y_low = zero_patches(Y, args.num_iwt)
+            Y_low = iwt_fn(Y_low)
+
+            # Run model to get mask (zero out first patch of mask) and x_wt_hat
+            mask, _, _ = iwt_model(Y_low)
+
+            # Add first patch to WT'ed mask
+            mask_wt = wt_model(mask)
+            inner_dim = data.shape[2] // np.power(2, args.num_iwt)
+            mask_wt[:, :, :inner_dim, :inner_dim] += Y[:, :, :inner_dim, :inner_dim]
+
+            img_recon = iwt_fn(mask_wt)
+            
+            # Save images
+            save_image(Y_low.cpu(), img_output_dir + '/y{}.png'.format(epoch))
+            save_image(mask.cpu(), img_output_dir + '/recon_mask{}.png'.format(epoch))
+            save_image(Y_mask.cpu(), img_output_dir + '/mask{}.png'.format(epoch))
+            save_image(img_recon.cpu(), img_output_dir + '/recon_img{}.png'.format(epoch))
+            save_image(data.cpu(), img_output_dir + '/img{}.png'.format(epoch))            
+
+    if save:
+        torch.save({
+                    'epoch': epoch,
+                    'model_state_dict': iwt_model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict()
+                }, model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
 
 # Evaluation method for AE that takes in IWT of first patch to produce mask
 def eval_iwtae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer, save=True):
