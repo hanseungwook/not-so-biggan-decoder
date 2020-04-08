@@ -132,8 +132,7 @@ def eval_iwtvae_3masks(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loa
                 'optimizer_state_dict': optimizer.state_dict()
                }, model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
 
-# Evaluation method for AE that takes in IWT of first patch to produce mask (32 -> 128 using 512 images)
-def eval_iwtvae_iwtmask_128(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer):
+def eval_iwtvae_iwtmask(epoch, wt_model, iwt_model, optimizer, iwt_fn, sample_loader, args, img_output_dir, model_dir, writer):
     with torch.no_grad():
         iwt_model.eval()
         
@@ -142,7 +141,6 @@ def eval_iwtvae_iwtmask_128(epoch, wt_model, iwt_model, optimizer, iwt_fn, sampl
             
             # Applying WT to X to get Y
             Y = wt_model(data)
-            Y = Y[:, :, :128, :128]
             Y_full = Y.clone()
         
             # Zeroing out first patch
