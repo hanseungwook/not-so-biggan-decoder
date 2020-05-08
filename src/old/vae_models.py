@@ -176,6 +176,125 @@ class Mask_Add(nn.Module):
     def forward(self, img, mask):
         return img + mask.unsqueeze(1)
 
+# Variational Autoencoder Code
+class WTVAE_32(nn.Module):
+    def __init__(self, image_channels=3, h_dim=256*2*2, z_dim=100, num_wt=2):
+        super(WTVAE_32, self).__init__()
+        
+        self.cuda = False
+        self.device = None
+        self.num_wt = num_wt
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+        self.z_dim = z_dim
+
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 32, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 32, 16, 16]
+            nn.BatchNorm2d(32),
+            self.relu,
+            nn.Conv2d(32, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 8, 8]
+            nn.BatchNorm2d(64),
+            self.relu,
+            nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 4, 4]
+            nn.BatchNorm2d(128),
+            self.relu,
+            nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 256, 2, 2]
+            nn.BatchNorm2d(256),
+            self.relu
+        )
+
+        # Initializing weights for encoder conv layers
+        weights_init(self.encoder)
+
+        # Flatten after this maxpool for linear layer
+        self.fc_mean = nn.Linear(h_dim, z_dim)
+        weights_init(self.fc_mean)
+        self.fc_logvar = nn.Linear(h_dim, z_dim)
+        weights_init(self.fc_logvar)
+        self.fc_dec = nn.Linear(z_dim, h_dim)
+        weights_init(self.fc_dec)
+
+        # Unflatten before going through layers of decoder
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True),      #[b, 128, 4, 4]
+            nn.BatchNorm2d(128),
+            self.relu,
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True),       #[b, 64, 8, 8]
+            nn.BatchNorm2d(64),
+            self.relu,
+            nn.ConvTranspose2d(64, 32, 4, stride=2, padding=1, bias=True),        #[b, 32, 16, 16]
+            nn.BatchNorm2d(32),
+            self.relu,
+            nn.ConvTranspose2d(32, 3, 4, stride=2, padding=1, bias=True),          #[b, 3, 32, 32]
+        )
+
+        # Initializing weights for decoder conv layers
+        weights_init(self.decoder)
+
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = logvar.mul(0.5).exp_()
+            # return torch.normal(mu, std)
+            esp = torch.randn(*mu.size()).to(self.device)
+            z = mu + std * esp
+            return z
+        else:
+            return mu
+    
+    def bottleneck(self, h):
+        mu, logvar = self.fc_mean(h), self.fc_logvar(h)
+        z = self.reparameterize(mu, logvar)
+        return z, mu, logvar
+
+    def encode(self, x):
+        h = self.encoder(x)                                                         #[b, 256, 2, 2]
+
+        z, mu, logvar = self.bottleneck(h.reshape(h.shape[0], -1))                  #[b, z_dim]
+
+        return z, mu, logvar
+
+    def decode(self, z):
+        z = self.fc_dec(z)                                                          #[b, h_dim (256*2*2)]
+        z = self.decoder(z.reshape(-1, 256, 2, 2))                                  #[b, 3, 32, 32]
+        
+        return z
+    
+    def sample(self, batch_size):
+        sample = torch.randn(batch_size, self.z_dim, device=self.device)
+        z_sample = self.decode(sample)
+
+        return z_sample
+
+    def forward(self, x):
+        z, mu, logvar = self.encode(x)
+        z = self.decode(z)
+        
+        return z, mu, logvar
+
+    def loss_function(self, x_wt_hat, x_512, mu, logvar, kl_weight=1.0) -> Variable:
+        
+        x_wt = self.wt(x_512)
+        x_wt = x_wt[:, :, :32, :32]
+        
+        # Loss btw original WT 1st patch & reconstructed 1st patch
+        BCE = F.mse_loss(x_wt_hat.reshape(-1), x_wt.reshape(-1))
+
+        KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) * kl_weight
+        KLD /= x_512.shape[0] * 32 * 32
+
+        return BCE + KLD, BCE, KLD
+
+    def set_filters(self, filters):
+        self.wt = WT(wt=wt, num_wt=self.num_wt)
+        self.wt.set_filters(filters)
+    
+    def set_device(self, device):
+        if device != 'cpu':
+            self.cuda = True
+        
+        self.device = device
+
 # WTVAE for 64 x 64 images
 # num_wt of WT layers (default: 2)
 # Using Unflatten for decoder (N * 2048 * 1 * 1), instead of Unflatten1
@@ -3242,6 +3361,108 @@ class IWTVAE_512_Mask_2(nn.Module):
         self.iwt = IWT(iwt=iwt, num_iwt=self.num_iwt)
         self.iwt.set_filters(filters)
 
+# Conditional masking network that produces high frequency components for upscaling to 256
+class IWTAE_256_Mask_Conditional(nn.Module):
+    def __init__(self, image_channels=3, z_dim=100, num_iwt=2):
+        super(IWTAE_128_Mask_2, self).__init__()
+        # Resolution of images (256 x 256)
+        self.res = 256
+        self.device = None
+        self.cuda = False
+        
+        self.z_dim = z_dim
+        self.num_iwt = num_iwt
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.sigmoid = nn.Sigmoid()
+
+        # Z Encoder
+        self.encoder = nn.Sequential(
+            nn.Conv2d(3, 64, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 64, 128, 128]
+            self.leakyrelu,
+            nn.Conv2d(64, 128, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 128, 64, 64]
+            self.leakyrelu,
+            nn.Conv2d(128, 256, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 256, 32, 32]
+            self.leakyrelu,
+            nn.Conv2d(256, 512, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 512, 16, 16]
+            self.leakyrelu,
+            nn.Conv2d(512, 1024, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 1024, 8, 8]
+            self.leakyrelu,
+            nn.Conv2d(1024, 2048, 4, stride=2, padding=1, bias=True, padding_mode='zeros'), #[b, 2048, 4, 4]
+            self.leakyrelu
+        )
+
+        # Initializing weights of encoder                                      
+        weights_init(self.encoder)
+        
+        self.fc_enc = nn.Linear(2048 * 4 * 4, 1024)
+        weights_init(self.fc_enc)
+        
+        self.fc_mean = nn.Linear(1024, z_dim)
+        weights_init(self.fc_mean)
+        
+        self.fc_var = nn.Linear(1024, z_dim)
+        weights_init(self.fc_var)
+        
+        self.fc_dec = nn.Linear(z_dim, 2048 * 4 * 4)
+        weights_init(self.fc_dec)
+
+        # Z Decoder
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(2048, 1024, 4, stride=2, padding=1, bias=True), #[b, 1024, 8, 8]
+            self.leakyrelu,
+            nn.ConvTranspose2d(1024, 512, 4, stride=2, padding=1, bias=True), #[b, 512, 16, 16]
+            self.leakyrelu,
+            nn.ConvTranspose2d(512, 256, 4, stride=2, padding=1, bias=True), #[b, 256, 32, 32]
+            self.leakyrelu,
+            nn.ConvTranspose2d(256, 128, 4, stride=2, padding=1, bias=True), #[b, 128, 64, 64]
+            self.leakyrelu,
+            nn.ConvTranspose2d(128, 64, 4, stride=2, padding=1, bias=True), #[b, 32, 128, 128]
+            self.leakyrelu,
+            nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1, bias=True), #[b, 3, 256, 256]
+        )
+        
+        # Initializing weights of decoder
+        weights_init(self.decoder)
+        
+        self.iwt = None
+    
+      
+    def encode(self, y):
+        h = self.encoder(y)                                                         #[b, 2048, 4, 4]
+        h = self.fc_enc(h.reshape(-1,2048*4*4))                                     #[b, z_dim]
+
+        return self.fc_mean(h), F.softplus(self.fc_var(h))                          #[b, z_dim]
+
+    
+    def decode(self, z):
+        h = self.leakyrelu(self.fc_dec(z))                       #[b, 2048*4*4]
+        h = self.decoder(h.reshape(-1, 2048, 4, 4))              #[b, 3, 256, 256]
+        
+        # Returns mask
+        return h
+        
+    def forward(self, y):
+        mu, var = self.encode(y)
+        mask = self.decode(mu)
+        
+        return mask, mu, var
+        
+    def loss_function(self, mask, mask_recon, mu, var) -> Variable:
+        # WT-space loss on patch level (x_wt already has first patch all 0's)
+        BCE_wt = F.mse_loss(mask_recon.reshape(-1), mask.reshape(-1)) * mask.shape[1] * mask.shape[2] * mask.shape[3]
+        
+        KLD = torch.tensor(0)
+
+        return BCE_wt + KLD, BCE_wt, KLD
+
+    def set_device(self, device):
+        self.device = device
+        if 'cuda' in self.device:
+            self.cuda = True
+    
+    def set_filters(self, filters):
+        self.iwt = IWT(iwt=iwt, num_iwt=self.num_iwt)
+        self.iwt.set_filters(filters)
 
 # Reconstructing IWT'ed mask
 class IWTAE_128_Mask_2(nn.Module):
