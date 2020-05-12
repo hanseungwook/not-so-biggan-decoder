@@ -1,5 +1,5 @@
 import os, sys
-sys.path.append('./Pytorch-UNet')
+sys.path.append('./Pytorch-UNet/')
 import torch
 from torch import optim
 import torchvision.transforms as transforms
@@ -61,11 +61,11 @@ if __name__ == "__main__":
                                                pin_memory=True, drop_last=True)
 
     # Create validation dataset
-    # valid_dataset = dset.ImageFolder(root=args.valid_dir, transform=default_transform)
+    valid_dataset = dset.ImageFolder(root=args.valid_dir, transform=default_transform)
 
-    # valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size,
-    #                                            shuffle=True, num_workers=args.workers,
-    #                                            pin_memory=True, drop_last=True)
+    valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size,
+                                               shuffle=True, num_workers=args.workers,
+                                               pin_memory=True, drop_last=True)
 
     # Model and optimizer
     model = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
@@ -74,4 +74,4 @@ if __name__ == "__main__":
     state_dict = {'itr': 0}
 
     for epoch in range(args.num_epochs):
-        train_unet128(epoch, state_dict, model, optimizer, train_loader, args, logger)
+        train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loader, args, logger)

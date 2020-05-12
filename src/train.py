@@ -7,13 +7,13 @@ from tqdm import tqdm, trange
 from wt_utils import *
 
 # Train function for UNet 128 (64->128) without data augmentation
-def train_unet128(epoch, state_dict, model, optimizer, dataloader, args, logger):
+def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loader, args, logger):
     model.train()
 
     filters = create_filters(device=args.device)
     inv_filters = create_inv_filters(device=args.device)
 
-    for i, data in tqdm(dataloader):
+    for i, data in tqdm(train_loader):
         start_time = time.time()
         optimizer.zero_grad()
 
@@ -122,6 +122,45 @@ def train_unet128(epoch, state_dict, model, optimizer, dataloader, args, logger)
             
             # Save logger 
             torch.save(logger, args.output_dir + '/logger.pth')
+        
+        if not state_dict['itr'] % args.valid_every:
+            model.eval()
+            with torch.no_grad(): 
+                for i, data in tqdm(valid_loader):
+                    data = data.to(args.device)
+                
+                    Y = wt_128_3quads(data, filters, levels=3)
+
+                    # Get real 1st level masks
+                    Y_64 = Y[:, :, :64, :64]
+                    real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br = get_4masks(Y_64, 32)
+                    Y_64_patches = torch.cat((real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br), dim=1)
+
+                    # Get real 2nd level masks
+                    real_mask_tr, real_mask_bl, real_mask_br = get_3masks(Y, args.mask_dim)
+
+                    # Divide into 32 x 32 patches
+                    real_mask_tr_patches = create_patches_from_grid(real_mask_tr)
+                    real_mask_bl_patches = create_patches_from_grid(real_mask_bl)
+                    real_mask_br_patches = create_patches_from_grid(real_mask_br)
+
+                    # Run through 128 mask network and get reconstructed image
+                    recon_mask_all = model(Y_64_patches)
+                    recon_mask_tr, recon_mask_bl, recon_mask_br = split_masks_from_channels(recon_mask_all)
+                
+                    # Reshape channel-wise concatenated patches to new dimension
+                    recon_mask_tr_patches = recon_mask_tr.reshape(recon_mask_tr.shape[0], -1, 3, 32, 32)
+                    recon_mask_bl_patches = recon_mask_bl.reshape(recon_mask_bl.shape[0], -1, 3, 32, 32)
+                    recon_mask_br_patches = recon_mask_br.reshape(recon_mask_br.shape[0], -1, 3, 32, 32)
+                    
+                    # Calculate loss
+                    loss = 0
+                    for j in range(real_mask_tr_patches.shape[1]):
+                        loss += F.mse_loss(real_mask_tr_patches[:,j], recon_mask_tr_patches[:,j])
+                        loss += F.mse_loss(real_mask_bl_patches[:,j], recon_mask_bl_patches[:,j])
+                        loss += F.mse_loss(real_mask_br_patches[:,j], recon_mask_br_patches[:,j])
+            
+            model.train()
 
         # Increment iteration number
         state_dict['itr'] += 1       
