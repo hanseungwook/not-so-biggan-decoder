@@ -25,7 +25,7 @@ if __name__ == "__main__":
     logger.update_args(args)
 
     # Create output directory
-    if not os.path.exists(args.output_di):
+    if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
     else:
         print('WARNING: Output directory already exists and will be overwriting (if not resuming)')
