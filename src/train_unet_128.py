@@ -32,7 +32,7 @@ if __name__ == "__main__":
         raise Exception('Cannot create output directory')
 
     # Initialize wandb
-    wandb.init(project=args.project)
+    wandb.init(project=args.project_name)
     
     # Create filters for dataloader
     filters_cpu = create_filters(device='cpu')
