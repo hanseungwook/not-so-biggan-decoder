@@ -113,9 +113,9 @@ def wt_128_3quads(img, filters, levels):
     h = data.shape[2]
     w = data.shape[3]
     
-    tr = wt(data[:, :, :h//2, w//2:], filters, levels-2)
-    bl = wt(data[:, :, h//2:, :w//2], filters, levels-2)
-    br = wt(data[:, :, h//2:, w//2:], filters, levels-2)
+    tr = wt(data[:, :, :h//2, w//2:], filters, levels=1)
+    bl = wt(data[:, :, h//2:, :w//2], filters, levels=1)
+    br = wt(data[:, :, h//2:, w//2:], filters, levels=1)
     
     data[:, :, :h//2, w//2:] = tr
     data[:, :, h//2:, :w//2] = bl
@@ -129,6 +129,11 @@ def wt_256_3quads(data, filters, levels):
     w = data.shape[3]
     
     data = wt(data, filters, levels)[:, :, :256, :256]
+
+    # Applying WT to 64x64 inner 3 quadrants
+    data[:, :, :64, 64:128] = wt(data[:, :, :64, 64:128], filters, levels=1)
+    data[:, :, 64:128, :64] = wt(data[:, :, 64:128, :64], filters, levels=1)
+    data[:, :, 64:128, 64:128] = wt(data[:, :, 64:128, 64:128], filters, levels=1)
     
     data[:, :, :h//2, w//2:] = wt_128_3quads(data[:, :, :h//2, w//2:], filters, levels=2)
     data[:, :, h//2:, :w//2] = wt_128_3quads(data[:, :, h//2:, :w//2], filters, levels=2)
@@ -292,8 +297,8 @@ def calc_grad_norm_2(model):
     return total_norm
 
 
-def load_checkpoint(model, optimizer, args):
-    checkpoint = torch.load(args.output_dir + '/iwt_model_128_itr{}.pth'.format(args.checkpoint), map_location=args.device)
+def load_checkpoint(model, optimizer, model_type, args):
+    checkpoint = torch.load(args.output_dir + '/iwt_model_{}_itr{}.pth'.format(model_type, args.checkpoint), map_location=args.device)
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
@@ -303,3 +308,12 @@ def load_checkpoint(model, optimizer, args):
     torch.cuda.empty_cache()
 
     return model, optimizer, logger
+
+def load_weights(model, checkpoint_path, args):
+    checkpoint = torch.load(checkpoint_path, map_location=args.device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    del checkpoint
+    torch.cuda.empty_cache()
+
+    return model
