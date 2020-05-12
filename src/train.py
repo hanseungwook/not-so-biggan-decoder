@@ -126,7 +126,7 @@ def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loade
         if not state_dict['itr'] % args.valid_every:
             model.eval()
             with torch.no_grad(): 
-                for i, data in tqdm(valid_loader):
+                for data, _ in tqdm(valid_loader):
                     data = data.to(args.device)
                 
                     Y = wt_128_3quads(data, filters, levels=3)
