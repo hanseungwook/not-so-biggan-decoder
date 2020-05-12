@@ -23,7 +23,6 @@ if __name__ == "__main__":
     # Parse arguments & log
     args = parse_args()
     logger.update_args(args)
-    logger.print(args)
 
     # Create output directory
     try:
