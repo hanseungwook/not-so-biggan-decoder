@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--output_dir', type=str, 
                         help='Output directory to create and save files')
 
-    parser.add_argument('--project', type=str, default='unet-full-imagenet-128',
+    parser.add_argument('--project_name', type=str, default='unet_full_imagenet_128',
                         help='Project name for wandb')
     parser.add_argument('--save_every', type=int, default=500,
                         help='Save every X iterations')

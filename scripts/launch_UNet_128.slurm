@@ -68,7 +68,8 @@ python src/train_unet_128.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
 --batch_size 128 --image_size 256 --mask_dim 64 --lr 1e-4 \
 --num_epochs 10 --output_dir /nobackup/users/swhan/wtvae/results/unet_128/
---project unet-full-imagenet-128 --save_every 500
+--project_name unet_full_imagenet_128 \
+--save_every 500 --valid_every 1000 --log_every 50
 
 echo "Run completed at:- "
 date
