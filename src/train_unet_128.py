@@ -1,5 +1,5 @@
 import os, sys
-sys.path.append('../Pytorch-UNet')
+sys.path.append('./Pytorch-UNet')
 import torch
 from torch import optim
 import torchvision.transforms as transforms
