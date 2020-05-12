@@ -13,7 +13,7 @@ def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loade
     filters = create_filters(device=args.device)
     inv_filters = create_inv_filters(device=args.device)
 
-    for i, data in tqdm(train_loader):
+    for i, (data, _) in tqdm(train_loader):
         start_time = time.time()
         optimizer.zero_grad()
 
