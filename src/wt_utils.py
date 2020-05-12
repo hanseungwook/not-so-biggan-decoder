@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import random
 import pywt
 import IPython
+from logger import Logger
 
 ################# ZERO FUNCTIONS #################
 
@@ -289,3 +290,16 @@ def calc_grad_norm_2(model):
     total_norm = total_norm ** (1. / 2)
 
     return total_norm
+
+
+def load_checkpoint(model, optimizer, args):
+    checkpoint = torch.load(args.output_dir + '/iwt_model_128_itr{}.pth'.format(args.checkpoint), map_location=args.device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+    logger = torch.load(args.output_dir + '/logger.pth')
+
+    del checkpoint
+    torch.cuda.empty_cache()
+
+    return model, optimizer, logger

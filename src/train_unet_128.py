@@ -7,7 +7,7 @@ import torchvision.datasets as dset
 import wandb
 
 from datasets import ImagenetDataAugDataset
-from wt_utils import wt, create_filters
+from wt_utils import wt, create_filters, load_checkpoint
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod
 from train import train_unet128
@@ -25,10 +25,10 @@ if __name__ == "__main__":
     logger.update_args(args)
 
     # Create output directory
-    try:
+    if not os.path.exists(args.output_di):
         os.mkdir(args.output_dir)
-    except:
-        raise Exception('Cannot create output directory')
+    else:
+        print('WARNING: Output directory already exists and will be overwriting (if not resuming)')
 
     # Initialize wandb
     wandb.init(project=args.project_name)
@@ -71,6 +71,11 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     state_dict = {'itr': 0}
+
+    if args.resume:
+        print('Loading weights & resuming from iteration {}'.format(args.checkpoint))
+        model, optimizer, logger = load_checkpoint(model, optimizer, args)
+        state_dict['itr'] = args.checkpoint
 
     for epoch in range(args.num_epochs):
         train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loader, args, logger)
