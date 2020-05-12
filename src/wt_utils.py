@@ -104,8 +104,8 @@ def iwt(vres, inv_filters, levels=1):
 
 
 # Input is 256 x 256 or 128 x 128 (levels automatically adjusted), and outputs 128 x 128 will all patches WT'ed to 32 x 32
-def wt_128_3quads(data, filters, levels):
-    data = data.clone()
+def wt_128_3quads(img, filters, levels):
+    data = img.clone()
         
     data = wt(data, filters, levels)[:, :, :128, :128]
     h = data.shape[2]
