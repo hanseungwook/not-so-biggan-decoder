@@ -60,7 +60,7 @@ def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loade
         # Update logger & wandb
         logger.update(state_dict['itr'], loss.cpu().item(), itr_time)
         wandb.log({'train_loss': loss.item()}, commit=False)
-        wandb.log({'train_itr_time': itr_time}, commit=False)    
+        wandb.log({'train_itr_time': itr_time}, commit=True)    
 
         # Save images, logger, weights on save_every interval
         if not state_dict['itr'] % args.save_every:
@@ -160,6 +160,7 @@ def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loade
                         loss += F.mse_loss(real_mask_bl_patches[:,j], recon_mask_bl_patches[:,j])
                         loss += F.mse_loss(real_mask_br_patches[:,j], recon_mask_br_patches[:,j])
 
+                    wandb.log({'val_loss': loss.item()}, commit=True)
                     logger.update_val_loss(state_dict['itr'], loss.cpu().item())
             
             model.train()
