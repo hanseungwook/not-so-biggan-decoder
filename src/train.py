@@ -13,7 +13,7 @@ def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loade
     filters = create_filters(device=args.device)
     inv_filters = create_inv_filters(device=args.device)
 
-    for i, (data, _) in tqdm(train_loader):
+    for data, _ in tqdm(train_loader):
         start_time = time.time()
         optimizer.zero_grad()
 
@@ -58,7 +58,7 @@ def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loade
         itr_time = end_time - start_time
 
         # Update logger & wandb
-        logger.update(state_dict['itr'], loss.item(), itr_time)
+        logger.update(state_dict['itr'], loss.cpu().item(), itr_time)
         wandb.log({'train_loss': loss.item()}, commit=False)
         wandb.log({'train_itr_time': itr_time}, commit=False)    
 
@@ -159,6 +159,8 @@ def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loade
                         loss += F.mse_loss(real_mask_tr_patches[:,j], recon_mask_tr_patches[:,j])
                         loss += F.mse_loss(real_mask_bl_patches[:,j], recon_mask_bl_patches[:,j])
                         loss += F.mse_loss(real_mask_br_patches[:,j], recon_mask_br_patches[:,j])
+
+                    logger.update_val_loss(state_dict['itr'], loss.cpu().item())
             
             model.train()
 
