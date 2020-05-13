@@ -40,8 +40,8 @@ def parse_args():
     # Resume
     parser.add_argument('--resume', action='store_true', default=False,
                         help='Resume training? (default: %(default)s)')
-    parser.add_argument('--checkpoint', action='store_true', default=False,
-                        help='Resume training? (default: %(default)s)')
+    parser.add_argument('--checkpoint', type=int, default=0,
+                        help='Resume iteration X (default: %(default)s)')
 
     # Model weights for 128 (when training 256)
     parser.add_argument('--model_128_weights', type=str, default='',
