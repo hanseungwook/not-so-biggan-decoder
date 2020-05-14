@@ -430,7 +430,7 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
         real_mask_br_patches = create_patches_from_grid_16(real_mask_br)
 
         with torch.no_grad():
-            recon_mask_128_all = model(Y_64_patches)
+            recon_mask_128_all = model_128(Y_64_patches)
             recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br = split_masks_from_channels(recon_mask_128_all)
 
         Y_128_patches = torch.cat((Y_64_patches, recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br), dim=1)
