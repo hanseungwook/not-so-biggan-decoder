@@ -483,7 +483,7 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
             recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)    
             recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1) 
             
-            recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_tr_img, recon_mask_bl_img, recon_mask_br_img)
+            recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
 
             # Collate all masks concatenated by channel to an image (slice up and put into a square)
             recon_mask_256_tr_img = collate_16_channels_to_img(recon_mask_256_tr, args.device)
