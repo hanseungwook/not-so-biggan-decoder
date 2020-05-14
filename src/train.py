@@ -492,9 +492,9 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
 
             recon_mask_256 = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img)
             
-            recon_mask_256_tr_img = apply_iwt_quads_128(recon_mask_256_tr_img, inv_filters, levels=1)
-            recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_256_bl_img, inv_filters, levels=1)    
-            recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_256_br_img, inv_filters, levels=1) 
+            recon_mask_256_tr_img = apply_iwt_quads_128(recon_mask_256_tr_img, inv_filters)
+            recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_256_bl_img, inv_filters)
+            recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_256_br_img, inv_filters)
             
             recon_mask_256_iwt = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img)
             
