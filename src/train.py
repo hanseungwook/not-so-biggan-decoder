@@ -555,7 +555,7 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
                     real_mask_br_patches = create_patches_from_grid_16(real_mask_br)
 
                     with torch.no_grad():
-                        recon_mask_128_all = model(Y_64_patches)
+                        recon_mask_128_all = model_128(Y_64_patches)
                         recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br = split_masks_from_channels(recon_mask_128_all)
 
                     Y_128_patches = torch.cat((Y_64_patches, recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br), dim=1)
@@ -565,13 +565,13 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
                     recon_mask_256_tr, recon_mask_256_bl, recon_mask_256_br = split_masks_from_channels(recon_mask_256_all)
                 
                     # Reshape channel-wise concatenated patches to new dimension
-                    recon_mask_256_tr_patches = recon_mask_256_tr.reshape(batch_size, -1, 3, 32, 32)
-                    recon_mask_256_bl_patches  = recon_mask_256_bl.reshape(batch_size, -1, 3, 32, 32)
-                    recon_mask_256_br_patches = recon_mask_256_br.reshape(batch_size, -1, 3, 32, 32) 
+                    recon_mask_256_tr_patches = recon_mask_256_tr.reshape(recon_mask_256_tr.shape[0], -1, 3, 32, 32)
+                    recon_mask_256_bl_patches  = recon_mask_256_bl.reshape(recon_mask_256_bl.shape[0], -1, 3, 32, 32)
+                    recon_mask_256_br_patches = recon_mask_256_br.reshape(recon_mask_256_br.shape[0], -1, 3, 32, 32) 
                     
                     # Calculate loss
                     loss = 0
-                    for j in range(real_mask_256_tr_patches.shape[1]):
+                    for j in range(real_mask_tr_patches.shape[1]):
                         loss += F.mse_loss(recon_mask_256_tr_patches[:, j], real_mask_tr_patches[:, j])
                         loss += F.mse_loss(recon_mask_256_bl_patches[:, j], real_mask_bl_patches[:, j])
                         loss += F.mse_loss(recon_mask_256_br_patches[:, j], real_mask_br_patches[:, j])
@@ -604,7 +604,7 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
             recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)    
             recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1) 
             
-            recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_tr_img, recon_mask_bl_img, recon_mask_br_img)
+            recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
 
             # Collate all masks concatenated by channel to an image (slice up and put into a square)
             recon_mask_256_tr_img = collate_16_channels_to_img(recon_mask_256_tr, args.device)
@@ -613,9 +613,9 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
 
             recon_mask_256 = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img)
             
-            recon_mask_256_tr_img = apply_iwt_quads_128(recon_mask_tr_img, inv_filters, levels=1)
-            recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_bl_img, inv_filters, levels=1)    
-            recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_br_img, inv_filters, levels=1) 
+            recon_mask_256_tr_img = apply_iwt_quads_128(recon_mask_256_tr_img, inv_filters)
+            recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_256_bl_img, inv_filters)
+            recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_256_br_img, inv_filters)
             
             recon_mask_256_iwt = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img)
             
