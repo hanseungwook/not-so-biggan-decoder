@@ -7,7 +7,7 @@ import torchvision.datasets as dset
 import wandb
 
 from datasets import ImagenetDataAugDataset
-from wt_utils import wt, create_filters, load_checkpoint
+from wt_utils import wt, create_filters, load_checkpoint, load_weights
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod
 from train import train_unet128_refine
@@ -67,7 +67,11 @@ if __name__ == "__main__":
                                                pin_memory=True, drop_last=True)
 
     # Model and optimizer
-    model = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
+    print('Loading model 128 weights')
+    model_128 = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
+    model_128 = load_weights(model_128, args.model_128_weights, args)
+
+    model = UNet_NTail_128_Mod(n_channels=36, n_classes=3, n_tails=12, bilinear=True).to(args.device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     state_dict = {'itr': 0}
@@ -78,4 +82,4 @@ if __name__ == "__main__":
         state_dict['itr'] = args.checkpoint
 
     for epoch in range(args.num_epochs):
-        train_unet128_refine(epoch, state_dict, model, optimizer, train_loader, valid_loader, args, logger)
+        train_unet128_refine(epoch, state_dict, model_128, model, optimizer, train_loader, valid_loader, args, logger)
