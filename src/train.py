@@ -446,7 +446,7 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
         
         # Calculate loss
         loss = 0
-        for j in range(real_mask_256_tr_patches.shape[1]):
+        for j in range(real_mask_tr_patches.shape[1]):
             loss += F.mse_loss(recon_mask_256_tr_patches[:, j], real_mask_tr_patches[:, j])
             loss += F.mse_loss(recon_mask_256_bl_patches[:, j], real_mask_bl_patches[:, j])
             loss += F.mse_loss(recon_mask_256_br_patches[:, j], real_mask_br_patches[:, j])
