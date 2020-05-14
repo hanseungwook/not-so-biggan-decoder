@@ -441,7 +441,7 @@ def train_unet256(epoch, state_dict, model, model_128, optimizer, train_loader, 
     
         # Reshape channel-wise concatenated patches to new dimension
         recon_mask_256_tr_patches = recon_mask_256_tr.reshape(recon_mask_256_tr.shape[0], -1, 3, 32, 32)
-        recon_mask_256_bl_patches  = recon_mask_256_bl.reshape(recon_mask_256_bl.shape[0], -1, 3, 32, 32)
+        recon_mask_256_bl_patches = recon_mask_256_bl.reshape(recon_mask_256_bl.shape[0], -1, 3, 32, 32)
         recon_mask_256_br_patches = recon_mask_256_br.reshape(recon_mask_256_br.shape[0], -1, 3, 32, 32) 
         
         # Calculate loss
