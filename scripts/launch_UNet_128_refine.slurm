@@ -5,9 +5,9 @@
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err
 
-#SBATCH -J unet_128
-#SBATCH -o unet_128_%j.out
-#SBATCH -e unet_128_%j.err
+#SBATCH -J unet_128_refine
+#SBATCH -o unet_128_refine_%j.out
+#SBATCH -e unet_128_refine_%j.err
 
 #SBATCH --mail-user=seungwook.han@ibm.com
 #SBATCH --mail-type=ALL
@@ -64,11 +64,11 @@ date
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err 
 
-python src/train_unet_128_refine.py \
+python src/train_unet_128.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
 --batch_size 128 --image_size 256 --mask_dim 64 --lr 1e-4 \
---num_epochs 100 --output_dir /nobackup/users/swhan/wtvae/results/unet_128_refine/ \
---project_name unet_full_imagenet_128_refine \
+--num_epochs 100 --output_dir /nobackup/users/swhan/wtvae/results/unet_128/ \
+--project_name unet_full_imagenet_128 \
 --save_every 500 --valid_every 1000 --log_every 50
 
 echo "Run completed at:- "
