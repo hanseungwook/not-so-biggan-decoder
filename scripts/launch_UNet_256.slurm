@@ -70,7 +70,7 @@ python src/train_unet_256.py \
 --num_epochs 100 --output_dir $HOME2/wtvae/results/unet_256/ \
 --project_name unet_full_imagenet_256 \
 --save_every 500 --valid_every 1000 --log_every 50 \
---model_128_weights $HOME2/wtvae/results/unet_128/iwt_model_128_itr197000.pth
+--model_128_weights $HOME2/wtvae/results/unet_128_run2/iwt_model_128_itr197000.pth
 
 echo "Run completed at:- "
 date
