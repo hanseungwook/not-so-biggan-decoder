@@ -341,20 +341,24 @@ def train_unet128_refine(epoch, state_dict, model_128, model, optimizer, train_l
                     real_mask_br_patches = create_patches_from_grid(real_mask_br)
 
                     # Run through 128 mask network and get reconstructed image
-                    recon_mask_all = model(Y_64_patches)
-                    recon_mask_tr, recon_mask_bl, recon_mask_br = split_masks_from_channels(recon_mask_all)
+                    with torch.no_grad():
+                        recon_mask_all = model_128(Y_64_patches)
+                        recon_mask_tr, recon_mask_bl, recon_mask_br = split_masks_from_channels(recon_mask_all)
+
+                    refined_recon_mask_all = model(recon_mask_all)
+                    refined_recon_mask_tr, refined_recon_mask_bl, refined_recon_mask_br = split_masks_from_channels(refined_recon_mask_all)
                 
                     # Reshape channel-wise concatenated patches to new dimension
-                    recon_mask_tr_patches = recon_mask_tr.reshape(recon_mask_tr.shape[0], -1, 3, 32, 32)
-                    recon_mask_bl_patches = recon_mask_bl.reshape(recon_mask_bl.shape[0], -1, 3, 32, 32)
-                    recon_mask_br_patches = recon_mask_br.reshape(recon_mask_br.shape[0], -1, 3, 32, 32)
+                    refined_recon_mask_tr_patches = refined_recon_mask_tr.reshape(refined_recon_mask_tr.shape[0], -1, 3, 32, 32)
+                    refined_recon_mask_bl_patches = refined_recon_mask_bl.reshape(refined_recon_mask_bl.shape[0], -1, 3, 32, 32)
+                    refined_recon_mask_br_patches = refined_recon_mask_br.reshape(refined_recon_mask_br.shape[0], -1, 3, 32, 32)
                     
                     # Calculate loss
                     loss = 0
                     for j in range(real_mask_tr_patches.shape[1]):
-                        loss += F.mse_loss(recon_mask_tr_patches[:, j], real_mask_tr_patches[:, j])
-                        loss += F.mse_loss(recon_mask_bl_patches[:, j], real_mask_bl_patches[:, j])
-                        loss += F.mse_loss(recon_mask_br_patches[:, j], real_mask_br_patches[:, j])
+                        loss += F.mse_loss(refined_recon_mask_tr_patches[:, j], real_mask_tr_patches[:, j])
+                        loss += F.mse_loss(refined_recon_mask_bl_patches[:, j], real_mask_bl_patches[:, j])
+                        loss += F.mse_loss(refined_recon_mask_br_patches[:, j], real_mask_br_patches[:, j])
 
                     val_losses.append(loss.item())
 
