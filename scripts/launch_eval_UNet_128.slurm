@@ -68,7 +68,7 @@ python src/eval_unet_128.py \
 --batch_size 128 --image_size 256 --mask_dim 64 \
 --output_dir $HOME2/wtvae/results/unet_128_eval/ \
 --project_name unet_full_imagenet_128_eval \
---resume --checkpoint_path $HOME2/wtvae/unet_128_run2/iwt_model_128_itr197000.pth
+--resume --checkpoint_path $HOME2/wtvae/results/unet_128_run2/iwt_model_128_itr197000.pth
 
 echo "Run completed at:- "
 date
