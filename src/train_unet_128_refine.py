@@ -68,10 +68,10 @@ if __name__ == "__main__":
 
     # Model and optimizer
     print('Loading model 128 weights')
-    model_128 = UNet_NTail_128_Mod1(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
+    model_128 = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
     model_128 = load_weights(model_128, args.model_128_weights, args)
 
-    model = UNet_NTail_128_Mod(n_channels=36, n_classes=3, n_tails=12, bilinear=True).to(args.device)
+    model = UNet_NTail_128_Mod1(n_channels=36, n_classes=3, n_tails=12, bilinear=True).to(args.device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
     state_dict = {'itr': 0}
