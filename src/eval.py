@@ -31,7 +31,6 @@ def eval_unet128(model, data_loader, data_type, args):
             recon_mask_tr, recon_mask_bl, recon_mask_br = split_masks_from_channels(recon_mask_all)
 
         Y_real = wt(data, filters, levels=3)
-        zeros = torch.zeros(recon_mask_tr.shape)
         
         real_img_128_padded = Y_real[:, :, :128, :128]
         real_img_128_padded = zero_pad(real_img_128_padded, 256, args.device)
@@ -45,6 +44,8 @@ def eval_unet128(model, data_loader, data_type, args):
         recon_mask_tr_img = iwt(recon_mask_tr_img, inv_filters, levels=1)
         recon_mask_bl_img = iwt(recon_mask_bl_img, inv_filters, levels=1)    
         recon_mask_br_img = iwt(recon_mask_br_img, inv_filters, levels=1) 
+
+        zeros = torch.zeros(recon_mask_tr_img.shape)
         
         recon_mask_iwt = collate_patches_to_img(zeros, recon_mask_tr_img, recon_mask_bl_img, recon_mask_br_img)
         
