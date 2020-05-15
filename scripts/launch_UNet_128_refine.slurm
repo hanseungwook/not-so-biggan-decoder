@@ -71,6 +71,7 @@ python src/train_unet_128.py \
 --project_name unet_full_imagenet_128 \
 --save_every 500 --valid_every 1000 --log_every 50 \
 --model_128_weights $HOME2/wtvae/results/unet_128/iwt_model_128_itr197000.pth
+--resume --checkpoint ITERATION_NUMBER
 
 echo "Run completed at:- "
 date
