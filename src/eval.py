@@ -3,6 +3,7 @@ import torch.nn.functional as F
 from torchvision.utils import save_image
 import wandb
 from tqdm import tqdm, trange
+import h5py
 
 from wt_utils import *
 
@@ -10,12 +11,19 @@ from wt_utils import *
 def eval_unet128(model, data_loader, data_type, args):
     model.eval()
 
+    # Create filters
     filters = create_filters(device=args.device)
     inv_filters = create_inv_filters(device=args.device)
 
-    counter = 0
+    # Create hdf5 dataset
+    f = h5py.File(args.output_dir + data_type + '/recons.hdf5', 'w')
+    dataset = f.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
 
+    counter = 0
+    
     for data, _ in tqdm(data_loader):
+        if counter >= 20000:
+            break
         data = data.to(args.device)
     
         Y = wt_128_3quads(data, filters, levels=3)
@@ -52,11 +60,19 @@ def eval_unet128(model, data_loader, data_type, args):
         recon_mask_padded = zero_pad(recon_mask_iwt, 256, args.device)
         recon_mask_padded[:, :, :64, :64] = Y_64
         recon_img = iwt(recon_mask_padded, inv_filters, levels=3)
-            
-        # Save images
-        for j in range(recon_img.shape[0]):
-            save_image(recon_img.cpu(), args.output_dir + data_type + '/recon_img_{}.png'.format(counter))
-            # save_image(real_img_128_padded.cpu(), args.output_dir + data_type + '/img_128_{}.png'.format(counter))
-            # save_image(data.cpu(), args.output_dir + data_type + '/img_{}.png'.format(counter))
+    
+        # Save image into hdf5
+        batch_size = recon_img.shape[0]
+        dataset[counter: counter+batch_size] = recon_img
+        counter += batch_size
 
-            counter += 1
+        # Save images
+        # for j in range(recon_img.shape[0]):
+        #     save_image(recon_img.cpu(), args.output_dir + data_type + '/recon_img_{}.png'.format(counter))
+        #     # save_image(real_img_128_padded.cpu(), args.output_dir + data_type + '/img_128_{}.png'.format(counter))
+        #     # save_image(data.cpu(), args.output_dir + data_type + '/img_{}.png'.format(counter))
+
+        #     counter += 1
+
+    f.close()
+
