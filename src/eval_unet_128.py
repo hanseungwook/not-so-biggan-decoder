@@ -10,7 +10,7 @@ from datasets import ImagenetDataAugDataset
 from wt_utils import wt, create_filters, load_checkpoint, load_weights
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod
-from train import eval_unet128
+from eval import eval_unet128
 from logger import Logger
 
 if __name__ == "__main__":
