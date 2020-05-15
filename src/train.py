@@ -266,10 +266,26 @@ def train_unet128_refine(epoch, state_dict, model_128, model, optimizer, train_l
             recon_mask_br_img = iwt(recon_mask_br_img, inv_filters, levels=1) 
             
             recon_mask_iwt = collate_patches_to_img(zeros, recon_mask_tr_img, recon_mask_bl_img, recon_mask_br_img)
+
+            refined_recon_mask_tr_img = collate_channels_to_img(refined_recon_mask_tr, args.device)
+            refined_recon_mask_bl_img = collate_channels_to_img(refined_recon_mask_bl, args.device)   
+            refined_recon_mask_br_img = collate_channels_to_img(refined_recon_mask_br, args.device)
+
+            refined_recon_mask = collate_patches_to_img(zeros, refined_recon_mask_tr_img, refined_recon_mask_bl_img, refined_recon_mask_br_img)
             
+            refined_recon_mask_tr_img = iwt(refined_recon_mask_tr_img, inv_filters, levels=1)
+            refined_recon_mask_bl_img = iwt(refined_recon_mask_bl_img, inv_filters, levels=1)    
+            refined_recon_mask_br_img = iwt(refined_recon_mask_br_img, inv_filters, levels=1) 
+            
+            refined_recon_mask_iwt = collate_patches_to_img(zeros, refined_recon_mask_tr_img, refined_recon_mask_bl_img, refined_recon_mask_br_img)
+
             recon_mask_padded = zero_pad(recon_mask_iwt, 256, args.device)
             recon_mask_padded[:, :, :64, :64] = Y_64
             recon_img = iwt(recon_mask_padded, inv_filters, levels=3)
+
+            refined_recon_mask_padded = zero_pad(refined_recon_mask_iwt, 256, args.device)
+            refined_recon_mask_padded[:, :, :64, :64] = Y_64
+            refined_recon_img = iwt(refined_recon_mask_padded, inv_filters, levels=3)
             
             # Reconstructed image with only 64x64
             Y_64_low = zero_pad(Y_64, 256, args.device)
@@ -281,8 +297,12 @@ def train_unet128_refine(epoch, state_dict, model_128, model, optimizer, train_l
             
             save_image(recon_mask.cpu(), args.output_dir + 'recon_mask_itr{}.png'.format(state_dict['itr']))
             save_image(recon_mask_iwt.cpu(), args.output_dir + 'recon_mask_iwt_itr{}.png'.format(state_dict['itr']))
+
+            save_image(refined_recon_mask.cpu(), args.output_dir + 'refined_recon_mask_itr{}.png'.format(state_dict['itr']))
+            save_image(refined_recon_mask_iwt.cpu(), args.output_dir + 'refined_recon_mask_iwt_itr{}.png'.format(state_dict['itr']))
             
             save_image(recon_img.cpu(), args.output_dir + 'recon_img_itr{}.png'.format(state_dict['itr']))
+            save_image(refined_recon_img.cpu(), args.output_dir + 'refined_recon_img_itr{}.png'.format(state_dict['itr']))
             save_image(Y_64_low.cpu(), args.output_dir + 'low_img_64_full_itr{}.png'.format(state_dict['itr']))
 
             save_image(real_img_128_padded.cpu(), args.output_dir + 'img_128_real_masks_itr{}.png'.format(state_dict['itr']))
@@ -374,10 +394,26 @@ def train_unet128_refine(epoch, state_dict, model_128, model, optimizer, train_l
             recon_mask_br_img = iwt(recon_mask_br_img, inv_filters, levels=1) 
             
             recon_mask_iwt = collate_patches_to_img(zeros, recon_mask_tr_img, recon_mask_bl_img, recon_mask_br_img)
+
+            refined_recon_mask_tr_img = collate_channels_to_img(refined_recon_mask_tr, args.device)
+            refined_recon_mask_bl_img = collate_channels_to_img(refined_recon_mask_bl, args.device)   
+            refined_recon_mask_br_img = collate_channels_to_img(refined_recon_mask_br, args.device)
+
+            refined_recon_mask = collate_patches_to_img(zeros, refined_recon_mask_tr_img, refined_recon_mask_bl_img, refined_recon_mask_br_img)
             
+            refined_recon_mask_tr_img = iwt(refined_recon_mask_tr_img, inv_filters, levels=1)
+            refined_recon_mask_bl_img = iwt(refined_recon_mask_bl_img, inv_filters, levels=1)    
+            refined_recon_mask_br_img = iwt(refined_recon_mask_br_img, inv_filters, levels=1) 
+            
+            refined_recon_mask_iwt = collate_patches_to_img(zeros, refined_recon_mask_tr_img, refined_recon_mask_bl_img, refined_recon_mask_br_img)
+
             recon_mask_padded = zero_pad(recon_mask_iwt, 256, args.device)
             recon_mask_padded[:, :, :64, :64] = Y_64
             recon_img = iwt(recon_mask_padded, inv_filters, levels=3)
+
+            refined_recon_mask_padded = zero_pad(refined_recon_mask_iwt, 256, args.device)
+            refined_recon_mask_padded[:, :, :64, :64] = Y_64
+            refined_recon_img = iwt(refined_recon_mask_padded, inv_filters, levels=3)
             
             # Reconstructed image with only 64x64
             Y_64_low = zero_pad(Y_64, 256, args.device)
@@ -389,8 +425,12 @@ def train_unet128_refine(epoch, state_dict, model_128, model, optimizer, train_l
             
             save_image(recon_mask.cpu(), args.output_dir + 'val_recon_mask_itr{}.png'.format(state_dict['itr']))
             save_image(recon_mask_iwt.cpu(), args.output_dir + 'val_recon_mask_iwt_itr{}.png'.format(state_dict['itr']))
+
+            save_image(refined_recon_mask.cpu(), args.output_dir + 'val_refined_recon_mask_itr{}.png'.format(state_dict['itr']))
+            save_image(refined_recon_mask_iwt.cpu(), args.output_dir + 'val_refined_recon_mask_iwt_itr{}.png'.format(state_dict['itr']))
             
             save_image(recon_img.cpu(), args.output_dir + 'val_recon_img_itr{}.png'.format(state_dict['itr']))
+            save_image(refined_recon_img.cpu(), args.output_dir + 'val_refined_recon_img_itr{}.png'.format(state_dict['itr']))
             save_image(Y_64_low.cpu(), args.output_dir + 'val_low_img_64_full_itr{}.png'.format(state_dict['itr']))
 
             save_image(real_img_128_padded.cpu(), args.output_dir + 'val_img_128_real_masks_itr{}.png'.format(state_dict['itr']))
