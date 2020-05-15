@@ -9,7 +9,7 @@ import wandb
 from datasets import ImagenetDataAugDataset
 from wt_utils import wt, create_filters, load_checkpoint, load_weights
 from arguments import parse_args
-from unet.unet_model import UNet_NTail_128_Mod
+from unet.unet_model import UNet_NTail_128_Mod, UNet_NTail_128_Mod1
 from train import train_unet128_refine
 from logger import Logger
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     # Model and optimizer
     print('Loading model 128 weights')
-    model_128 = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
+    model_128 = UNet_NTail_128_Mod1(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
     model_128 = load_weights(model_128, args.model_128_weights, args)
 
     model = UNet_NTail_128_Mod(n_channels=36, n_classes=3, n_tails=12, bilinear=True).to(args.device)
