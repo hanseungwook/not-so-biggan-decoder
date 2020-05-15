@@ -16,8 +16,11 @@ def eval_unet128(model, data_loader, data_type, args):
     inv_filters = create_inv_filters(device=args.device)
 
     # Create hdf5 dataset
-    f = h5py.File(args.output_dir + data_type + '/recons.hdf5', 'w')
-    dataset = f.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    f1 = h5py.File(args.output_dir + data_type + '/recon_img.hdf5', 'w')
+    f2 = h5py.File(args.output_dir + data_type + '/real_img.hdf5', 'w')
+
+    real_dataset = f1.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    recon_dataset = f2.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
@@ -63,7 +66,8 @@ def eval_unet128(model, data_loader, data_type, args):
     
         # Save image into hdf5
         batch_size = recon_img.shape[0]
-        dataset[counter: counter+batch_size] = recon_img.cpu()
+        recon_dataset[counter: counter+batch_size] = recon_img.cpu()
+        real_dataset[counter: counter+batch_size] = data.cpu()
         counter += batch_size
 
         # Save images
@@ -74,5 +78,6 @@ def eval_unet128(model, data_loader, data_type, args):
 
         #     counter += 1
 
-    f.close()
+    f1.close()
+    f2.close()
 
