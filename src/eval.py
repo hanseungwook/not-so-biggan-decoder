@@ -20,7 +20,7 @@ def eval_unet128(model, data_loader, data_type, args):
     dataset = f.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
 
     counter = 0
-    
+
     for data, _ in tqdm(data_loader):
         if counter >= 20000:
             break
@@ -63,7 +63,7 @@ def eval_unet128(model, data_loader, data_type, args):
     
         # Save image into hdf5
         batch_size = recon_img.shape[0]
-        dataset[counter: counter+batch_size] = recon_img
+        dataset[counter: counter+batch_size] = recon_img.cpu()
         counter += batch_size
 
         # Save images
