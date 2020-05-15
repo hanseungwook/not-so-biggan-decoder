@@ -67,7 +67,7 @@ python src/train_unet_128_refine.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
 --batch_size 128 --image_size 256 --mask_dim 64 --lr 1e-4 \
 --num_epochs 100 --output_dir $HOME2/wtvae/results/unet_128_refine_bigger_capacity/ \
---project_name unet_full_imagenet_128 \
+--project_name unet_full_imagenet_128_refine \
 --save_every 500 --valid_every 1000 --log_every 50 \
 --model_128_weights $HOME2/wtvae/results/unet_128_run2/iwt_model_128_itr197000.pth
 
