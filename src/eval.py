@@ -7,7 +7,7 @@ from tqdm import tqdm, trange
 from wt_utils import *
 
 # Run model through dataloader and save all images
-def eval_unet128(model, data_loader, args):
+def eval_unet128(model, data_loader, data_type, args):
     model.eval()
 
     filters = create_filters(device=args.device)
@@ -54,8 +54,8 @@ def eval_unet128(model, data_loader, args):
             
         # Save images
         for j in range(recon_img.shape[0]):
-            save_image(recon_img.cpu(), args.output_dir + 'recon_img_{}.png'.format(counter))
-            save_image(real_img_128_padded.cpu(), args.output_dir + 'img_128_{}.png'.format(counter))
-            save_image(data.cpu(), args.output_dir + 'img_{}.png'.format(counter))
+            save_image(recon_img.cpu(), args.output_dir + data_type + '/recon_img_{}.png'.format(counter))
+            save_image(real_img_128_padded.cpu(), args.output_dir + data_type + '/img_128_{}.png'.format(counter))
+            save_image(data.cpu(), args.output_dir + data_type + '/img_{}.png'.format(counter))
 
             counter += 1

@@ -10,7 +10,7 @@ from datasets import ImagenetDataAugDataset
 from wt_utils import wt, create_filters, load_checkpoint, load_weights
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod
-from train import train_unet128
+from train import eval_unet128
 from logger import Logger
 
 if __name__ == "__main__":
@@ -27,6 +27,8 @@ if __name__ == "__main__":
     # Create output directory
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
+        os.mkdir(args.output_dir + '/train/')
+        os.mkdir(args.output_dir + '/valid/')
     else:
         print('WARNING: Output directory already exists and will be overwriting (if not resuming)')
     
@@ -71,6 +73,6 @@ if __name__ == "__main__":
         print('Loading weights')
         model = load_weights(model, args.checkpoint_path, args)
 
-    eval_unet128(model, train_loader, args)
-    eval_unet128(model, valid_loader, args)
+    eval_unet128(model, train_loader, 'train', args)
+    eval_unet128(model, valid_loader, 'valid', args)
 
