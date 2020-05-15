@@ -20,7 +20,6 @@
 #SBATCH --ntasks-per-node=4
 #SBATCH --mem=0
 #SBATCH --time=24:00:00
-#SBATCH --exclusive
 #SBATCH -p sched_system_all 
 
 ## User python environment
