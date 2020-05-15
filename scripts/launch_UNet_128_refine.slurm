@@ -18,7 +18,7 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
-#SBATCH --mem=0
+#SBATCH --mem=500g
 #SBATCH --time=24:00:00
 #SBATCH -p sched_system_all 
 
