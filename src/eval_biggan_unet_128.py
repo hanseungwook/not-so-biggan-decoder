@@ -27,8 +27,6 @@ if __name__ == "__main__":
     # Create output directory
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
-        os.mkdir(args.output_dir + '/train/')
-        os.mkdir(args.output_dir + '/valid/')
     else:
         print('WARNING: Output directory already exists and will be overwriting (if not resuming)')
     
