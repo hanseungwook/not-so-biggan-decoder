@@ -91,8 +91,10 @@ def eval_biggan_unet128(model, data_loader, args):
 
     # Create hdf5 dataset
     f1 = h5py.File(args.output_dir + '/recon_img.hdf5', 'w')
+    f2 = h5py.File(args.output_dir + '/sample_padded.hdf5', 'w')
 
     recon_dataset = f1.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    sample_dataset = f2.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
@@ -126,12 +128,17 @@ def eval_biggan_unet128(model, data_loader, args):
         recon_mask_padded = zero_pad(recon_mask_iwt, 256, args.device)
         recon_mask_padded[:, :, :64, :64] = Y_64
         recon_img = iwt(recon_mask_padded, inv_filters, levels=3)
+
+        sample_padded = zero_pad(Y_64, 256, args.device)
+        sample_img = iwt(sample_padded, inv_filters, levels=3)
     
         # Save image into hdf5
         batch_size = recon_img.shape[0]
         recon_dataset[counter: counter+batch_size] = recon_img.cpu()
+        sample_dataset[counter: counter+batch_size] = sample_img.cpu()
         counter += batch_size
 
     f1.close()
+    f2.close()
 
 
