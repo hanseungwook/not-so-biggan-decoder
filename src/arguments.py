@@ -45,7 +45,9 @@ def parse_args():
 
     # Loading weights for eval
     parser.add_argument('--checkpoint_path', type=str, default='',
-                        help='Path to load weights from (for evaluation) (default: %(default)s)')              
+                        help='Path to load weights from (for evaluation) (default: %(default)s)')           
+    parser.add_argument('--sample_file', type=str, default='',
+                        help='Path to samples from BigGAN(default: %(default)s)')      
 
     # Model weights for 128 (when training 256)
     parser.add_argument('--model_128_weights', type=str, default='',
