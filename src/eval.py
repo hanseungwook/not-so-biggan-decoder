@@ -91,7 +91,7 @@ def eval_biggan_unet128(model, data_loader, args):
 
     # Create hdf5 dataset
     f1 = h5py.File(args.output_dir + '/recon_img.hdf5', 'w')
-    f2 = h5py.File(args.output_dir + '/sample_padded.hdf5', 'w')
+    f2 = h5py.File(args.output_dir + '/sample_img.hdf5', 'w')
 
     recon_dataset = f1.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
     sample_dataset = f2.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
