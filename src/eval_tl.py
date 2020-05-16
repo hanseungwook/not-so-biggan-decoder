@@ -64,5 +64,5 @@ if __name__ == "__main__":
                                                pin_memory=True, drop_last=True)
 
     eval_tl(train_loader, 'train', args)
-    eval_tl(valid_loaderader, 'valid', args)
+    eval_tl(valid_loader, 'valid', args)
 
