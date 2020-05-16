@@ -142,3 +142,47 @@ def eval_biggan_unet128(model, data_loader, args):
     f2.close()
 
 
+# Run model through dataloader and save all images
+def eval_tl(data_loader, data_type, args):
+    # Create filters
+    filters = create_filters(device=args.device)
+    inv_filters = create_inv_filters(device=args.device)
+
+    # Create hdf5 dataset
+    f1 = h5py.File(args.output_dir + data_type + '/recon_img.hdf5', 'w')
+    f2 = h5py.File(args.output_dir + data_type + '/real_img.hdf5', 'w')
+
+    recon_dataset = f1.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    real_dataset = f2.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+
+    counter = 0
+
+    for data, _ in tqdm(data_loader):
+        if counter >= 20000:
+            break
+        data = data.to(args.device)
+    
+        Y =wt(data, filters, levels=3)
+
+        # Get real 1st level masks
+        Y_64 = Y[:, :, :64, :64]
+        
+        Y_64_padded = zero_pad(Y_64, 256, args.device)
+        Y_64_padded = iwt(Y_64_padded, inv_filters, levels=3)
+    
+        # Save image into hdf5
+        batch_size = Y_64_padded.shape[0]
+        recon_dataset[counter: counter+batch_size] = Y_64_padded.cpu()
+        real_dataset[counter: counter+batch_size] = data.cpu()
+        counter += batch_size
+
+        # Save images
+        # for j in range(recon_img.shape[0]):
+        #     save_image(recon_img.cpu(), args.output_dir + data_type + '/recon_img_{}.png'.format(counter))
+        #     # save_image(real_img_128_padded.cpu(), args.output_dir + data_type + '/img_128_{}.png'.format(counter))
+        #     # save_image(data.cpu(), args.output_dir + data_type + '/img_{}.png'.format(counter))
+
+        #     counter += 1
+
+    f1.close()
+    f2.close()
