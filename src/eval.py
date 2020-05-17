@@ -81,6 +81,85 @@ def eval_unet128(model, data_loader, data_type, args):
     f1.close()
     f2.close()
 
+# Creating HDF5 dataset of real and reconstructed, given real 64x64 TL patch
+def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
+    model_128.eval()
+    model_256.eval()
+
+    # Create filters
+    filters = create_filters(device=args.device)
+    inv_filters = create_inv_filters(device=args.device)
+
+    # Create hdf5 dataset
+    f1 = h5py.File(args.output_dir + data_type + '/recon_img.hdf5', 'w')
+    f2 = h5py.File(args.output_dir + data_type + '/real_img.hdf5', 'w')
+
+    recon_dataset = f1.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    real_dataset = f2.create_dataset('data', shape=(20000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+
+    counter = 0
+
+    with torch.no_grad():
+        for data, _ in tqdm(data_loader):
+            if counter >= 20000:
+                break
+
+            data = data.to(args.device)
+        
+            Y = wt_256_3quads(data, filters, levels=3)
+
+            # Get real 1st level masks
+            Y_64 = Y[:, :, :64, :64]
+            real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br = get_4masks(Y_64, 32)
+            Y_64_patches = torch.cat((real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br), dim=1)
+
+            # Run through unet 128
+            recon_mask_128_all = model_128(Y_64_patches)
+            recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br = split_masks_from_channels(recon_mask_128_all)
+
+            Y_128_patches = torch.cat((Y_64_patches, recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br), dim=1)
+
+            # Run through unet 256
+            recon_mask_256_all = model_256(Y_128_patches)
+            recon_mask_256_tr, recon_mask_256_bl, recon_mask_256_br = split_masks_from_channels(recon_mask_256_all)
+
+            # Collate al masks constructed by first 128 level
+            recon_mask_128_tr_img = collate_channels_to_img(recon_mask_128_tr, args.device)
+            recon_mask_128_bl_img = collate_channels_to_img(recon_mask_128_bl, args.device)   
+            recon_mask_128_br_img = collate_channels_to_img(recon_mask_128_br, args.device)
+            
+            recon_mask_128_tr_img = iwt(recon_mask_128_tr_img, inv_filters, levels=1)
+            recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)    
+            recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1) 
+            
+            recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
+
+            # Collate all masks concatenated by channel to an image (slice up and put into a square)
+            recon_mask_256_tr_img = collate_16_channels_to_img(recon_mask_256_tr, args.device)
+            recon_mask_256_bl_img = collate_16_channels_to_img(recon_mask_256_bl, args.device)   
+            recon_mask_256_br_img = collate_16_channels_to_img(recon_mask_256_br, args.device)
+
+            zeros = torch.zeros(recon_mask_256_tr_img.shape)
+            
+            recon_mask_256_tr_img = apply_iwt_quads_128(recon_mask_256_tr_img, inv_filters)
+            recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_256_bl_img, inv_filters)
+            recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_256_br_img, inv_filters)
+            
+            recon_mask_256_iwt = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img, device=args.device))
+            
+            # IWT to reconstruct iamge
+            recon_mask_padded = zero_pad(recon_mask_256_iwt, 256, args.device)
+            recon_mask_padded[:, :, :128, :128] = recon_mask_128_iwt
+            recon_img = iwt(recon_mask_padded, inv_filters, levels=3)
+        
+            # Save image into hdf5
+            batch_size = recon_img.shape[0]
+            recon_dataset[counter: counter+batch_size] = recon_img.cpu()
+            real_dataset[counter: counter+batch_size] = data.cpu()
+            counter += batch_size
+
+    f1.close()
+    f2.close()
 
 def eval_biggan_unet128(model, data_loader, args):
     model.eval()
