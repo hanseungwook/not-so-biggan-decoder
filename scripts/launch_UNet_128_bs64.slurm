@@ -5,9 +5,9 @@
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err
 
-#SBATCH -J eval_biggan_unet_128
-#SBATCH -o eval_biggan_unet_128_%j.out
-#SBATCH -e eval_biggan_unet_128_%j.err
+#SBATCH -J unet_128
+#SBATCH -o unet_128_%j.out
+#SBATCH -e unet_128_%j.err
 
 #SBATCH --mail-user=seungwook.han@ibm.com
 #SBATCH --mail-type=ALL
@@ -18,8 +18,9 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
-#SBATCH --mem=500g
+#SBATCH --mem=0
 #SBATCH --time=24:00:00
+#SBATCH --exclusive
 #SBATCH -p sched_system_all 
 
 ## User python environment
@@ -63,13 +64,12 @@ date
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err 
 
-python src/eval_biggan_unet_128.py \
+python src/train_unet_128.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
---batch_size 100 --image_size 256 --mask_dim 64 \
---output_dir $HOME2/wtvae/results/biggan_unet_128_eval_z02/ \
---project_name biggan_unet_imagenet_128_eval \
---resume --checkpoint_path $HOME2/wtvae/results/unet_128_run2/iwt_model_128_itr197000.pth \
---sample_file $HOME2/BigGAN-PyTorch/results_64_96/samples/BigGAN_WT64_BigGANdeep_seed0_Gch128_Dch128_Gd2_Dd2_bs64_Glr1.0e-04_Dlr4.0e-04_Gnlinplace_relu_Dnlinplace_relu_Ginitortho_Dinitortho_Gattn64_Dattn64_Gshared_hier_ema/samples_z02.npz
+--batch_size 64 --image_size 256 --mask_dim 64 --lr 1e-4 \
+--num_epochs 100 --output_dir /nobackup/users/swhan/wtvae/results/unet_128_bs64/ \
+--project_name unet_full_imagenet_128 \
+--save_every 500 --valid_every 1000 --log_every 50
 
 echo "Run completed at:- "
 date
