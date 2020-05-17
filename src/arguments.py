@@ -52,7 +52,7 @@ def parse_args():
     # Model weights for 128 and 256
     parser.add_argument('--model_128_weights', type=str, default='',
                         help='Path to 128 model weights(default: %(default)s)')
-    parser.add_argument('--model_128_weights', type=str, default='',
+    parser.add_argument('--model_256_weights', type=str, default='',
                         help='Path to 256 model weights(default: %(default)s)')
 
     
