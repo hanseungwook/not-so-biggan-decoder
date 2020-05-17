@@ -18,9 +18,8 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=4
-#SBATCH --mem=0
+#SBATCH --mem=500g
 #SBATCH --time=24:00:00
-#SBATCH --exclusive
 #SBATCH -p sched_system_all 
 
 ## User python environment
@@ -69,7 +68,8 @@ python src/train_unet_128_refine.py \
 --batch_size 128 --image_size 256 --mask_dim 64 --lr 1e-4 \
 --num_epochs 100 --output_dir $HOME2/wtvae/results/unet_128/ \
 --project_name unet_full_imagenet_128 \
---save_every 500 --valid_every 1000 --log_every 50
+--save_every 500 --valid_every 1000 --log_every 50 \
+--resume --checkpoint 197000 \
 
 echo "Run completed at:- "
 date
