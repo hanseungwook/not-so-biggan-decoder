@@ -125,13 +125,14 @@ def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
 
             # Collate al masks constructed by first 128 level
             recon_mask_128_tr_img = collate_channels_to_img(recon_mask_128_tr, args.device)
-            recon_mask_128_bl_img = collate_channels_to_img(recon_mask_128_bl, args.device)   
+            recon_mask_128_bl_img = collate_channels_to_img(recon_mask_128_bl, args.device)
             recon_mask_128_br_img = collate_channels_to_img(recon_mask_128_br, args.device)
             
             recon_mask_128_tr_img = iwt(recon_mask_128_tr_img, inv_filters, levels=1)
             recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)    
             recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1) 
             
+            Y_64 = wt(data, filters, levels=3)[:, :, :64, :64]
             recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
 
             # Collate all masks concatenated by channel to an image (slice up and put into a square)
@@ -148,9 +149,8 @@ def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
             recon_mask_256_iwt = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img, device=args.device)
             
             # IWT to reconstruct iamge
-            recon_mask_padded = zero_pad(recon_mask_256_iwt, 256, args.device)
-            recon_mask_padded[:, :, :128, :128] = recon_mask_128_iwt
-            recon_img = iwt(recon_mask_padded, inv_filters, levels=3)
+            recon_mask_256_iwt[:, :, :128, :128] = recon_mask_128_iwt
+            recon_img = iwt(recon_mask_256_iwt, inv_filters, levels=3)
         
             # Save image into hdf5
             batch_size = recon_img.shape[0]
