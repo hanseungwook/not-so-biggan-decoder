@@ -145,7 +145,7 @@ def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
             recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_256_bl_img, inv_filters)
             recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_256_br_img, inv_filters)
             
-            recon_mask_256_iwt = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img, device=args.device))
+            recon_mask_256_iwt = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img, device=args.device)
             
             # IWT to reconstruct iamge
             recon_mask_padded = zero_pad(recon_mask_256_iwt, 256, args.device)
