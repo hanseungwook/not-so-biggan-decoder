@@ -69,7 +69,7 @@ python src/eval_unet_128_256.py \
 --output_dir $HOME2/wtvae/results/unet_128_256_eval/ \
 --project_name unet_full_imagenet_128_256_eval \
 --model_128_weights $HOME2/wtvae/results/unet_128_run2/iwt_model_128_itr197000.pth \
---model_256_weights $HOME2/wtvae/resuts/unet_256_run2/iwt_model_256_itr107000.pth
+--model_256_weights $HOME2/wtvae/results/unet_256_run2/iwt_model_256_itr107000.pth
 
 echo "Run completed at:- "
 date
