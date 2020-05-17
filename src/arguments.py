@@ -49,9 +49,11 @@ def parse_args():
     parser.add_argument('--sample_file', type=str, default='',
                         help='Path to samples from BigGAN(default: %(default)s)')      
 
-    # Model weights for 128 (when training 256)
+    # Model weights for 128 and 256
     parser.add_argument('--model_128_weights', type=str, default='',
                         help='Path to 128 model weights(default: %(default)s)')
+    parser.add_argument('--model_128_weights', type=str, default='',
+                        help='Path to 256 model weights(default: %(default)s)')
 
     
     args = parser.parse_args()
