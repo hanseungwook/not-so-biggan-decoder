@@ -269,7 +269,6 @@ def eval_biggan_unet_128_256(model_128, model_256, data_loader, args):
             recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)   
             recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1)
             
-            Y_64 = wt(data, filters, levels=3)[:, :, :64, :64]
             recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
 
             # Collate all masks concatenated by channel to an image (slice up and put into a square)
