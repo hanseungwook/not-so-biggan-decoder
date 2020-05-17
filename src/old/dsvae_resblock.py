@@ -98,3 +98,30 @@ class ResNetLayer(nn.Module):
         x = self.blocks(x)
         x = self.out(x)
         return x
+
+class ResNetLayer_NTails(nn.Module):
+    """
+    A ResNet layer composed by `n` blocks stacked one after the other
+    """
+    def __init__(self, in_channels, hidden_channels, out_channels, n_tails, block=ResNetBasicBlock, n=1, *args, **kwargs):
+        super().__init__()
+        # 'We perform downsampling directly by convolutional layers that have a stride of 2.'
+        downsampling = 1
+        self.blocks = nn.Sequential(
+            block(in_channels, hidden_channels, *args, **kwargs, downsampling=1),
+            *[block(hidden_channels * block.expansion, 
+                    hidden_channels, downsampling=1, *args, **kwargs) for _ in range(n - 1)]
+        )
+        self.outc_modules = nn.ModuleList()
+        for i in range(n_tails):
+            self.outc_modules.append(conv_nobn(hidden_channels, out_channels, conv=conv3x3, bias=False, stride=downsampling))
+
+    def forward(self, x):
+        x = self.blocks(x)
+        x_out = torch.empty(0, device=x.device)
+
+        for layer in self.outc_modules:
+            cur_x_out = layer(x)
+            x_out = torch.cat((x_out, cur_x_out), dim=1)
+        
+        return x_out
