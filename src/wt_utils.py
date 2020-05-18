@@ -202,6 +202,19 @@ def create_patches_from_grid(data):
     return torch.stack((tl, tr, bl, br), dim=1)
 
 
+# From a square/grid, collate into channels (4 patches)
+def collate_channels_from_grid(data):
+    h = data.shape[2]
+    w = data.shape[3]
+    assert(h == w)
+    
+    tl = data[:, :, :h//2, :w//2]    
+    tr = data[:, :, :h//2, w//2:]
+    bl = data[:, :, h//2:, :w//2]
+    br = data[:, :, h//2:, w//2:]
+    
+    return torch.cat((tl, tr, bl, br), dim=1)
+
 # Splits 16 patches from a square/grid
 def create_patches_from_grid_16(data):
     h = data.shape[2]
