@@ -716,9 +716,9 @@ def train_unet256_real(epoch, state_dict, model, optimizer, train_loader, valid_
         real_mask_128_tr, real_mask_128_bl, real_mask_128_br = get_3masks(Y[:, :, :128, :128], 64)
 
         # Divide into 32 x 32 patches
-        real_mask_128_tr = collate_channels_from_grid(real_mask_tr)
-        real_mask_128_bl = collate_channels_from_grid(real_mask_bl)
-        real_mask_128_br = collate_channels_from_grid(real_mask_br)
+        real_mask_128_tr = collate_channels_from_grid(real_mask_128_tr)
+        real_mask_128_bl = collate_channels_from_grid(real_mask_128_bl)
+        real_mask_128_br = collate_channels_from_grid(real_mask_128_br)
 
         # Get real 3rd level masks (256 level)
         real_mask_tr, real_mask_bl, real_mask_br = get_3masks(Y, args.mask_dim)
@@ -831,9 +831,9 @@ def train_unet256_real(epoch, state_dict, model, optimizer, train_loader, valid_
                     real_mask_128_tr, real_mask_128_bl, real_mask_128_br = get_3masks(Y[:, :, :128, :128], 64)
 
                     # Divide into 32 x 32 patches
-                    real_mask_128_tr = collate_channels_from_grid(real_mask_tr)
-                    real_mask_128_bl = collate_channels_from_grid(real_mask_bl)
-                    real_mask_128_br = collate_channels_from_grid(real_mask_br)
+                    real_mask_128_tr = collate_channels_from_grid(real_mask_128_tr)
+                    real_mask_128_bl = collate_channels_from_grid(real_mask_128_bl)
+                    real_mask_128_br = collate_channels_from_grid(real_mask_128_br)
 
                     # Get real 3rd level masks (256 level)
                     real_mask_tr, real_mask_bl, real_mask_br = get_3masks(Y, args.mask_dim)

@@ -11,7 +11,7 @@ from datasets import ImagenetDataAugDataset
 from wt_utils import wt, create_filters, load_checkpoint
 from arguments import parse_args
 from dsvae_resblock import ResNetLayer_NTails
-from train import train_unet_256_real
+from train import train_unet256_real
 from logger import Logger
 
 if __name__ == "__main__":
@@ -70,4 +70,4 @@ if __name__ == "__main__":
         state_dict['itr'] = args.checkpoint
 
     for epoch in range(args.num_epochs):
-        train_unet_256_real(epoch, state_dict, model, optimizer, train_loader, valid_loader, args, logger)
+        train_unet256_real(epoch, state_dict, model, optimizer, train_loader, valid_loader, args, logger)
