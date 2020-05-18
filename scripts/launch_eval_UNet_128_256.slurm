@@ -66,7 +66,7 @@ date
 python src/eval_unet_128_256.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
 --batch_size 100 --image_size 256 \
---output_dir $HOME2/wtvae/results/unet_128_256_eval/ \
+--output_dir $HOME2/wtvae/results/unet_128_256_eval_1/ \
 --project_name unet_full_imagenet_128_256_eval \
 --model_128_weights /nobackup/users/swhan/wtvae/results/unet_128_run2/iwt_model_128_itr197000.pth \
 --model_256_weights $HOME2/wtvae/results/unet_256/iwt_model_256_itr216000.pth
