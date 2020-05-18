@@ -70,7 +70,7 @@ if __name__ == "__main__":
     model_128 = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
     model_128 = load_weights(model_128, args.model_128_weights, args)
     
-    model_256 = UNet_NTail_128_Mod1(n_channels=48, n_classes=3, n_tails=48, bilinear=True).to(args.device)
+    model_256 = UNet_NTail_128_Mod(n_channels=48, n_classes=3, n_tails=48, bilinear=True).to(args.device)
     model_256 = load_weights(model_256, args.model_256_weights, args)
 
     eval_unet_128_256(model_128, model_256, train_loader, 'train', args)
