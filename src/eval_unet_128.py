@@ -70,7 +70,7 @@ if __name__ == "__main__":
     
     # Load weights
     print('Loading weights')
-    model = load_weights(model, args.checkpoint_path, args)
+    model = load_weights(model, args.model_128_weights, args)
 
     eval_unet128(model, train_loader, 'train', args)
     eval_unet128(model, valid_loader, 'valid', args)

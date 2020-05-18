@@ -57,11 +57,11 @@ if __name__ == "__main__":
                                                pin_memory=True, drop_last=True)
 
     # Model and optimizer
-    model = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
+    model = UNet_NTail_128_Mod(n_channels=48, n_classes=3, n_tails=48, bilinear=True).to(args.device)
     
     # Load weights
     print('Loading weights')
-    model = load_weights(model, args.checkpoint_path, args)
+    model = load_weights(model, args.model_256_weights, args)
 
     eval_unet256(model, train_loader, 'train', args)
     eval_unet256(model, valid_loader, 'valid', args)

@@ -18,9 +18,11 @@ def eval_unet128(model, data_loader, data_type, args):
     # Create hdf5 dataset
     f1 = h5py.File(args.output_dir + data_type + '/recon_img.hdf5', 'w')
     f2 = h5py.File(args.output_dir + data_type + '/real_img.hdf5', 'w')
+    f3 = h5py.File(args.output_dir + data_type + '/low_64_img.hdf5', 'w')
 
     recon_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
     real_dataset = f2.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    low_dataset = f3.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
@@ -64,10 +66,15 @@ def eval_unet128(model, data_loader, data_type, args):
         recon_mask_padded[:, :, :64, :64] = Y_64
         recon_img = iwt(recon_mask_padded, inv_filters, levels=3)
     
+        # Reconstructed image with only 128x128
+        Y_64_low = zero_pad(Y_64, 256, args.device)
+        Y_64_low = iwt(Y_64_low, inv_filters, levels=3)    
+        
         # Save image into hdf5
         batch_size = recon_img.shape[0]
         recon_dataset[counter: counter+batch_size] = recon_img.cpu()
         real_dataset[counter: counter+batch_size] = data.cpu()
+        low_dataset[counter: counter+batch_size] = Y_64_low.cpu()
         counter += batch_size
 
         # Save images
@@ -80,6 +87,7 @@ def eval_unet128(model, data_loader, data_type, args):
 
     f1.close()
     f2.close()
+    f3.close()
 
 
 # Run model through dataloader and save all images
@@ -163,6 +171,7 @@ def eval_unet256(model, data_loader, data_type, args):
 
     f1.close()
     f2.close()
+    f3.close()
 
 # Creating HDF5 dataset of real and reconstructed, given real 64x64 TL patch
 def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
