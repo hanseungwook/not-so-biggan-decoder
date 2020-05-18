@@ -10,7 +10,7 @@ from datasets import ImagenetDataAugDataset
 from wt_utils import wt, create_filters, load_checkpoint, load_weights
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod
-from eval import eval_unet128
+from eval import eval_unet256
 from logger import Logger
 
 if __name__ == "__main__":
@@ -41,15 +41,6 @@ if __name__ == "__main__":
                             transforms.Resize(args.image_size),
                             transforms.ToTensor()
                         ])
-    
-    # Image augmentation transforms + dataset
-    # transform = [transforms.ColorJitter(0.5, 0.5, 0.5, 0),
-    #             transforms.RandomAffine(180),
-    #             transforms.RandomErasing(p=1, value=1)]
-
-    # train_dataset = ImagenetDataAugDataset(root_dir=args.train_dir, num_wt=3, mask_dim=args.mask_dim, wt=wt, 
-    #                                        filters=filters_cpu, default_transform=default_transform,
-    #                                        transform=transform, p=0.1)
 
     # Create train dataset
     train_dataset = dset.ImageFolder(root=args.train_dir, transform=default_transform)
@@ -69,9 +60,8 @@ if __name__ == "__main__":
     model = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
     
     # Load weights
-    if args.resume:
-        print('Loading weights')
-        model = load_weights(model, args.checkpoint_path, args)
+    print('Loading weights')
+    model = load_weights(model, args.checkpoint_path, args)
 
     eval_unet256(model, train_loader, 'train', args)
     eval_unet256(model, valid_loader, 'valid', args)

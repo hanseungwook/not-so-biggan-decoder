@@ -5,9 +5,9 @@
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err
 
-#SBATCH -J unet_256
-#SBATCH -o unet_256_%j.out
-#SBATCH -e unet_256_%j.err
+#SBATCH -J eval_unet_128
+#SBATCH -o eval_unet_128_%j.out
+#SBATCH -e eval_unet_128_%j.err
 
 #SBATCH --mail-user=seungwook.han@ibm.com
 #SBATCH --mail-type=ALL
@@ -63,13 +63,12 @@ date
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err 
 
-python src/train_unet_256.py \
+python src/eval_unet_128.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
---batch_size 64 --image_size 256 --mask_dim 128 --lr 1e-4 \
---num_epochs 100 --output_dir $HOME2/wtvae/results/unet_256/ \
---project_name unet_full_imagenet_256 \
---save_every 500 --valid_every 1000 --log_every 50 \
---model_256_weights /nobackup/users/swhan/wtvae/results/unet_256/iwt_model_256_itr220500.pth \
+--batch_size 100 --image_size 256 --mask_dim 64 \
+--output_dir $HOME2/wtvae/results/unet_128_eval/ \
+--project_name unet_full_imagenet_128_eval \
+--resume --checkpoint_path $HOME2/wtvae/results/unet_128_run2/iwt_model_128_itr197000.pth
 
 echo "Run completed at:- "
 date

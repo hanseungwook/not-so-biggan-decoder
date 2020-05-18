@@ -69,9 +69,8 @@ if __name__ == "__main__":
     model = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
     
     # Load weights
-    if args.resume:
-        print('Loading weights')
-        model = load_weights(model, args.checkpoint_path, args)
+    print('Loading weights')
+    model = load_weights(model, args.checkpoint_path, args)
 
     eval_unet128(model, train_loader, 'train', args)
     eval_unet128(model, valid_loader, 'valid', args)
