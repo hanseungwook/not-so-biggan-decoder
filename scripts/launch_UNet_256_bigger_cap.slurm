@@ -63,7 +63,7 @@ date
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err 
 
-python src/train_unet_256.py \
+python src/train_unet_256_bigger_cap.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
 --batch_size 64 --image_size 256 --mask_dim 128 --lr 1e-4 \
 --num_epochs 100 --output_dir $HOME2/wtvae/results/unet_256/ \
