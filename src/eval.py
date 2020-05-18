@@ -139,7 +139,7 @@ def eval_unet256(model, data_loader, data_type, args):
 
             Y_real = wt(data, filters, levels=3)
             Y_128 = Y_real[:, :, :128, :128]
-            zeros = torch.zeros(real_mask_tr.shape)
+            zeros = torch.zeros(recon_mask_256_tr.shape)
 
             # Collate all masks concatenated by channel to an image (slice up and put into a square)
             recon_mask_256_tr_img = collate_16_channels_to_img(recon_mask_256_tr, args.device)
