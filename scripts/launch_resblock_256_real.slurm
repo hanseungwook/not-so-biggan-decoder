@@ -65,7 +65,7 @@ date
 
 python src/train_resblock_256_real.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
---batch_size 128 --image_size 256 --mask_dim 64 --lr 1e-4 \
+--batch_size 64 --image_size 256 --mask_dim 128 --lr 1e-4 \
 --num_epochs 100 --output_dir $HOME2/wtvae/results/resblock_256_real/ \
 --project_name resblock_full_imagenet_256_real \
 --save_every 500 --valid_every 1000 --log_every 50
