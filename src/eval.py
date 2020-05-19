@@ -196,10 +196,13 @@ def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
 
             data = data.to(args.device)
         
-            Y = wt_256_3quads(data, filters, levels=3)
+            # Y = wt_256_3quads(data, filters, levels=3)
 
-            # Get real 1st level masks
-            Y_64 = Y[:, :, :64, :64]
+            # # Get real 1st level masks
+            # Y_64 = Y[:, :, :64, :64]
+            Y = F.interpolate(data, 64, mode='bicubic')
+            Y = wt(Y, filters, levels=1)
+
             real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br = get_4masks(Y_64, 32)
             Y_64_patches = torch.cat((real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br), dim=1)
 
