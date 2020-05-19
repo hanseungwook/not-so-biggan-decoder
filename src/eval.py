@@ -513,7 +513,7 @@ def eval_tl(data_loader, data_type, args):
         Y =wt(data, filters, levels=3)
 
         # Get real 1st level masks
-        Y_64 = Y[:, :, :64, :64]
+        Y_64 = iwt(Y[:, :, :64, :64], inv_filters, levels=1)
         
         # Y_64_padded = zero_pad(Y_64, 256, args.device)
         # Y_64_padded = iwt(Y_64_padded, inv_filters, levels=3)
