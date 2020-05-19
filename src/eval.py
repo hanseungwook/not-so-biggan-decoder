@@ -203,7 +203,7 @@ def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
             Y = F.interpolate(data, 64, mode='bicubic')
             Y = wt(Y, filters, levels=1)
 
-            real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br = get_4masks(Y_64, 32)
+            real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br = get_4masks(Y, 32)
             Y_64_patches = torch.cat((real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br), dim=1)
 
             # Run through unet 128
@@ -225,8 +225,8 @@ def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
             recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)   
             recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1)
             
-            Y_64 = wt(data, filters, levels=3)[:, :, :64, :64]
-            recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
+            # Y_64 = wt(data, filters, levels=3)[:, :, :64, :64]
+            recon_mask_128_iwt = collate_patches_to_img(Y, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
 
             # Collate all masks concatenated by channel to an image (slice up and put into a square)
             recon_mask_256_tr_img = collate_16_channels_to_img(recon_mask_256_tr, args.device)
