@@ -393,7 +393,7 @@ def eval_biggan_unet_128_256(model_128, model_256, data_loader, args):
             tl_dataset[counter: counter+batch_size] = iwt(Y_64, inv_filters, levels=1).cpu()
 
             recon_mask_256_iwt[:, :, :64, :64].fill_(0)
-            recon_masks_dataset[counter: counter+batch_size] = recon_mask_256_iwt
+            recon_masks_dataset[counter: counter+batch_size] = recon_mask_256_iwt.cpu()
             counter += batch_size
 
     f1.close()
