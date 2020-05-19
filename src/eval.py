@@ -322,10 +322,14 @@ def eval_biggan_unet_128_256(model_128, model_256, data_loader, args):
 
     # Create hdf5 dataset
     f1 = h5py.File(args.output_dir + '/recon_img.hdf5', 'w')
-    f2 = h5py.File(args.output_dir + '/sample_img.hdf5', 'w')
+    f2 = h5py.File(args.output_dir + '/low_img.hdf5', 'w')
+    f3 = h5py.File(args.output_dir + '/recon_masks.hdf5', 'w')
+    f4 = h5py.File(args.output_dir + '/tl_64.hdf5', 'w')
 
     recon_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
-    sample_dataset = f2.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    low_dataset = f2.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    recon_masks_dataset = f3.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    tl_dataset = f4.create_dataset('data', shape=(50000, 3, 64, 64), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
@@ -378,17 +382,24 @@ def eval_biggan_unet_128_256(model_128, model_256, data_loader, args):
             recon_mask_256_iwt[:, :, :128, :128] = recon_mask_128_iwt
             recon_img = iwt(recon_mask_256_iwt, inv_filters, levels=3)
 
-            sample_padded = zero_pad(Y_64, 256, args.device)
-            sample_img = iwt(sample_padded, inv_filters, levels=3)
+            low_padded = zero_pad(Y_64, 256, args.device)
+            low_img = iwt(low_padded, inv_filters, levels=3)
         
             # Save image into hdf5
             batch_size = recon_img.shape[0]
+
             recon_dataset[counter: counter+batch_size] = recon_img.cpu()
-            sample_dataset[counter: counter+batch_size] = sample_img.cpu()
+            low_dataset[counter: counter+batch_size] = low_img.cpu()
+            tl_dataset[counter: counter+batch_size] = iwt(Y_64, inv_filters, levels=1).cpu()
+
+            recon_mask_256_iwt[:, :, :64, :64].fill_(0)
+            recon_masks_dataset[counter: counter+batch_size] = recon_mask_256_iwt
             counter += batch_size
 
     f1.close()
     f2.close()
+    f3.close()
+    f4.close()
 
 
 # Creating HDF5 dataset of real and reconstructed, given real 64x64 TL patch
@@ -488,6 +499,11 @@ def eval_pretrained_biggan_unet_128_256(model_128, model_256, data_loader, args)
 
     f1.close()
     f2.close()
+    f3.close()
+    f4.close()
+    f5.close()
+    f6.close()
+
 
 
 # Run model through dataloader and save all images
