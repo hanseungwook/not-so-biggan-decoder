@@ -497,11 +497,11 @@ def eval_tl(data_loader, data_type, args):
     inv_filters = create_inv_filters(device=args.device)
 
     # Create hdf5 dataset
-    f1 = h5py.File(args.output_dir + data_type + '/recon_img.hdf5', 'w')
-    f2 = h5py.File(args.output_dir + data_type + '/real_img.hdf5', 'w')
+    f1 = h5py.File(args.output_dir + data_type + '/real_tl_img.hdf5', 'w')
+    # f2 = h5py.File(args.output_dir + data_type + '/real_img.hdf5', 'w')
 
-    recon_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
-    real_dataset = f2.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    # recon_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    real_dataset = f1.create_dataset('data', shape=(50000, 3, 64, 64), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
@@ -515,13 +515,13 @@ def eval_tl(data_loader, data_type, args):
         # Get real 1st level masks
         Y_64 = Y[:, :, :64, :64]
         
-        Y_64_padded = zero_pad(Y_64, 256, args.device)
-        Y_64_padded = iwt(Y_64_padded, inv_filters, levels=3)
+        # Y_64_padded = zero_pad(Y_64, 256, args.device)
+        # Y_64_padded = iwt(Y_64_padded, inv_filters, levels=3)
     
         # Save image into hdf5
-        batch_size = Y_64_padded.shape[0]
-        recon_dataset[counter: counter+batch_size] = Y_64_padded.cpu()
-        real_dataset[counter: counter+batch_size] = data.cpu()
+        batch_size = Y_64.shape[0]
+        # recon_dataset[counter: counter+batch_size] = Y_64.cpu()
+        real_dataset[counter: counter+batch_size] = Y_64.cpu()
         counter += batch_size
 
         # Save images
@@ -533,4 +533,4 @@ def eval_tl(data_loader, data_type, args):
         #     counter += 1
 
     f1.close()
-    f2.close()
+    # f2.close()
