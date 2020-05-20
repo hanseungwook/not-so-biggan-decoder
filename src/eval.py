@@ -520,10 +520,11 @@ def eval_tl(data_loader, data_type, args):
 
     # Create hdf5 dataset
     f1 = h5py.File(args.output_dir + data_type + '/real_tl_img.hdf5', 'w')
-    # f2 = h5py.File(args.output_dir + data_type + '/real_img.hdf5', 'w')
+    f2 = h5py.File(args.output_dir + data_type + '/resized_img.hdf5', 'w')
 
     # recon_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
     real_dataset = f1.create_dataset('data', shape=(50000, 3, 64, 64), dtype=np.float32, fillvalue=0)
+    resized_dataset = f2.create_dataset('data', shape=(50000, 3, 64, 64), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
@@ -531,8 +532,10 @@ def eval_tl(data_loader, data_type, args):
         if counter >= 50000:
             break
         data = data.to(args.device)
+
+        resized = F.interpolate(data, 64, mode='bilinear')
     
-        Y =wt(data, filters, levels=3)
+        Y = wt(data, filters, levels=3)
 
         # Get real 1st level masks
         Y_64 = iwt(Y[:, :, :64, :64], inv_filters, levels=1)
@@ -544,6 +547,7 @@ def eval_tl(data_loader, data_type, args):
         batch_size = Y_64.shape[0]
         # recon_dataset[counter: counter+batch_size] = Y_64.cpu()
         real_dataset[counter: counter+batch_size] = Y_64.cpu()
+        resized_dataset[counter: counter+batch_size] = resized.cpu()
         counter += batch_size
 
         # Save images
@@ -555,4 +559,4 @@ def eval_tl(data_loader, data_type, args):
         #     counter += 1
 
     f1.close()
-    # f2.close()
+    f2.close()
