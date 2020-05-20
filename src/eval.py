@@ -418,6 +418,7 @@ def eval_pretrained_biggan_unet_128_256(model_128, model_256, data_loader, args)
     f4 = h5py.File(args.output_dir + '/recon_masks.hdf5', 'w')
     f5 = h5py.File(args.output_dir + '/real_masks.hdf5', 'w')
     f6 = h5py.File(args.output_dir + '/tl_64.hdf5', 'w')
+    f7 = h5py.File(args.output_dir + '/resized_64.hdf5', 'w')
 
     recon_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
     sample_dataset = f2.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
@@ -425,6 +426,7 @@ def eval_pretrained_biggan_unet_128_256(model_128, model_256, data_loader, args)
     recon_masks_dataset = f4.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
     real_masks_dataset = f5.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
     tl_dataset = f6.create_dataset('data', shape=(50000, 3, 64, 64), dtype=np.float32, fillvalue=0)
+    resized_dataset = f7.create_dataset('data', shape=(50000, 3, 64, 64), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
@@ -434,6 +436,8 @@ def eval_pretrained_biggan_unet_128_256(model_128, model_256, data_loader, args)
                 break
 
             data = data.to(args.device)
+
+            resized = F.interpolate(data, 64, mode='bilinear')
         
             Y = wt(data, filters, levels=3)
             Y_64 = Y[:, :, :64, :64]
@@ -494,6 +498,7 @@ def eval_pretrained_biggan_unet_128_256(model_128, model_256, data_loader, args)
             Y[:, :, :64, :64].fill_(0)
             recon_masks_dataset[counter: counter+batch_size] = recon_mask_256_iwt.cpu()
             real_masks_dataset[counter: counter+batch_size] = Y.cpu()
+            resized_dataset[counter: counter+batch_size] = resized.cpu()
             
             counter += batch_size
 
@@ -503,6 +508,7 @@ def eval_pretrained_biggan_unet_128_256(model_128, model_256, data_loader, args)
     f4.close()
     f5.close()
     f6.close()
+    f7.close()
 
 
 
