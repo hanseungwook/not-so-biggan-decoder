@@ -67,8 +67,8 @@ python src/eval_biggan_unet_128_256.py \
 --batch_size 100 --image_size 256 \
 --output_dir $HOME2/wtvae/results/biggan_unet_128_256_eval_z1_run4/ \
 --project_name biggan_unet_imagenet_128_256_eval \
---model_128_weights $HOME2/wtvae/results/unet_128_run2/iwt_model_128_itr197000.pth \
---model_256_weights $HOME2/wtvae/results/unet_256_run4/iwt_model_256_itr220500.pth \
+--model_128_weights $HOME2/wtvae/results/unet_128_run1_3/iwt_model_128_itr197000.pth \
+--model_256_weights $HOME2/wtvae/results/unet_256_run1_4/iwt_model_256_itr220500.pth \
 --sample_file $HOME2/BigGAN-PyTorch/results_deep_run4_in/samples/BigGAN_WT64_BigGANdeep_seed0_Gch128_Dch128_Gd2_Dd2_bs256_nDa2_nGa2_Glr1.0e-04_Dlr4.0e-04_Gnlinplace_relu_Dnlinplace_relu_Ginitortho_Dinitortho_Gattn32_Dattn32_Gshared_hier_ema/samples.npz
 
 
