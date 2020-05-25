@@ -68,7 +68,7 @@ python src/train_unet_256_real.py \
 --batch_size 64 --image_size 256 --mask_dim 128 --lr 1e-4 \
 --num_epochs 100 --output_dir $HOME2/wtvae/results/unet_256_real/ \
 --project_name unet_full_imagenet_256_real \
---save_every 500 --valid_every 1000 --log_every 50
+--save_every 2000 --valid_every 2000 --log_every 50
 
 echo "Run completed at:- "
 date
