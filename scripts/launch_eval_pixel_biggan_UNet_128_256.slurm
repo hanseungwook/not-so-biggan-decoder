@@ -63,7 +63,7 @@ date
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err 
 
-python src/eval_biggan_unet_128_256.py \
+python src/eval_pixel_biggan_unet_128_256.py \
 --batch_size 100 --image_size 256 \
 --output_dir $HOME2/wtvae/results/pixel_biggan_unet_128_256_eval_z1/ \
 --project_name unet_full_imagenet_128_256_eval \
