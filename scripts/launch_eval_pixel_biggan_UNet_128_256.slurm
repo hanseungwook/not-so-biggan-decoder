@@ -5,9 +5,9 @@
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err
 
-#SBATCH -J eval_pixel_biggan
-#SBATCH -o eval_pixel_biggan_%j.out
-#SBATCH -e eval_pixel_biggan_%j.err
+#SBATCH -J eval_pretrained_biggan
+#SBATCH -o eval_pretrained_biggan_%j.out
+#SBATCH -e eval_pretrained_biggan_%j.err
 
 #SBATCH --mail-user=churwitz@mit.edu
 #SBATCH --mail-type=ALL
@@ -63,7 +63,7 @@ date
 ###  cancel jobs using command 'scancel <jobnum>'
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err 
 
-python src/eval_pixel_biggan_unet_128_256.py \
+python src/eval_pixel_pretrained_biggan_unet_128_256.py \
 --batch_size 100 --image_size 256 \
 --output_dir $HOME2/wtvae/results/pixel_biggan_unet_128_256_eval_z1/ \
 --project_name unet_full_imagenet_128_256_eval \
