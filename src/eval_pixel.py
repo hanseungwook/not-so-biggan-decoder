@@ -19,7 +19,7 @@ def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
     f2 = h5py.File(args.output_dir + data_type + '/real_img.hdf5', 'w')
 
     recon_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
-    real_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
+    real_dataset = f2.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
