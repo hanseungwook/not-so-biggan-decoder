@@ -64,7 +64,7 @@ date
 ###  outputs are in  multi_torch_<jobnum>.out and multi_torch_<jobnum>.err 
 
 python src/calc_nll.py \
---path $HOME2/wtvae/results/unet_128_256_real_eval_day1/valid/recon_img.hdf5 $HOME2/wtvae/results/unet_128_256_real_eval_day1/valid/real_img.hdf5
+$HOME2/wtvae/results/unet_128_256_real_eval_day1/valid/recon_img.hdf5 $HOME2/wtvae/results/unet_128_256_real_eval_day1/valid/real_img.hdf5
 
 echo "Run completed at:- "
 date
