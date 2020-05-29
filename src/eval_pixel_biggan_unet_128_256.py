@@ -4,12 +4,10 @@ import torchvision.transforms as transforms
 import wandb
 
 from arguments_eval import parse_args
-from train import train
 
 import sys
 import os
 sys.path.insert(0, 'Pytorch-UNet')
-sys.path.insert(0, 'models')
 import numpy as np
 import matplotlib.pyplot as plt
 import torchvision.datasets as dset
