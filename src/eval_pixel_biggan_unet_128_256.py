@@ -3,8 +3,6 @@ import torch
 import torchvision.transforms as transforms
 import wandb
 
-from models import VQVAE
-
 from arguments_eval import parse_args
 from train import train
 
