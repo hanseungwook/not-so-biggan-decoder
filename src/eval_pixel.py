@@ -53,7 +53,7 @@ def eval_biggan_unet_128_256(model_128, model_256, data_loader, args):
     f1.close()
     f2.close()
 
-# Creating HDF5 dataset of real and reconstructed, given real 64x64 TL patch
+# Creating HDF5 dataset of real and reconstructed, given sample from pretrained 256x256
 def eval_pretrained_biggan_unet_128_256(model_128, model_256, data_loader, args):
     model_128.eval()
     model_256.eval()
@@ -64,7 +64,7 @@ def eval_pretrained_biggan_unet_128_256(model_128, model_256, data_loader, args)
     f2 = h5py.File(args.output_dir + '/real_sample.hdf5', 'w')
 
     recon_dataset = f1.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
-    real_sample_dataset = f2.create_dataset('data', shape=(50000, 3, 64, 64), dtype=np.float32, fillvalue=0)
+    real_sample_dataset = f2.create_dataset('data', shape=(50000, 3, 256, 256), dtype=np.float32, fillvalue=0)
 
     counter = 0
 
