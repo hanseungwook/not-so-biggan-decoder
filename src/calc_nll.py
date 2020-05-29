@@ -11,7 +11,7 @@ def calculate_nll(paths):
     t1 = np.array(t1)
 
     f2 = h5py.File(paths[1], 'r')
-    t2 = f1.get('data')
+    t2 = f2.get('data')
     t2 = np.array(t2)
 
     return np.square(np.subtract(t1, t2)).mean()
