@@ -22,7 +22,7 @@ def eval_unet_128_256(model_128, model_256, data_loader, data_type, args):
     counter = 0
 
     with torch.no_grad():
-        for data in tqdm(data_loader):
+        for data, _ in tqdm(data_loader):
             if counter >= 50000:
                 break
             
