@@ -44,7 +44,7 @@ if __name__ == "__main__":
     dataset = SampleDataset(file_path=args.sample_file)
         
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
-                                               shuffle=True, num_workers=args.workers,
+                                               shuffle=False, num_workers=args.workers,
                                                pin_memory=True, drop_last=True)
 
     print('Loading UNet 128 and 256 weights')
