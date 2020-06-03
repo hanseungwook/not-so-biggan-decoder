@@ -32,7 +32,7 @@ python src/train_unet_256_real.py \
 --save_every 2000 --valid_every 2000 --log_every 50 \
 ```
 
-**Reconstructions using real dataset 64x64 TL patch+ first level decoder + second level decoder**
+**Reconstructions using real dataset 64x64 TL patch + first level decoder + second level decoder**
 ```bash
 python src/eval_unet_128_256.py \
 --train_dir {Path to ImageNet train dataset} --valid_dir {Path to ImageNet valid dataset} \
