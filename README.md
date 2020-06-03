@@ -1,7 +1,7 @@
 # not-so-biggan decoder
 
 ## Models
-Modified UNet models are all placed within the submodule Pytorch-UNet. You may need to run the following commands in order to pull from the submodule codebase.
+Modified UNet-based decoder models are all placed within the submodule Pytorch-UNet. You may need to run the following commands in order to pull from the submodule codebase.
 
 ```bash
 git submodule init
