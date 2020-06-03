@@ -8,9 +8,9 @@ git submodule init
 git submodule update
 ```
 
-## Example scripts
+## Training and evaluation scripts
 
-Here are the example scripts to run training for the two levels of decoder and for reconstructing using the 64x64 TL patch either from the real dataset or our not-so-biggan sampler.
+Here are the example scripts to run training for the two levels of decoder and for reconstructing using the 64x64 TL patch either from the real dataset or our not-so-biggan sampler. All training utilizes only 1 x V100 16GB GPU, if available.
 
 **Training first level UNet-based decoder (64 => 128)**
 ```bash
