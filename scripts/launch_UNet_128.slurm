@@ -69,7 +69,7 @@ python src/train_unet_128.py \
 --num_epochs 100 --output_dir $HOME2/wtvae/results/unet_128/ \
 --project_name unet_full_imagenet_128 \
 --save_every 500 --valid_every 1000 --log_every 50 \
---resume --checkpoint 197000 \
+# --resume --checkpoint 197000 \
 
 echo "Run completed at:- "
 date
