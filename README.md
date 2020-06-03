@@ -8,6 +8,13 @@ git submodule init
 git submodule update
 ```
 
+## Environment setup
+The conda environment that was used for this repository can be found under `requirements.yml` and can be installed with the following command:
+
+```bash
+conda env create -f requirements.yml
+```
+
 ## Training and evaluation scripts
 
 Here are the example scripts to run training for the two levels of decoder and for reconstructing using the 64x64 TL patch either from the real dataset or our not-so-biggan sampler. All training utilizes only 1 x V100 16GB GPU, if available.
@@ -61,3 +68,5 @@ The actual scripts used to train the models (with the Slurm workload manager) ar
 ## Requirements
 
 Under `requirements.yml` for conda environment setup
+
+## TEST
