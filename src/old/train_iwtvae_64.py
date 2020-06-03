@@ -4,21 +4,28 @@ from torch import optim
 from torch.utils.data import DataLoader, Subset
 from torchvision.utils import save_image
 import numpy as np
-from vae_models import IWTVAE_64, IWTVAE_64_Mask, WTVAE_64
+from vae_models import WTVAE_64, IWTVAE_64, IWTVAE_64_Mask, IWTVAE_64_Bottleneck, IWTVAE_64_FreezeIWT
 from wt_datasets import CelebaDataset
 from trainer import train_iwtvae
 from arguments import args_parse
-from utils.processing import zero_patches
+from utils.utils import zero_patches, set_seed, save_plot
+import matplotlib.pyplot as plt
 import logging
 import pywt
 from random import sample
 
 
 if __name__ == "__main__":
+    # Accelerate training since fixed input sizes
+    torch.backends.cudnn.benchmark = True 
+
     logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(message)s')
     LOGGER = logging.getLogger(__name__)
 
     args = args_parse()
+
+    # Set seed
+    set_seed(args.seed)
 
     dataset_dir = os.path.join(args.root_dir, 'celeba64')
     train_dataset = CelebaDataset(dataset_dir, os.listdir(dataset_dir), WT=False)
@@ -32,17 +39,26 @@ if __name__ == "__main__":
         devices = ['cpu', 'cpu']
 
     if args.mask:
-        iwt_model = IWTVAE_64_Mask(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
-    elif args.bottleneck > 0:
-        iwt_model = IWTVAE_64(z_dim=args.z_dim, bottleneck_dim=args.bottleneck, upsampling='bottleneck', num_upsampling=args.num_upsampling, reuse=args.reuse)
+        iwt_model = IWTVAE_64_Mask(z_dim=args.z_dim, num_upsampling=args.num_upsampling, reuse=args.reuse)
+        LOGGER.info('Running mask model')
+    elif args.bottleneck_dim > 0:
+        iwt_model = IWTVAE_64_Bottleneck(z_dim=args.z_dim, bottleneck_dim=args.bottleneck_dim)
+        LOGGER.info('Running bottleneck model with dim = {}'.format(args.bottleneck_dim))
+    elif args.freeze_iwt:
+        iwt_model = IWTVAE_64_FreezeIWT(z_dim=args.z_dim, bottleneck_dim=args.bottleneck_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
+        LOGGER.info('Running freeze IWT model with upsampling = {}'.format(args.upsampling))
     else:
         iwt_model = IWTVAE_64(z_dim=args.z_dim, upsampling=args.upsampling, num_upsampling=args.num_upsampling, reuse=args.reuse)
+        LOGGER.info('Running original model with upsampling = {}'.format(args.upsampling))
+    
+    if args.zero:
+        LOGGER.info('Zero-ing out all patches other than 1st')
 
     iwt_model = iwt_model.to(devices[0])
     iwt_model.set_devices(devices)
 
     wt_model = WTVAE_64(z_dim=args.z_dim, num_wt=args.num_wt, unflatten=args.unflatten)
-    wt_model.load_state_dict(torch.load(args.wtvae_model))
+    wt_model.load_state_dict(torch.load(args.wt_model))
     wt_model.set_device(devices[1])
     wt_model.to(devices[1])
     wt_model.eval()
@@ -72,9 +88,11 @@ if __name__ == "__main__":
                 
                 z_sample = torch.randn(data.shape[0],100).to(devices[0])
                 
-                Y = wt_model(data1)[0].to(devices[0])
+                Y = wt_model(data1)[0]
                 if args.zero:
                     Y = zero_patches(Y)
+                Y = Y.to(devices[0])
+    
                 mu, var = iwt_model.encode(data0, Y)
                 x_hat = iwt_model.decode(Y, mu)
                 x_sample = iwt_model.decode(Y, z_sample)
@@ -86,7 +104,12 @@ if __name__ == "__main__":
     
         torch.save(iwt_model.state_dict(), model_dir + '/iwtvae_epoch{}.pth'.format(epoch))
     
+    # Save train losses and plot
     np.save(model_dir+'/train_losses.npy', train_losses)
+    save_plot(train_losses, img_output_dir + '/train_loss.png')
+    
+    LOGGER.info('IWT Model parameters: {}'.format(sum(x.numel() for x in iwt_model.parameters())))
+
     
     
     
