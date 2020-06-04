@@ -1,7 +1,7 @@
 # not-so-biggan decoder
 
 ## not-so-biggan sampler
-All models, training, and evaluation code are located here: https://anonymous.4open.science/r/5c1049ba-109f-4a12-9d74-9a4a5130ce97/.
+All models, training, and evaluation code for the not-so-biggan sampler are located here: https://anonymous.4open.science/r/5c1049ba-109f-4a12-9d74-9a4a5130ce97/.
 
 ## Models
 Modified UNet-based decoder models are all placed within the submodule Pytorch-UNet. You may need to run the following commands in order to pull from the submodule codebase.
