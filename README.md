@@ -1,5 +1,8 @@
 # not-so-biggan decoder
 
+## not-so-biggan sampler
+All models, training, and evaluation code are located here: https://anonymous.4open.science/r/5c1049ba-109f-4a12-9d74-9a4a5130ce97/.
+
 ## Models
 Modified UNet-based decoder models are all placed within the submodule Pytorch-UNet. You may need to run the following commands in order to pull from the submodule codebase.
 
@@ -64,9 +67,10 @@ python src/eval_biggan_unet_128_256.py \
 ## Slurm scripts
 The actual scripts used to train the models (with the Slurm workload manager) are all in `scripts/`. 
 
+## FID and IS evaluation
+All code for FID and IS evaluation has been adapted from the original Tensorflow implementation and are located here: https://anonymous.4open.science/r/dac95e3c-ecab-4daf-bea4-758db495843a/. The only change to this implmentation was that I modified it to use HDF5 datasets of images for the calculations as it provides a much faster method for saving and loading images.
+
 
 ## Requirements
 
 Under `requirements.yml` for conda environment setup
-
-## TEST
