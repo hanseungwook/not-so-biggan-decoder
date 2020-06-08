@@ -6,6 +6,9 @@ All models, training, and evaluation code for the not-so-biggan sampler are loca
 ## Models
 Modified UNet-based decoder models are all placed within the submodule Pytorch-UNet. You may need to run the following commands in order to pull from the submodule codebase.
 
+If the submodule structure is incompatible for the anonymized GitHub repository, the Pytorch-UNet repository is located here: https://anonymous.4open.science/r/484d57ea-7841-4c8d-bf1c-0dc1c24f2362/
+
+
 ```bash
 git submodule init
 git submodule update
