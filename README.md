@@ -67,6 +67,39 @@ python src/eval_biggan_unet_128_256.py \
 --sample_file {Path to 64x64 TL patch samples from sampler} \
 ```
 
+**Training first level UNet-based-pixel decoder (64 => 128)**
+```bash
+python src/train_UNET_256_pixel.py \
+--train_dir {Path to ImageNet train dataset} --valid_dir {Path to ImageNet valid dataset} \
+--batch_size=64 --image_size=256 \
+--low_resolution=128 --workers=4 \
+--lr=1e-3 --num_epochs 100 \
+--output_dir {Path to output directory} --save_every=500 \
+--valid_every=1000 \
+```
+
+**Training first level UNet-based-pixel decoder (64 => 128)**
+```bash
+python src/train_UNET_pixel.py \
+--train_dir {Path to ImageNet train dataset} --valid_dir {Path to ImageNet valid dataset} \
+--batch_size=64, --image_size=128 \
+--low_resolution=64, --workers=4 \
+--lr=1e-3, --num_epochs=100 \
+--output_dir {Path to output directory} --save_every=500 \
+--valid_every=1000 \
+```
+
+**Training second level UNet-based-pixel decoder (128 => 256)**
+```bash
+python src/train_UNET_256_pixel.py \
+--train_dir {Path to ImageNet train dataset} --valid_dir {Path to ImageNet valid dataset} \
+--batch_size=64 --image_size=256 \
+--low_resolution=128 --workers=4 \
+--lr=1e-3 --num_epochs 100 \
+--output_dir {Path to output directory} --save_every=500 \
+--valid_every=1000 \
+```
+
 ## Slurm scripts
 The actual scripts used to train the models (with the Slurm workload manager) are all in `scripts/`. 
 
