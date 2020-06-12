@@ -931,7 +931,7 @@ def train_unet_128_256_perceptual(epoch, state_dict, model_128, model_256, optim
     inv_filters = create_inv_filters(device=args.device)
 
     # Create perceptual loss
-    loss_fn = models.PerceptualLoss(model='net-lin', net='vgg', use_gpu=use_gpu, gpu_ids=[0])
+    loss_fn = models.PerceptualLoss(model='net-lin', net='vgg', use_gpu=True, gpu_ids=[0])
 
     for data, _ in tqdm(train_loader):
         start_time = time.time()
