@@ -1,3 +1,6 @@
 [submodule "Pytorch-UNet"]
 	path = Pytorch-UNet
 	url = https://github.com/hanseungwook/Pytorch-UNet.git
+[submodule "PerceptualSimilarity"]
+	path = PerceptualSimilarity
+	url = https://github.com/richzhang/PerceptualSimilarity.git
