@@ -1,5 +1,6 @@
 import time
 import sys
+import gc
 import torch.nn.functional as F
 from torchvision.utils import save_image
 import wandb
@@ -996,7 +997,10 @@ def train_unet_128_256_perceptual(epoch, state_dict, model_128, model_256, optim
         # Update logger & wandb
         logger.update(state_dict['itr'], loss.cpu().item(), itr_time)
         wandb.log({'train_loss': loss.item()}, commit=False)
-        wandb.log({'train_itr_time': itr_time}, commit=True)    
+        wandb.log({'train_itr_time': itr_time}, commit=True)
+
+        gc.collect()
+        torch.cuda.empty_cache()
 
         # Save images, logger, weights on save_every interval
         if not state_dict['itr'] % args.save_every:
@@ -1096,6 +1100,9 @@ def train_unet_128_256_perceptual(epoch, state_dict, model_128, model_256, optim
             
             save_image(recon_img.cpu(), args.output_dir + 'val_recon_img_itr{}.png'.format(state_dict['itr']))
             save_image(data.cpu(), args.output_dir + 'val_img_itr{}.png'.format(state_dict['itr']))
+
+            gc.collect()
+            torch.cuda.empty_cache()
         
         # Increment iteration number
         state_dict['itr'] += 1
