@@ -931,7 +931,7 @@ def train_unet_128_256_perceptual(epoch, state_dict, model_128, model_256, optim
     inv_filters = create_inv_filters(device=args.device)
 
     # Create perceptual loss
-    loss_fn = models.PerceptualLoss(model='net-lin', net='vgg', use_gpu=True, gpu_ids=[0])
+    loss_fn = models.PerceptualLoss(model='net-lin', net='vgg', use_gpu=True, gpu_ids=[1])
 
     for data, _ in tqdm(train_loader):
         start_time = time.time()
@@ -962,7 +962,7 @@ def train_unet_128_256_perceptual(epoch, state_dict, model_128, model_256, optim
         recon_mask_128_br_img = collate_channels_to_img(recon_mask_128_br, args.device)
         
         recon_mask_128_tr_img = iwt(recon_mask_128_tr_img, inv_filters, levels=1)
-        recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)   
+        recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)
         recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1)
         
         Y_64 = wt(data, filters, levels=3)[:, :, :64, :64]
@@ -986,7 +986,7 @@ def train_unet_128_256_perceptual(epoch, state_dict, model_128, model_256, optim
         recon_img = iwt(recon_mask_256_iwt, inv_filters, levels=3)
 
         # May need to fix normalization
-        loss = loss_fn.forward(recon_img, data, normalize=True).mean()
+        loss = loss_fn.forward(recon_img.to('cuda:1'), data.to('cuda:1'), normalize=True).mean().to('cuda:0')
         loss.backward()
         optimizer.step()
 
