@@ -5,6 +5,8 @@ import wandb
 from tqdm import tqdm, trange
 
 from wt_utils import *
+sys.path.append('./PerceptualSimilarity/')
+import models
 
 # Train function for UNet 128 (64->128) without data augmentation
 def train_unet128(epoch, state_dict, model, optimizer, train_loader, valid_loader, args, logger):
@@ -915,5 +917,184 @@ def train_unet256_real(epoch, state_dict, model, optimizer, train_loader, valid_
 
             save_image(data.cpu(), args.output_dir + 'val_img_itr{}.png'.format(state_dict['itr']))
 
+        # Increment iteration number
+        state_dict['itr'] += 1
+
+
+def train_unet_128_256_perceptual(epoch, state_dict, model_128, model_256, optimizer, train_loader, valid_loader, args, logger):
+    model_128.train()
+    model_256.train()
+
+    # Create filters
+    filters = create_filters(device=args.device)
+    inv_filters = create_inv_filters(device=args.device)
+
+    # Create perceptual loss
+    loss_fn = models.PerceptualLoss(model='net-lin', net='vgg', use_gpu=use_gpu, gpu_ids=[0])
+
+    for data, _ in tqdm(train_loader):
+        start_time = time.time()
+        optimizer.zero_grad()
+
+        data = data.to(args.device)
+    
+        Y = wt_256_3quads(data, filters, levels=3)
+
+        # Get real 1st level masks
+        Y_64 = Y[:, :, :64, :64]
+        real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br = get_4masks(Y_64, 32)
+        Y_64_patches = torch.cat((real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br), dim=1)
+
+        # Run through unet 128
+        recon_mask_128_all = model_128(Y_64_patches)
+        recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br = split_masks_from_channels(recon_mask_128_all)
+
+        Y_128_patches = torch.cat((Y_64_patches, recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br), dim=1)
+
+        # Run through unet 256
+        recon_mask_256_all = model_256(Y_128_patches)
+        recon_mask_256_tr, recon_mask_256_bl, recon_mask_256_br = split_masks_from_channels(recon_mask_256_all)
+
+        # Collate al masks constructed by first 128 level
+        recon_mask_128_tr_img = collate_channels_to_img(recon_mask_128_tr, args.device)
+        recon_mask_128_bl_img = collate_channels_to_img(recon_mask_128_bl, args.device)
+        recon_mask_128_br_img = collate_channels_to_img(recon_mask_128_br, args.device)
+        
+        recon_mask_128_tr_img = iwt(recon_mask_128_tr_img, inv_filters, levels=1)
+        recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)   
+        recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1)
+        
+        Y_64 = wt(data, filters, levels=3)[:, :, :64, :64]
+        recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
+
+        # Collate all masks concatenated by channel to an image (slice up and put into a square)
+        recon_mask_256_tr_img = collate_16_channels_to_img(recon_mask_256_tr, args.device)
+        recon_mask_256_bl_img = collate_16_channels_to_img(recon_mask_256_bl, args.device)   
+        recon_mask_256_br_img = collate_16_channels_to_img(recon_mask_256_br, args.device)
+
+        zeros = torch.zeros(recon_mask_256_tr_img.shape)
+        
+        recon_mask_256_tr_img = apply_iwt_quads_128(recon_mask_256_tr_img, inv_filters)
+        recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_256_bl_img, inv_filters)
+        recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_256_br_img, inv_filters)
+        
+        recon_mask_256_iwt = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img, device=args.device)
+        
+        # IWT to reconstruct iamge
+        recon_mask_256_iwt[:, :, :128, :128] = recon_mask_128_iwt
+        recon_img = iwt(recon_mask_256_iwt, inv_filters, levels=3)
+
+        # May need to fix normalization
+        loss = loss_fn.foward(recon_img, data, normalize=True)
+        loss.backward()
+        optimizer.step()
+
+        end_time = time.time()
+        itr_time = end_time - start_time
+
+        # Update logger & wandb
+        logger.update(state_dict['itr'], loss.cpu().item(), itr_time)
+        wandb.log({'train_loss': loss.item()}, commit=False)
+        wandb.log({'train_itr_time': itr_time}, commit=True)    
+
+        # Save images, logger, weights on save_every interval
+        if not state_dict['itr'] % args.save_every:
+            real_mask = wt(data, filters, levels=3)
+            real_mask[:, :, :64, :64].fill_(0)
+
+            # Save images
+            save_image(real_mask.cpu(), args.output_dir + 'real_mask_iwt_itr{}.png'.format(state_dict['itr']))
+            save_image(recon_mask_256_iwt.cpu(), args.output_dir + 'recon_mask_iwt_itr{}.png'.format(state_dict['itr']))
+            
+            save_image(recon_img.cpu(), args.output_dir + 'recon_img_itr{}.png'.format(state_dict['itr']))
+            save_image(data.cpu(), args.output_dir + 'img_itr{}.png'.format(state_dict['itr']))
+            
+            # Save model & optimizer weights
+            torch.save({
+                'model_128_state_dict': model_128.state_dict(),
+                'model_256_state_dict': model_256.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                }, args.output_dir + '/iwt_model_128_256_itr{}.pth'.format(state_dict['itr']))
+            
+            # Save logger 
+            torch.save(logger, args.output_dir + '/logger.pth')
+
+        if not state_dict['itr'] % args.valid_every:
+            model_128.eval()
+            model_256.eval()
+            val_losses = []
+            with torch.no_grad(): 
+                for data, _ in tqdm(valid_loader):
+                    data = data.to(args.device)
+                
+                    Y = wt_256_3quads(data, filters, levels=3)
+
+                    # Get real 1st level masks
+                    Y_64 = Y[:, :, :64, :64]
+                    real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br = get_4masks(Y_64, 32)
+                    Y_64_patches = torch.cat((real_mask_64_tl, real_mask_64_tr, real_mask_64_bl, real_mask_64_br), dim=1)
+
+                    # Run through unet 128
+                    recon_mask_128_all = model_128(Y_64_patches)
+                    recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br = split_masks_from_channels(recon_mask_128_all)
+
+                    Y_128_patches = torch.cat((Y_64_patches, recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br), dim=1)
+
+                    # Run through unet 256
+                    recon_mask_256_all = model_256(Y_128_patches)
+                    recon_mask_256_tr, recon_mask_256_bl, recon_mask_256_br = split_masks_from_channels(recon_mask_256_all)
+
+                    # Collate al masks constructed by first 128 level
+                    recon_mask_128_tr_img = collate_channels_to_img(recon_mask_128_tr, args.device)
+                    recon_mask_128_bl_img = collate_channels_to_img(recon_mask_128_bl, args.device)
+                    recon_mask_128_br_img = collate_channels_to_img(recon_mask_128_br, args.device)
+                    
+                    recon_mask_128_tr_img = iwt(recon_mask_128_tr_img, inv_filters, levels=1)
+                    recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)   
+                    recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1)
+                    
+                    Y_64 = wt(data, filters, levels=3)[:, :, :64, :64]
+                    recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
+
+                    # Collate all masks concatenated by channel to an image (slice up and put into a square)
+                    recon_mask_256_tr_img = collate_16_channels_to_img(recon_mask_256_tr, args.device)
+                    recon_mask_256_bl_img = collate_16_channels_to_img(recon_mask_256_bl, args.device)   
+                    recon_mask_256_br_img = collate_16_channels_to_img(recon_mask_256_br, args.device)
+
+                    zeros = torch.zeros(recon_mask_256_tr_img.shape)
+                    
+                    recon_mask_256_tr_img = apply_iwt_quads_128(recon_mask_256_tr_img, inv_filters)
+                    recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_256_bl_img, inv_filters)
+                    recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_256_br_img, inv_filters)
+                    
+                    recon_mask_256_iwt = collate_patches_to_img(zeros, recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img, device=args.device)
+                    
+                    # IWT to reconstruct iamge
+                    recon_mask_256_iwt[:, :, :128, :128] = recon_mask_128_iwt
+                    recon_img = iwt(recon_mask_256_iwt, inv_filters, levels=3)
+
+                    # May need to fix normalization
+                    loss = loss_fn.foward(recon_img, data, normalize=True)
+                    val_losses.append(loss.item())
+
+                val_losses_mean = np.mean(val_losses)
+                wandb.log({'val_loss': val_losses_mean}, commit=True)
+                logger.update_val_loss(state_dict['itr'], val_losses_mean)
+                val_losses.clear()
+            
+            model_128.train()
+            model_256.train()
+
+            # Save batch of validation images
+            real_mask = wt(data, filters, levels=3)
+            real_mask[:, :, :64, :64].fill_(0)
+
+            # Save images
+            save_image(real_mask.cpu(), args.output_dir + 'val_real_mask_iwt_itr{}.png'.format(state_dict['itr']))
+            save_image(recon_mask_256_iwt.cpu(), args.output_dir + 'val_recon_mask_iwt_itr{}.png'.format(state_dict['itr']))
+            
+            save_image(recon_img.cpu(), args.output_dir + 'val_recon_img_itr{}.png'.format(state_dict['itr']))
+            save_image(data.cpu(), args.output_dir + 'val_img_itr{}.png'.format(state_dict['itr']))
+        
         # Increment iteration number
         state_dict['itr'] += 1
