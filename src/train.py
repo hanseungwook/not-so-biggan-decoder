@@ -1079,7 +1079,7 @@ def train_unet_128_256_perceptual(epoch, state_dict, model_128, model_256, optim
                     recon_img = iwt(recon_mask_256_iwt, inv_filters, levels=3)
 
                     # May need to fix normalization
-                    loss = loss_fn.forward(recon_img, data, normalize=True)
+                    loss = loss_fn.forward(recon_img, data, normalize=True).mean()
                     val_losses.append(loss.item())
 
                 val_losses_mean = np.mean(val_losses)
