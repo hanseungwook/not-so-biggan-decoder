@@ -66,8 +66,8 @@ date
 python src/train_unet_128_256_perceptual_loss.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
 --batch_size 128 --image_size 256 --num_epochs 100 \
---output_dir $HOME2/wtvae/results/unet_128_256_perceptual_loss/ \
---project_name unet_imagenet_128_256_perceptual_loss \
+--output_dir $HOME2/wtvae/results/unet_128_256_perceptual_loss_freeze/ \
+--project_name unet_imagenet_128_256_perceptual_loss_freeze \
 --model_128_weights $HOME2/wtvae/results/unet_128_run1_3/iwt_model_128_itr288000.pth \
 --model_256_weights $HOME2/wtvae/results/unet_256_real/iwt_model_256_itr232000.pth \
 --save_every 2000 --valid_every 2000 --log_every 50 

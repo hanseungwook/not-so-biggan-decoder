@@ -330,3 +330,7 @@ def load_weights(model, checkpoint_path, args):
     torch.cuda.empty_cache()
 
     return model
+
+def freeze_model(model):
+    for params in model.parameters():
+        params.requires_grad = False

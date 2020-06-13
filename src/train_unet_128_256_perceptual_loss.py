@@ -7,7 +7,7 @@ import torchvision.datasets as dset
 import wandb
 
 from datasets import ImagenetDataAugDataset
-from wt_utils import wt, create_filters, load_checkpoint, load_weights
+from wt_utils import wt, create_filters, load_checkpoint, load_weights, freeze_model
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod, UNet_NTail_128_Mod1
 from train import train_unet_128_256_perceptual
@@ -62,8 +62,9 @@ if __name__ == "__main__":
     if args.model_256_weights:
         print('Loading model 256 weights')
         model_256 = load_weights(model_256, args.model_256_weights, args)
+        freeze_model(model_256)
 
-    optimizer = optim.Adam(list(model_128.parameters()) + list(model_256.parameters()), lr=args.lr)
+    optimizer = optim.Adam(model_128.parameters(), lr=args.lr)
     # May have to load optimizer when checkpointing
     state_dict = {'itr': args.checkpoint}
 
