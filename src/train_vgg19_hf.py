@@ -15,7 +15,6 @@ from tqdm import tqdm
 from distutils.version import LooseVersion
 
 from wt_utils_new import wt, wt_successive, wt_hf, wt_lf, iwt, create_filters, create_inv_filters
-import resnet
 
 import wandb
 
