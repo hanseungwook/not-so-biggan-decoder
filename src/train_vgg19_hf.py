@@ -168,7 +168,7 @@ if args.cuda:
     print('Wavelet filter moved to GPU')
 
 if args.hf:
-    print('Running VGG19 model with high frequencies IWTed as input'))
+    print('Running VGG19 model with high frequencies IWTed as input')
     wt_transform = lambda vimg: wt_hf(vimg, filters, levels=args.num_wt_levels)
 ######################################################
 
