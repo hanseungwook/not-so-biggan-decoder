@@ -48,14 +48,14 @@ date
 
 ## Horovod execution
 horovodrun -np $SLURM_NTASKS -H `cat $NODELIST` python \
-      $HOME2/not-so-biggan-decoder/src/train_vgg19_nobn_hf.py \
+      $HOME2/not-so-biggan-decoder/src/train_vgg19_hf.py \
       --train-dir /data/ImageNet/ILSVRC2012/train/ \
       --val-dir /data/ImageNet/ILSVRC2012/val/ \
       --hf \
       --fp16-allreduce \
       --batch-size=64 \
       --wandb-entity sswwhan \
-      --wandb_project_name vgg19-hf \
+      --wandb_project_name vgg19-nobn-hf \
       --wandb-api-key $HOME2/settings/wandb_api_key.txt \
       --num-wt-levels 3 \
       --epochs 120 \
