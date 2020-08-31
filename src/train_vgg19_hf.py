@@ -221,8 +221,7 @@ val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.val_batch_
 
 
 # Set up standard VGG19-BN model.
-if not args.hier_model:
-    model = models.vgg19_bn()
+model = models.vgg19_bn()
 print(model)
 
 # By default, Adasum doesn't need scaling up learning rate.
