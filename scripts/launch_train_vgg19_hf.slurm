@@ -48,7 +48,7 @@ date
 
 ## Horovod execution
 horovodrun -np $SLURM_NTASKS -H `cat $NODELIST` python \
-      $HOME2/not-so-biggan-decoder/src/train_vgg19_hf.py \
+      $HOME2/not-so-biggan-decoder/src/train_vgg19_nobn_hf.py \
       --train-dir /data/ImageNet/ILSVRC2012/train/ \
       --val-dir /data/ImageNet/ILSVRC2012/val/ \
       --hf \
