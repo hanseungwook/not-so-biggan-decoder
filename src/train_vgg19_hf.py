@@ -400,7 +400,7 @@ class Metric(object):
 
 
 for epoch in range(resume_from_epoch, args.epochs):
-    best_val_acc = flaot('-inf')
+    best_val_acc = float('-inf')
     is_best = False
 
     if not args.validate_only:
