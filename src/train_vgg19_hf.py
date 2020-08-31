@@ -45,6 +45,8 @@ parser.add_argument('--num-wt-levels', type=int, default=1,
                     help='number of wavelet transforms applied')
 parser.add_argument('--hf', action='store_true', default=False,
                     help='Only train on high frequency patches (IWTed)')
+parser.add_argument('--bn', action='store_true', default=False,
+                    help='Batch normalization in VGG19 model')
                
 
 # Default settings from https://arxiv.org/abs/1706.02677.
@@ -221,7 +223,10 @@ val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.val_batch_
 
 
 # Set up standard VGG19-BN model.
-model = models.vgg19_bn()
+if args.bn:
+    model = models.vgg19_bn()
+else:
+    model = models.vgg19()
 print(model)
 
 # By default, Adasum doesn't need scaling up learning rate.
