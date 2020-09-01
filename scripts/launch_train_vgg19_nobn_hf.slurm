@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -J in_hier
-#SBATCH -o in_hier_%j.out
-#SBATCH -e in_hier_%j.err
+#SBATCH -J vgg19nobn
+#SBATCH -o vgg19nobn_%j.out
+#SBATCH -e vgg19nobn%j.err
 
 #SBATCH --mail-user=swhan@mit.edu
 #SBATCH --mail-type=ALL
