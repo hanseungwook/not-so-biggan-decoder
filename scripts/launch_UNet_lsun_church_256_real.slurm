@@ -67,7 +67,7 @@ python src/train_unet_256_real.py \
 --dataset lsun-church_outdoor \
 --train_dir $HOME2/data/lsun/ --valid_dir $HOME2/data/lsun/ \
 --batch_size 64 --image_size 256 --mask_dim 128 --lr 1e-4 \
---num_epochs 100 --output_dir $HOME2/wtvae/results/unet_lsun_church_256_real/ \
+--num_epochs 100 --output_dir $HOME2/not-so-biggan-decoder/results/unet_lsun_church_256_real/ \
 --project_name unet_lsun_church_256_real \
 --save_every 2000 --valid_every 2000 --log_every 50
 
