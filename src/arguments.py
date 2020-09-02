@@ -17,6 +17,8 @@ def parse_args():
                         help='Number of workers for dataloader')                    
     parser.add_argument('--mask_dim', type=int, default=64,
                         help='Dimension of mask trying to reconstruct (32 / 64 / 128')
+    parser.add_argument('--dataset', type=str, default='imagenet'
+                        help='Name of dataset to train on (imagenet, lsun-bedroom, lsun-church_outdoor, ...)')
 
     # Model arguments
     parser.add_argument('--lr', type=float, default=1e-4,

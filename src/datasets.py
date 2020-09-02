@@ -5,8 +5,46 @@ import numpy as np
 import torch
 import torchvision
 from torch.utils.data import Dataset
+import torchvision.datasets as dset
 import torchvision.transforms as transforms
 from wt_utils import get_3masks
+
+####################################################################
+# DATASET HELPER
+####################################################################
+
+def parse_dataset_args(dataset):
+    dataset = dataset.split('-')
+    ds_name = None
+    classes = None
+    
+    if 'imagenet' in dataset:
+        ds_name = 'imagenet'
+    elif 'lsun' in dataset:
+        ds_name = 'lsun'
+        classes = dataset[1:]
+        classes = [[c + ds_type for c in classes] for ds_type in ['_train', '_val']]
+    else:
+        raise NotImplementedError()
+
+    return ds_name, classes
+
+def create_dataset(ds_name, path, transform, classes=None):
+    dataset = None
+    
+    if ds_name == 'imagenet':
+        dataset = dset.ImageFolder(root=path, transform=transform)
+    elif ds_name == 'lsun':
+        dataset = dset.LSUN(path, classes=classes, transform=transform)
+    else:
+        raise NotImplementedError()
+    
+    return dataset
+
+
+####################################################################
+# CUSTOM DATASET OBJECTS
+####################################################################
 
 # Vanilla Imagenet dataset that replicates ImageFolder
 class ImagenetDataset(Dataset):

@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as dset
 import wandb
 
-from datasets import ImagenetDataAugDataset
+from datasets import parse_dataset_args, create_dataset
 from wt_utils import wt, create_filters, load_checkpoint, load_weights
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod
@@ -43,25 +43,17 @@ if __name__ == "__main__":
                             transforms.ToTensor()
                         ])
     
-    # Image augmentation transforms + dataset
-    # transform = [transforms.ColorJitter(0.5, 0.5, 0.5, 0),
-    #             transforms.RandomAffine(180),
-    #             transforms.RandomErasing(p=1, value=1)]
-
-    # train_dataset = ImagenetDataAugDataset(root_dir=args.train_dir, num_wt=3, mask_dim=args.mask_dim, wt=wt, 
-    #                                        filters=filters_cpu, default_transform=default_transform,
-    #                                        transform=transform, p=0.1)
+    # Parsing dataset arguments
+    ds_name, classes = parse_dataset_args(args.dataset)
 
     # Create train dataset
-    train_dataset = dset.ImageFolder(root=args.train_dir, transform=default_transform)
-
+    train_dataset = create_dataset(ds_name, args.train_dir, transform=default_transform, classes=classes[0] if classes else None)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size,
                                                shuffle=True, num_workers=args.workers,
                                                pin_memory=True, drop_last=True)
 
     # Create validation dataset
-    valid_dataset = dset.ImageFolder(root=args.valid_dir, transform=default_transform)
-
+    valid_dataset = create_dataset(ds_name, args.valid_dir, transform=default_transform, classes=classes[1] if classes else None)
     valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=args.batch_size,
                                                shuffle=True, num_workers=args.workers,
                                                pin_memory=True, drop_last=True)
