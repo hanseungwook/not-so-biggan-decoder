@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH -J in_hier
-#SBATCH -o in_hier_%j.out
-#SBATCH -e in_hier_%j.err
+#SBATCH -J vgg19nobn
+#SBATCH -o vgg19nobn_%j.out
+#SBATCH -e vgg19nobn%j.err
 
 #SBATCH --mail-user=swhan@mit.edu
 #SBATCH --mail-type=ALL
@@ -55,10 +55,10 @@ horovodrun -np $SLURM_NTASKS -H `cat $NODELIST` python \
       --fp16-allreduce \
       --batch-size=64 \
       --wandb-entity sswwhan \
-      --wandb_project_name vgg19-nobn-hf \
+      --wandb_project_name vgg19-nobn-hf-2wt \
       --wandb-api-key $HOME2/settings/wandb_api_key.txt \
-      --num-wt-levels 3 \
-      --epochs 120 \
+      --num-wt-levels 2 \
+      --epochs 180 \
       --resume-from-epoch \
       --model-load-path . \
       --save-models \
