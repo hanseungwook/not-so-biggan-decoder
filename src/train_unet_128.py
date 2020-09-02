@@ -64,7 +64,8 @@ if __name__ == "__main__":
 
     state_dict = {'itr': 0}
 
-    print('Loading weights')
+    if args.resume:
+        print('Loading weights')
         model, optimizer, logger = load_checkpoint(model, optimizer, '128', args)
         state_dict['itr'] = args.checkpoint
 
