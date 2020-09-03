@@ -54,7 +54,7 @@ def create_dataset(ds_name, path, transform, classes=None):
 ####################################################################
 
 # Pytorch LSUN Dataset with object categories support (cats) added
-class LSUN_OBJECTS(VisionDataset):
+class LSUN_Objects(VisionDataset):
     """
     `LSUN <https://www.yf.io/p/lsun>`_ dataset.
 
