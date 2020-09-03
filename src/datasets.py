@@ -11,6 +11,7 @@ from torch.utils.data import Dataset
 import torchvision.datasets as dset
 from torchvision.datasets.lsun import LSUNClass
 from torchvision.datasets.utils import verify_str_arg, iterable_to_str
+from torchvision.datasets import VisionDataset
 import torchvision.transforms as transforms
 from collections.abc import Iterable
 import pickle
