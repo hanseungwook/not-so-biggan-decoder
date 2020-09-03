@@ -10,7 +10,7 @@ import torchvision
 from torch.utils.data import Dataset
 import torchvision.datasets as dset
 from torchvision.datasets.lsun import LSUNClass
-from torchvision.datasets.lsun.utils import verify_str_arg, iterable_to_str
+from torchvision.datasets.utils import verify_str_arg, iterable_to_str
 import torchvision.transforms as transforms
 from collections.abc import Iterable
 import pickle
