@@ -70,7 +70,7 @@ class LSUN_Objects(VisionDataset):
     """
 
     def __init__(self, root, classes='train', transform=None, target_transform=None):
-        super(LSUN, self).__init__(root, transform=transform,
+        super(LSUN_Objects, self).__init__(root, transform=transform,
                                    target_transform=target_transform)
         self.classes = self._verify_classes(classes)
 
