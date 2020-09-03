@@ -44,7 +44,7 @@ def create_dataset(ds_name, path, transform, classes=None):
         dataset = dset.ImageFolder(root=path, transform=transform)
     elif ds_name == 'lsun':
         # LSUN Object classes
-        if any('cat' in c in classes):
+        if any('cat' in c for c in classes):
             dataset_idx = None
             for c in classes:
                 if 'train' in c:
