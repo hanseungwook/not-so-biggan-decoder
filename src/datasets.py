@@ -43,7 +43,21 @@ def create_dataset(ds_name, path, transform, classes=None):
     if ds_name == 'imagenet':
         dataset = dset.ImageFolder(root=path, transform=transform)
     elif ds_name == 'lsun':
-        dataset = dset.LSUN(path, classes=classes, transform=transform)
+        # LSUN Object classes
+        if 'cat' in classes:
+            dataset_idx = None
+            for c in classes:
+                if 'train' in c:
+                    dataset_idx = 0
+                elif 'val' in c:
+                    dataset_idx = 1
+
+            dataset = LSUN_Objects(path, classes=['cat_train'], transform=transform)
+            train_val_datasets = torch.utils.data.random_split(dataset, [len(dataset)-5000, 5000], generator=torch.Generator().manual_seed(42))
+            dataset = train_val_datasets[dataset_idx]
+        # LSUN Scene classes
+        else: 
+            dataset = dset.LSUN(path, classes=classes, transform=transform)
     else:
         raise NotImplementedError()
     
