@@ -68,7 +68,7 @@ python src/train_unet_128.py \
 --train_dir $HOME2/data/lsun/ --valid_dir $HOME2/data/lsun/ \
 --batch_size 128 --image_size 256 --mask_dim 64 --lr 1e-4 \
 --num_epochs 100 --output_dir $HOME2/not-so-biggan-decoder/results/unet_lsun_cat_128/ \
---project_name unet_lsun_church_128 \
+--project_name unet_lsun_cat_128 \
 --save_every 2000 --valid_every 2000 --log_every 100 \
 # --resume --checkpoint 197000 \
 
