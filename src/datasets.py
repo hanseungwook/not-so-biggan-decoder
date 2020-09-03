@@ -53,7 +53,8 @@ def create_dataset(ds_name, path, transform, classes=None):
                     dataset_idx = 1
 
             dataset = LSUN_Objects(path, classes=['cat_train'], transform=transform)
-            train_val_datasets = torch.utils.data.random_split(dataset, [len(dataset)-5000, 5000], generator=torch.Generator().manual_seed(42))
+            torch.manual_seed(42)
+            train_val_datasets = torch.utils.data.random_split(dataset, [len(dataset)-5000, 5000])
             dataset = train_val_datasets[dataset_idx]
         # LSUN Scene classes
         else: 
