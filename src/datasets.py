@@ -13,6 +13,7 @@ from torchvision.datasets.lsun import LSUNClass
 from torchvision.datasets.utils import verify_str_arg, iterable_to_str
 from torchvision.datasets import VisionDataset
 import torchvision.transforms as transforms
+import h5py
 from collections.abc import Iterable
 import pickle
 from wt_utils import get_3masks
@@ -259,3 +260,22 @@ class SampleDataset(Dataset):
             img = self.transform(img)
         
         return img
+
+class H5Dataset(Dataset):
+    def __init__(self, file_path, transform=None):
+        self.data = h5py.File(file_path, 'r')
+        self.transform = transform
+    
+    def __len__(self):
+        return self.data.shape[0]
+
+    def __getitem__(self, idx):
+        img = torch.from_numpy(self.data[idx])
+
+        if self.transform:
+            img = self.transform(img)
+        
+        return img
+    
+    def close(self):
+        self.data.close()
