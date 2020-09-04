@@ -263,7 +263,8 @@ class SampleDataset(Dataset):
 
 class H5Dataset(Dataset):
     def __init__(self, file_path, transform=None):
-        self.data = h5py.File(file_path, 'r')
+        self.file = h5py.File(filepath, 'r')
+        self.data = file.get('imgs')
         self.transform = transform
     
     def __len__(self):
@@ -278,4 +279,4 @@ class H5Dataset(Dataset):
         return img
     
     def close(self):
-        self.data.close()
+        self.file.close()
