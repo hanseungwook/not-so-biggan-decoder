@@ -276,6 +276,56 @@ def collate_16_channels_to_img(img_channels, device='cpu'):
     
     return img
 
+# Function for arranging two levels of outputs (128, 256) into an image
+# Outputs two reconstructions -- one with only 128 level and another with both 128 and 256 level masks
+# If mask option is True, then add a fully IWT'ed reconstructed mask
+def mask_outputs_to_img(Y_64, recon_mask_128_all, recon_mask_256_all, device, mask=False): 
+    # Split 128 and 256 level outputs into quadrants
+    recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br = split_masks_from_channels(recon_mask_128_all)
+    recon_mask_256_tr, recon_mask_256_bl, recon_mask_256_br = split_masks_from_channels(recon_mask_256_all)
+
+    # Collate all masks constructed by first 128 level
+    recon_mask_128_tr_img = collate_channels_to_img(recon_mask_128_tr, device)
+    recon_mask_128_bl_img = collate_channels_to_img(recon_mask_128_bl, device)   
+    recon_mask_128_br_img = collate_channels_to_img(recon_mask_128_br, device)
+    
+    recon_mask_128_tr_img = iwt(recon_mask_128_tr_img, inv_filters, levels=1)
+    recon_mask_128_bl_img = iwt(recon_mask_128_bl_img, inv_filters, levels=1)
+    recon_mask_128_br_img = iwt(recon_mask_128_br_img, inv_filters, levels=1) 
+    
+    recon_mask_128_iwt = collate_patches_to_img(Y_64, recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
+
+    # Collate all masks concatenated by channel to an image (slice up and put into a square)
+    recon_mask_256_tr_img = collate_16_channels_to_img(recon_mask_256_tr, device)
+    recon_mask_256_bl_img = collate_16_channels_to_img(recon_mask_256_bl, device)   
+    recon_mask_256_br_img = collate_16_channels_to_img(recon_mask_256_br, device)
+
+    recon_mask_256 = collate_patches_to_img(torch.zeros(recon_mask_256_tr_img.shape, device=device), recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img)
+    
+    recon_mask_256_tr_img = apply_iwt_quads_128(recon_mask_256_tr_img, inv_filters)
+    recon_mask_256_bl_img = apply_iwt_quads_128(recon_mask_256_bl_img, inv_filters)
+    recon_mask_256_br_img = apply_iwt_quads_128(recon_mask_256_br_img, inv_filters)
+    
+    recon_mask_256_iwt = collate_patches_to_img(torch.zeros(recon_mask_256_tr_img.shape, device=device), recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img)
+    
+    recon_mask_padded = zero_pad(recon_mask_256_iwt, 256, device)
+    recon_mask_padded[:, :, :128, :128] = recon_mask_128_iwt
+    recon_img = iwt(recon_mask_padded, inv_filters, levels=3)
+
+    recon_mask_128_padded = zero_pad(recon_mask_128_iwt, 256, device)
+    recon_img_128 = iwt(recon_mask_128_padded, inv_filters, levels=3)
+
+    if mask:
+        recon_mask_128_iwt = collate_patches_to_img(torch.zeros(recon_mask_128_tr_img.shape, device=device), recon_mask_128_tr_img, recon_mask_128_bl_img, recon_mask_128_br_img)
+        recon_mask_256_iwt = collate_patches_to_img(torch.zeros(recon_mask_256_tr_img.shape, device=device), recon_mask_256_tr_img, recon_mask_256_bl_img, recon_mask_256_br_img)
+        recon_mask_padded = zero_pad(recon_mask_256_iwt, 256, device)
+        recon_mask_padded[:, :, :128, :128] = recon_mask_128_iwt
+        recon_mask = iwt(recon_mask_padded, inv_filters, levels=3)
+
+        return recon_img_128, recon_img, recon_mask
+
+    return recon_img_128, recon_img
+
 ################# MISC #################
 
 def set_seed(seed, cudnn=True):
