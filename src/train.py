@@ -975,7 +975,6 @@ def train_unet_128_256(epoch, state_dict, model_128, model_256, optimizer, train
             Y_real = wt(data, filters, levels=3)
             Y_64 = Y_real[:, :, :64, :64]
             Y_128 = Y_real[:, :, :128, :128]
-            zeros = torch.zeros(real_mask_tr.shape)
 
             # Real mask with both levels (128, 256) 
             real_mask_iwt = iwt(zero_mask(Y_real, 3, 2).to(args.device), inv_filters, levels=3)
