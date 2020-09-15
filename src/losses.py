@@ -88,6 +88,7 @@ class DecoderLoss(nn.Module):
     """
     # Feature idx = 34, for no bn
     def __init__(self, model_path=None, feature_idx=49, bn=True, loss_criterion='l1', use_input_norm=False, device='cpu'):
+        super().__init__()
         self.pr_loss = PerceptualLoss(model_path, feature_idx, bn, loss_criterion, use_input_norm, device)
     
     def forward(self, fake_img, real_img):
