@@ -66,9 +66,9 @@ date
 python src/finetune_unet_128_256.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
 --batch_size 64 --image_size 256 --lr 1e-4 \
---feature_idx 34 --loss_criterion l2 --use_input_norm \
---output_dir $HOME2/not-so-biggan-decoder/results/finetune_unet_128_256_perceptual_pixel/ \
---project_name finetune_unet_imagenet_128_256_perceptual_pixel \
+--vgg_model_path $HOME2/not-so-biggan-decoder/results/vgg19-bn-hf-2wt/checkpoint-best.pth.tar --feature_idx 49 --loss_criterion l2 --bn --use_input_norm --use_wt \
+--output_dir $HOME2/not-so-biggan-decoder/results/finetune_unet_128_256_perceptual_wt/ \
+--project_name finetune_unet_imagenet_128_256_perceptual_wt \
 --model_128_weights $HOME2/wtvae/results/unet_128_run1_3/iwt_model_128_itr197000.pth \
 --model_256_weights $HOME2/wtvae/results/unet_256_real/iwt_model_256_itr156000.pth \
 --save_every 2000 --valid_every 2000 --log_every 50

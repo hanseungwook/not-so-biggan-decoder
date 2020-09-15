@@ -39,6 +39,22 @@ def parse_args():
     parser.add_argument('--log_every', type=int, default=50,
                         help='Log train metrics every X iterations')   
 
+    # Perceptual loss train arguments
+    parser.add_argument('--vgg_model_path', type=str, default='',
+                        help='Path to VGG model weights if we want to use custom-trained model, not pretrained')
+    parser.add_argument('--feature_idx', type=int, default=34,
+                        help='Feature index of VGG19')
+    parser.add_argument('--bn', action='store_true',
+                        help='Whether to use VGG19 model with BN or not')
+    parser.add_argument('--loss_criterion', type=str, default='l2',
+                        help='Which loss criterion to use for feature metrics (l1, l2)')
+    parser.add_argument('--use_input_norm', action='store_true',
+                        help='Whether to normalize the inputs to the VGG19 model (ImageNet normalization values)')
+    parser.add_argument('--use_wt', action='store_true',
+                        help='Whether to use perceptual loss on high frequency mask (WT)')
+
+
+
     # Resume
     parser.add_argument('--resume', action='store_true', default=False,
                         help='Resume training? (default: %(default)s)')

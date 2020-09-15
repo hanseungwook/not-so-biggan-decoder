@@ -3,17 +3,20 @@ from torch import nn as nn
 from torch.nn import L1Loss
 import torchvision.models as models
 
+from wt_utils_new import wt_hf
+
 class PerceptualLoss(nn.Module):
     """
     Perceptual loss implemented with a VGG-19 model
     """
 
-    def __init__(self, model_path, feature_idx, bn, loss_criterion, use_input_norm, device):
+    def __init__(self, model_path, feature_idx, bn, loss_criterion, use_input_norm, use_wt, device):
         # Instantiate model
         super().__init__()
         model = None
         pretrained = False if model_path else True
         self.use_input_norm = use_input_norm
+        self.use_wt = use_wt
 
         if bn:
             model = models.vgg19_bn(pretrained=pretrained).to(device)
@@ -47,6 +50,11 @@ class PerceptualLoss(nn.Module):
             self.register_buffer(
                 'std',
                 torch.Tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to(device))
+            
+        if self.use_wt:
+            filters = create_filters(device)
+            self.wt_transform = lambda vimg: wt_hf(vimg, filters, levels=2)
+
     
     def forward(self, fake, real):
         # Clipping into (0, 1) range for fake
@@ -56,6 +64,11 @@ class PerceptualLoss(nn.Module):
         if self.use_input_norm:
             fake = (fake - self.mean) / self.std
             real = (real - self.mean) / self.std
+
+        # Apply WT (to change into high frequency space), if indicated
+        if self.use_wt:
+            fake = self.wt_transform(fake)
+            real = self.wt_transform(real)
 
         fake_features = self.model(fake)
         real_features = self.model(real)
@@ -86,9 +99,10 @@ class DecoderLoss(nn.Module):
     """ Loss for decoder that encompasses MSE (pixel-wise) + Perceptual (VGG-19) + Total Variation Loss
     """
     # Feature idx = 34, for no bn
-    def __init__(self, model_path=None, feature_idx=49, bn=True, loss_criterion='l1', use_input_norm=False, device='cpu'):
+    # Feature idx = 49, for bn
+    def __init__(self, model_path='', feature_idx=49, bn=True, loss_criterion='l1', use_input_norm=False, use_wt=False, device='cpu'):
         super().__init__()
-        self.pr_loss = PerceptualLoss(model_path, feature_idx, bn, loss_criterion, use_input_norm, device)
+        self.pr_loss = PerceptualLoss(model_path, feature_idx, bn, loss_criterion, use_input_norm, use_wt, device)
     
     def forward(self, fake_img, real_img):
         # TODO: weighting of each losses
