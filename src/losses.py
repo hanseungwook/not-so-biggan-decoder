@@ -8,10 +8,12 @@ class PerceptualLoss(nn.Module):
     Perceptual loss implemented with a VGG-19 model
     """
 
-    def __init__(self, model_path, feature_idx, bn, loss_criterion, device):
+    def __init__(self, model_path, feature_idx, bn, loss_criterion, use_input_norm, device):
         # Instantiate model
         model = None
         pretrained = False if model_path else True
+        self.use_input_norm = use_input_norm
+        
         if bn:
             model = models.vgg19_bn(pretrained=pretrained).to(device)
         else:
