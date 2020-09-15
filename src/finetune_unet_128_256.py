@@ -31,6 +31,9 @@ if __name__ == "__main__":
     else:
         print('WARNING: Output directory already exists and will be overwriting (if not resuming)')
 
+    # Initialize wandb
+    wandb.init(project=args.project_name)
+
     # Create transforms
     default_transform = transforms.Compose([
                             transforms.CenterCrop(args.image_size),
