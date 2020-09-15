@@ -3,7 +3,7 @@ from torch import nn as nn
 from torch.nn import L1Loss
 import torchvision.models as models
 
-from wt_utils_new import wt_hf
+from wt_utils_new import wt_hf, create_filters
 
 class PerceptualLoss(nn.Module):
     """
