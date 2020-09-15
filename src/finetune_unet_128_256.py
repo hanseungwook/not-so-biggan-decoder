@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as dset
 import wandb
 
-from datasets import SampleDataset
+from datasets import parse_dataset_args, create_dataset
 from wt_utils import wt, create_filters, load_checkpoint, load_weights
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod
@@ -66,8 +66,8 @@ if __name__ == "__main__":
     # Optimizer
     optimizer = optim.Adam(list(model_128.parameters()) + list(model_256.parameters()), lr=args.lr)
 
-    # Decoder loss = MSE loss (pixel-wise) + perceptual loss (VGG-19) + total variation loss
-    loss = DecoderLoss()
+    # Decoder loss = perceptual loss (VGG-19)
+    loss = DecoderLoss(feature_idx=49, bn=True loss_criterion='l2', use_input_norm=True)
 
     # State dict
     state_dict = {'itr': 0}

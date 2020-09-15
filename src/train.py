@@ -955,7 +955,7 @@ def train_unet_128_256(epoch, state_dict, model, model_128, optimizer, train_loa
         real_mask_iwt = iwt(zero_mask(Y_real, 3, 2).to(args.device), inv_filters, levels=3)
 
         # Loss
-        loss = loss_fn(recon_mask, real_mask_iwt)
+        loss = loss_fn(recon_img, data)
     
         loss.backward()
         optimizer.step()
