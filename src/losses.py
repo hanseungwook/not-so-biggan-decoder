@@ -2,6 +2,7 @@ import torch
 from torch import nn as nn
 from torch.nn import L1Loss
 import torchvision.models as models
+import gc
 
 from wt_utils_new import wt_hf, create_filters
 
@@ -54,6 +55,9 @@ class PerceptualLoss(nn.Module):
         if self.use_wt:
             filters = create_filters(device)
             self.wt_transform = lambda vimg: wt_hf(vimg, filters, levels=2)
+
+        gc.collect()
+        torch.cuda.empty_cache()
 
     
     def forward(self, fake, real):
