@@ -1031,7 +1031,7 @@ def train_unet_128_256(epoch, state_dict, model_128, model_256, optimizer, train
                     recon_mask_256_all = model_256(Y_128_patches)
 
                     # Reconstruction and real
-                    recon_img_128, recon_img, recon_mask = mask_outputs_to_img(Y_64, recon_mask_128_all, recon_mask_256_all, device, mask=True)
+                    recon_img_128, recon_img, recon_mask = mask_outputs_to_img(Y_64, recon_mask_128_all, recon_mask_256_all, args.device, mask=True)
                     Y_real = wt(data, filters, levels=3)
                     real_mask_iwt = iwt(zero_mask(Y_real, 3, 2).to(args.device), inv_filters, levels=3)
 
@@ -1058,7 +1058,7 @@ def train_unet_128_256(epoch, state_dict, model_128, model_256, optimizer, train
             real_mask_iwt = iwt(zero_mask(Y_real, 3, 2).to(args.device), inv_filters, levels=3)
 
             # Create images with outputs of both 128 and 256 models
-            recon_img_128, recon_img, recon_mask = mask_outputs_to_img(Y_64, recon_mask_128_all, recon_mask_256_all, device, mask=True)
+            recon_img_128, recon_img, recon_mask = mask_outputs_to_img(Y_64, recon_mask_128_all, recon_mask_256_all, args.device, mask=True)
             
             # Reconstructed image with only 64x64
             Y_128_low = zero_pad(Y_128, 256, args.device)
