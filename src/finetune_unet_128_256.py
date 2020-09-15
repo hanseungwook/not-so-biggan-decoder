@@ -5,6 +5,7 @@ from torch import optim
 import torchvision.transforms as transforms
 import torchvision.datasets as dset
 import wandb
+import gc
 
 from datasets import parse_dataset_args, create_dataset
 from wt_utils import wt, create_filters, load_checkpoint, load_weights
@@ -71,6 +72,10 @@ if __name__ == "__main__":
 
     # State dict
     state_dict = {'itr': 0}
+
+    # Clean up memory
+    gc.collect()
+    torch.cuda.empty_cache()
 
     for epoch in range(args.num_epochs):
         train_unet_128_256(epoch, state_dict, model_128, model_256, optimizer, train_loader, valid_loader, args, logger, loss)
