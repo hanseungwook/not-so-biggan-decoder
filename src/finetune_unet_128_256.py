@@ -30,9 +30,6 @@ if __name__ == "__main__":
         os.mkdir(args.output_dir)
     else:
         print('WARNING: Output directory already exists and will be overwriting (if not resuming)')
-    
-    # Create filters for dataloader
-    filters_cpu = create_filters(device='cpu')
 
     # Create transforms
     default_transform = transforms.Compose([
@@ -67,7 +64,7 @@ if __name__ == "__main__":
     optimizer = optim.Adam(list(model_128.parameters()) + list(model_256.parameters()), lr=args.lr)
 
     # Decoder loss = perceptual loss (VGG-19)
-    loss = DecoderLoss(feature_idx=49, bn=True, loss_criterion='l2', use_input_norm=True)
+    loss = DecoderLoss(feature_idx=49, bn=True, loss_criterion='l2', use_input_norm=True, device=args.device)
 
     # State dict
     state_dict = {'itr': 0}

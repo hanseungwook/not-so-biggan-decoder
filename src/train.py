@@ -1,5 +1,6 @@
 import time
 import torch.nn.functional as F
+import torch.nn as nn
 from torchvision.utils import save_image
 import wandb
 from tqdm import tqdm, trange

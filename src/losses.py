@@ -8,14 +8,14 @@ class PerceptualLoss(nn.Module):
     Perceptual loss implemented with a VGG-19 model
     """
 
-    def __init__(self, model_path, feature_idx, bn=True, loss_criterion='l1'):
+    def __init__(self, model_path, feature_idx, bn, loss_criterion, device):
         # Instantiate model
         model = None
         pretrained = False if model_path else True
         if bn:
-            model = models.vgg19_bn(pretrained=pretrained)
+            model = models.vgg19_bn(pretrained=pretrained).to(device)
         else:
-            model = models.vgg19(pretrained=pretrained)
+            model = models.vgg19(pretrained=pretrained).to(device)
         
         # Load weight
         if model_path:
@@ -84,8 +84,8 @@ class DecoderLoss(nn.Module):
     """ Loss for decoder that encompasses MSE (pixel-wise) + Perceptual (VGG-19) + Total Variation Loss
     """
     # Feature idx = 34, for no bn
-    def __init__(self, model_path=None, feature_idx=49, bn=True, loss_criterion='l1', use_input_norm=False):
-        self.pr_loss = PerceptualLoss(model_path, feature_idx, bn, loss_criterion, use_input_norm)
+    def __init__(self, model_path=None, feature_idx=49, bn=True, loss_criterion='l1', use_input_norm=False, device='cpu'):
+        self.pr_loss = PerceptualLoss(model_path, feature_idx, bn, loss_criterion, use_input_norm, device)
     
     def forward(self, fake_img, real_img):
         # TODO: weighting of each losses
