@@ -10,10 +10,11 @@ class PerceptualLoss(nn.Module):
 
     def __init__(self, model_path, feature_idx, bn, loss_criterion, use_input_norm, device):
         # Instantiate model
+        super().__init__()
         model = None
         pretrained = False if model_path else True
         self.use_input_norm = use_input_norm
-        
+
         if bn:
             model = models.vgg19_bn(pretrained=pretrained).to(device)
         else:
@@ -73,9 +74,9 @@ class TVLoss(L1Loss):
         super(TVLoss, self).__init__()
 
     def forward(self, pred):
-        y_diff = super(WeightedTVLoss, self).forward(
+        y_diff = super(TVLoss, self).forward(
             pred[:, :, :-1, :], pred[:, :, 1:, :])
-        x_diff = super(WeightedTVLoss, self).forward(
+        x_diff = super(TVLoss, self).forward(
             pred[:, :, :, :-1], pred[:, :, :, 1:])
 
         loss = x_diff + y_diff

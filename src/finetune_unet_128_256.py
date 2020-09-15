@@ -64,7 +64,7 @@ if __name__ == "__main__":
     optimizer = optim.Adam(list(model_128.parameters()) + list(model_256.parameters()), lr=args.lr)
 
     # Decoder loss = perceptual loss (VGG-19)
-    loss = DecoderLoss(feature_idx=49, bn=True, loss_criterion='l2', use_input_norm=True, device=args.device)
+    loss = DecoderLoss(feature_idx=34, bn=False, loss_criterion='l2', use_input_norm=True, device=args.device)
 
     # State dict
     state_dict = {'itr': 0}
