@@ -280,6 +280,8 @@ def collate_16_channels_to_img(img_channels, device='cpu'):
 # Outputs two reconstructions -- one with only 128 level and another with both 128 and 256 level masks
 # If mask option is True, then add a fully IWT'ed reconstructed mask
 def mask_outputs_to_img(Y_64, recon_mask_128_all, recon_mask_256_all, device, mask=False): 
+    inv_filters = create_inv_filters(device=args.device)
+
     # Split 128 and 256 level outputs into quadrants
     recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br = split_masks_from_channels(recon_mask_128_all)
     recon_mask_256_tr, recon_mask_256_bl, recon_mask_256_br = split_masks_from_channels(recon_mask_256_all)
