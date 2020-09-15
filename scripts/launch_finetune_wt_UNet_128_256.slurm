@@ -65,7 +65,7 @@ date
 
 python src/finetune_unet_128_256.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
---batch_size 64 --image_size 256 --lr 1e-4 \
+--batch_size 32 --image_size 256 --lr 1e-4 \
 --vgg_model_path $HOME2/not-so-biggan-decoder/results/vgg19-bn-hf-2wt/checkpoint-best.pth.tar --feature_idx 49 --loss_criterion l2 --bn --use_input_norm --use_wt \
 --output_dir $HOME2/not-so-biggan-decoder/results/finetune_unet_128_256_perceptual_wt/ \
 --project_name finetune_unet_imagenet_128_256_perceptual_wt \
