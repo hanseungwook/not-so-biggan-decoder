@@ -921,7 +921,7 @@ def train_unet256_real(epoch, state_dict, model, optimizer, train_loader, valid_
 
 
 # Train function for Unet 128 + Unet 256 with perceptual loss on the entire mask
-def train_unet_128_256(epoch, state_dict, model, model_128, optimizer, train_loader, valid_loader, args, logger, loss_fn=nn.MSELoss()):
+def train_unet_128_256(epoch, state_dict, model_128, model_256, optimizer, train_loader, valid_loader, args, logger, loss_fn=nn.MSELoss()):
     model_128.train()
     model_256.train()
 
@@ -1029,7 +1029,7 @@ def train_unet_128_256(epoch, state_dict, model, model_128, optimizer, train_loa
                     Y_128_patches = torch.cat((Y_64_patches, recon_mask_128_tr, recon_mask_128_bl, recon_mask_128_br), dim=1)
 
                     # Run through 128 mask network and get reconstructed image
-                    recon_mask_256_all = model(Y_128_patches)
+                    recon_mask_256_all = model_256(Y_128_patches)
 
                     # Reconstruction and real
                     recon_img_128, recon_img, recon_mask = mask_outputs_to_img(Y_64, recon_mask_128_all, recon_mask_256_all, device, mask=True)
