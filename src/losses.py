@@ -57,9 +57,8 @@ class PerceptualLoss(nn.Module):
             fake = (fake - self.mean) / self.std
             real = (real - self.mean) / self.std
 
-        with torch.no_grad():            
-            fake_features = self.model(fake)
-            real_features = self.model(real)
+        fake_features = self.model(fake)
+        real_features = self.model(real)
         
         return self.loss(fake_features, real_features)
     
