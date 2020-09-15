@@ -66,7 +66,7 @@ date
 python src/finetune_unet_128_256.py \
 --train_dir /data/ImageNet/ILSVRC2012/train/ --valid_dir /data/ImageNet/ILSVRC2012/val/ \
 --batch_size 64 --image_size 256 --mask_dim 128 --lr 1e-4 \
---output_dir $HOME2/wtvae/results/not-so-biggan-decoder/finetune_unet_128_256_perceptual_pixel/ \
+--output_dir $HOME2/not-so-biggan-decoder/results/finetune_unet_128_256_perceptual_pixel/ \
 --project_name finetune_unet_imagenet_128_256_perceptual_pixel \
 --model_128_weights $HOME2/wtvae/results/unet_128_run1_3/iwt_model_128_itr197000.pth \
 --model_256_weights $HOME2/wtvae/results/unet_256_run1_4/iwt_model_256_itr220500.pth \
