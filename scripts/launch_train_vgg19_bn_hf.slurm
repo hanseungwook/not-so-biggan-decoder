@@ -56,7 +56,7 @@ horovodrun -np $SLURM_NTASKS -H `cat $NODELIST` python \
       --fp16-allreduce \
       --batch-size=64 \
       --wandb-entity sswwhan \
-      --wandb_project_name vgg19-bn-hf-2wt \
+      --wandb_project_name vgg19-bn-hf-2wt-nonorm \
       --wandb-api-key $HOME2/settings/wandb_api_key.txt \
       --num-wt-levels 2 \
       --epochs 180 \

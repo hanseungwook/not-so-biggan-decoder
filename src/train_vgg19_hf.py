@@ -196,8 +196,8 @@ train_dataset = \
                              transforms.RandomResizedCrop(256),
                              transforms.RandomHorizontalFlip(),
                              transforms.ToTensor(),
-                             transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                  std=[0.229, 0.224, 0.225])
+                            #  transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                            #                       std=[0.229, 0.224, 0.225])
                          ]))
 # Horovod: use DistributedSampler to partition data among workers. Manually specify
 # `num_replicas=hvd.size()` and `rank=hvd.rank()`.
@@ -213,8 +213,8 @@ val_dataset = \
                              transforms.Resize(256),
                              transforms.CenterCrop(256),
                              transforms.ToTensor(),
-                             transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                  std=[0.229, 0.224, 0.225])
+                            #  transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                            #                       std=[0.229, 0.224, 0.225])
                          ]))
 val_sampler = torch.utils.data.distributed.DistributedSampler(
     val_dataset, num_replicas=hvd.size(), rank=hvd.rank())
