@@ -382,3 +382,15 @@ def load_weights(model, checkpoint_path, args):
     torch.cuda.empty_cache()
 
     return model
+
+# Load both model 128 and model 256 weights and optimizer weights
+def load_all_weights(model_128, model_256, optimizer, checkpoint_path, args):
+    checkpoint = torch.load(checkpoint_path, map_location=args.device)
+    model_128.load_state_dict(checkpoint['model_128_state_dict'])
+    model_256.load_state_dict(checkpoint['model_256_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+    del checkpoint
+    torch.cuda.empty_cache()
+
+    return model_128, model_256, optimizer

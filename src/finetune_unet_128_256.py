@@ -8,7 +8,7 @@ import wandb
 import gc
 
 from datasets import parse_dataset_args, create_dataset
-from wt_utils import wt, create_filters, load_checkpoint, load_weights
+from wt_utils import wt, create_filters, load_checkpoint, load_weights, load_all_weights
 from arguments import parse_args
 from unet.unet_model import UNet_NTail_128_Mod
 from train import train_unet_128_256
@@ -59,19 +59,27 @@ if __name__ == "__main__":
 
     print('Loading UNet 128 and 256 weights')
     model_128 = UNet_NTail_128_Mod(n_channels=12, n_classes=3, n_tails=12, bilinear=True).to(args.device)
-    model_128 = load_weights(model_128, args.model_128_weights, args)
-    
     model_256 = UNet_NTail_128_Mod(n_channels=48, n_classes=3, n_tails=48, bilinear=True).to(args.device)
-    model_256 = load_weights(model_256, args.model_256_weights, args)
 
     # Optimizer
     optimizer = optim.Adam(list(model_128.parameters()) + list(model_256.parameters()), lr=args.lr)
 
-    # Decoder loss = perceptual loss (VGG-19)
-    loss = DecoderLoss(model_path=args.vgg_model_path, feature_idx=args.feature_idx, bn=args.bn, loss_criterion=args.loss_criterion, use_input_norm=args.use_input_norm, use_wt=args.use_wt, device=args.device)
-
     # State dict
     state_dict = {'itr': 0}
+
+    # If continuing finetuning/training, load these weights
+    if args.resume:
+        state_dict['itr'] = args.checkpoint
+        model_128, model_256, optimizer = load_all_weights(model_128, model_256, optimizer, args.checkpoint_path, args)
+        print('Loaded models and optimizer from iteration {}'.format(args.checkpoint))
+
+    # Else, loading original decoders only trained on MSE
+    else: 
+        model_128 = load_weights(model_128, args.model_128_weights, args)
+        model_256 = load_weights(model_256, args.model_256_weights, args)
+
+    # Decoder loss = perceptual loss (VGG-19)
+    loss = DecoderLoss(model_path=args.vgg_model_path, feature_idx=args.feature_idx, bn=args.bn, loss_criterion=args.loss_criterion, use_input_norm=args.use_input_norm, use_wt=args.use_wt, device=args.device)
 
     # Clean up memory
     gc.collect()

@@ -71,8 +71,8 @@ python src/finetune_unet_128_256.py \
 --project_name finetune_unet_imagenet_128_256_perceptual_wt \
 --model_128_weights $HOME2/wtvae/results/unet_128_run1_3/iwt_model_128_itr197000.pth \
 --model_256_weights $HOME2/wtvae/results/unet_256_real/iwt_model_256_itr156000.pth \
---save_every 2000 --valid_every 2000 --log_every 50
-
+--save_every 2000 --valid_every 2000 --log_every 50 \
+--resume --checkpoint 50000 --checkpoint_path $HOME2/not-so-biggan-decoder/results/finetune_unet_128_256_perceptual_wt/iwt_model_128_256_itr50000.pth
 
 echo "Run completed at:- "
 date
